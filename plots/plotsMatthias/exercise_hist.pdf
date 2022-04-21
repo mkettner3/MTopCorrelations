@@ -1,0 +1,30 @@
+{
+//========= Macro generated from object: exercise_hist/Exercise Histogram
+//========= by ROOT version6.14/09
+   
+   TH1F *exercise_hist__1 = new TH1F("exercise_hist__1","Exercise Histogram",10,0,100);
+   exercise_hist__1->SetBinContent(1,4);
+   exercise_hist__1->SetBinContent(2,3);
+   exercise_hist__1->SetBinContent(3,2);
+   exercise_hist__1->SetBinContent(4,1);
+   exercise_hist__1->SetBinContent(5,1);
+   exercise_hist__1->SetBinContent(7,1);
+   exercise_hist__1->SetBinContent(9,1);
+   exercise_hist__1->SetEntries(13);
+   exercise_hist__1->SetLineColor(5);
+   exercise_hist__1->GetXaxis()->SetLabelFont(42);
+   exercise_hist__1->GetXaxis()->SetLabelSize(0.035);
+   exercise_hist__1->GetXaxis()->SetTitleSize(0.035);
+   exercise_hist__1->GetXaxis()->SetTitleFont(42);
+   exercise_hist__1->GetYaxis()->SetTitle("entries");
+   exercise_hist__1->GetYaxis()->SetLabelFont(42);
+   exercise_hist__1->GetYaxis()->SetLabelSize(0.035);
+   exercise_hist__1->GetYaxis()->SetTitleSize(0.035);
+   exercise_hist__1->GetYaxis()->SetTitleOffset(0);
+   exercise_hist__1->GetYaxis()->SetTitleFont(42);
+   exercise_hist__1->GetZaxis()->SetLabelFont(42);
+   exercise_hist__1->GetZaxis()->SetLabelSize(0.035);
+   exercise_hist__1->GetZaxis()->SetTitleSize(0.035);
+   exercise_hist__1->GetZaxis()->SetTitleFont(42);
+   exercise_hist__1->Draw("");
+}
