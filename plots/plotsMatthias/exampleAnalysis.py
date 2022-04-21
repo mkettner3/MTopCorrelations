@@ -185,39 +185,32 @@ def gen_tops(event, sample):
 
     event.matched_jet_Cons_pt_ratio = [elem/event.nearest_jet_pt for elem in event.matched_jet_Cons_pt]
 
-    # matched_jet_cons = getJetConstituents(event=event, idx=nearest_jet_idx_t)
+    matched_jet_cons = getJetConstituents(event=event, idx=nearest_jet_idx_t)
 
     delta_delta = 0.02
     triplet = [ROOT.TLorentzVector()]*3
-    for i in range(event.nGenJetAK8_cons):
-        if event.GenJetAK8_cons_jetIndex[i] == nearest_jet_idx_t:
-            for j in range(i+1, event.nGenJetAK8_cons):
-                if event.GenJetAK8_cons_jetIndex[j] == nearest_jet_idx_t:
-                    for k in range(j+1, event.nGenJetAK8_cons):
-                        if event.GenJetAK8_cons_jetIndex[k] == nearest_jet_idx_t:
+    numb_of_particles = 1000
+    if len(matched_jet_cons) >= numb_of_particles:
+        for i in range(numb_of_particles):
+            for j in range(i+1, numb_of_particles):
+                for k in range(j+1, numb_of_particles):
 
-                            triplet[0].SetPtEtaPhiM(event.GenJetAK8_cons_pt[i], event.GenJetAK8_cons_eta[i],
-                                                    event.GenJetAK8_cons_phi[i], event.GenJetAK8_cons_mass[i])
-                            triplet[1].SetPtEtaPhiM(event.GenJetAK8_cons_pt[j], event.GenJetAK8_cons_eta[j],
-                                                    event.GenJetAK8_cons_phi[j], event.GenJetAK8_cons_mass[j])
-                            triplet[2].SetPtEtaPhiM(event.GenJetAK8_cons_pt[k], event.GenJetAK8_cons_eta[k],
-                                                    event.GenJetAK8_cons_phi[k], event.GenJetAK8_cons_mass[k])
-                            delta_0_1 = triplet[0].DeltaR(triplet[1])
-                            delta_0_2 = triplet[0].DeltaR(triplet[2])
-                            delta_1_2 = triplet[1].DeltaR(triplet[2])
-                            if abs(delta_0_1-delta_0_2) < delta_delta:
-                                if abs(delta_1_2-delta_0_1) < delta_delta:
-                                    if abs(delta_0_2-delta_1_2) < delta_delta:
-                                        w = (event.GenJetAK8_cons_pt[i]*event.GenJetAK8_cons_pt[j]*event.GenJetAK8_cons_pt[k])
-                                        w = w**2
-                                        # print(w)
-                                        # print(event.nearest_jet_pt)
-                                        # print(event.matched_jet_nCons)
-                                        w = w / (event.nearest_jet_pt**(3*2))
+                    triplet[0] = matched_jet_cons[i]
+                    triplet[1] = matched_jet_cons[j]
+                    triplet[2] = matched_jet_cons[k]
+                    delta_0_1 = triplet[0].DeltaR(triplet[1])
+                    delta_0_2 = triplet[0].DeltaR(triplet[2])
+                    delta_1_2 = triplet[1].DeltaR(triplet[2])
+                    if abs(delta_0_1-delta_0_2) < delta_delta:
+                        if abs(delta_1_2-delta_0_1) < delta_delta:
+                            if abs(delta_0_2-delta_1_2) < delta_delta:
+                                w = (event.GenJetAK8_cons_pt[i]*event.GenJetAK8_cons_pt[j]*event.GenJetAK8_cons_pt[k])
+                                w = w**2
+                                w = w / (event.nearest_jet_pt**(3*2))
 
-                                        zeta = (delta_0_1 + delta_0_2 + delta_1_2) / 3
+                                zeta = (delta_0_1 + delta_0_2 + delta_1_2) / 3
 
-                                        hist.Fill(zeta, w)
+                                hist.Fill(zeta, w)
 
 
 sequence.append(gen_tops)
