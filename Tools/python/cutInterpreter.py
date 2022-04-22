@@ -37,7 +37,7 @@ special_cuts = {
     "trilep": "l1_pt>40&&l2_pt>20&&l3_pt>10",
     "triMuon": "Sum$(lep_pt>40&&abs(lep_eta)<2.4&&lep_mediumId&&abs(lep_pdgId)==13)>=1 && Sum$(lep_pt>20&&abs(lep_eta)<2.4&&lep_mediumId&&abs(lep_pdgId)==13)>=2 && Sum$(lep_pt>10&&abs(lep_eta)<2.4&&lep_mediumId&&abs(lep_pdgId)==13)==3",
     "vetoElec": "Sum$(lep_pt>10&&abs(lep_eta)<2.4&&abs(lep_pdgId)==11)==0",
-    "AK8pt": "Sum$(GenJetAK8_pt>300)>=1",
+    "AK8pt": "Sum$(GenJetAK8_pt>400)>=1",
   }
 
 continous_variables = [('ht','Sum$(JetGood_pt*(JetGood_pt>30&&abs(JetGood_eta)<2.4))'), ("met", "met_pt"), ("Z2mass", "Z2_mass"), ("Z1mass", "Z1_mass"), ("minDLmass", "minDLmass"), ("mT", "mT")]

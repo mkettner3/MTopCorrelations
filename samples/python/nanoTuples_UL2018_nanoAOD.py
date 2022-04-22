@@ -22,5 +22,6 @@ def make_dirs( dirs ):
 
 dirs = {}
 
-dirs['TTbar']               = ["TTToSemiLeptonic"]
-TTbar = Sample.fromDirectory(name="TTbar", treeName="Events", isData=False, color=color.TTbar, texName="t#bar{t}", directory=make_dirs( dirs['TTbar']))
+sample_path = '/scratch-cbe/users/dennis.schwarz/MTopCorrelations/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8'
+dirs['TTbar'] = ["TTToSemiLeptonic"]
+TTbar = Sample.fromDirectory(name="TTbar", treeName="Events", isData=False, color=color.TTbar, texName="t#bar{t}", directory=sample_path)

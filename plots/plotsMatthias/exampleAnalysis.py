@@ -31,7 +31,9 @@ from MTopCorrelations.Tools.helpers          import getCollection
 # from Analysis.Tools.puReweighting        import getReweightingFunction
 # from Analysis.Tools.leptonJetArbitration     import cleanJetsAndLeptons
 
-# import Analysis.Tools.syncer
+from correlator_histogram_styling import style_corr_hist
+
+import Analysis.Tools.syncer                # Starts syncing by itself, does not need to be called in script
 import numpy as np
 
 ################################################################################
@@ -42,6 +44,7 @@ argParser.add_argument('--logLevel',       action='store',      default='INFO', 
 argParser.add_argument('--plot_directory', action='store', default='MTopCorrelations_v1')
 argParser.add_argument('--selection',      action='store', default='nAK81p-AK8pt')
 argParser.add_argument('--era',            action='store', type=str, default="UL2018")
+argParser.add_argument('--small',          action='store_true', help='Run only on a small subset of the data?', )
 args = argParser.parse_args()
 
 ################################################################################
@@ -56,11 +59,14 @@ logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 from MTopCorrelations.samples.nanoTuples_UL_RunII_nanoAOD import UL2018
 
 mc = [UL2018.TTbar]
+if args.small:
+    for sample in mc:
+        sample.reduceFiles(to=1)
 lumi_scale = 60
 
 ################################################################################
 # Correlator Hist
-hist = ROOT.TH1F("Correlator", "dR", 10, 0, 3)
+hist = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
 
 ################################################################################
 # Text on the plots
@@ -110,7 +116,7 @@ def getJetConstituents(event, idx):
     for i in range(event.nGenJetAK8_cons):
         if event.GenJetAK8_cons_jetIndex[i] == idx:
             part = ROOT.TLorentzVector()
-            part.SetPtEtaPhiM(event.GenJetAK8_cons_pt[i],event.GenJetAK8_cons_eta[i],event.GenJetAK8_cons_phi[i],event.GenJetAK8_cons_mass[i])
+            part.SetPtEtaPhiM(event.GenJetAK8_cons_pt[i], event.GenJetAK8_cons_eta[i], event.GenJetAK8_cons_phi[i], event.GenJetAK8_cons_mass[i])
             constituents.append(part)
     def getPt(part):
         return part.Pt()
@@ -130,7 +136,7 @@ def gen_tops(event, sample):
     top_lep = ROOT.TLorentzVector()
     top_had = ROOT.TLorentzVector()
     for i in range(event.nGenPart):
-         if abs(event.GenPart_pdgId[i]) in [11, 13, 15]:
+        if abs(event.GenPart_pdgId[i]) in [11, 13, 15]:
             if event.GenPart_grmompdgId[i] == 6:
                 top_lep = top_vec
                 top_had = anti_top_vec
@@ -176,21 +182,34 @@ def gen_tops(event, sample):
         if delta_q < 0.8 and delta_aq < 0.8 and delta_b < 0.8:
             event.merged_q_aq_b = True
 
-    event.matched_jet_nCons = 0
-    event.matched_jet_Cons_pt = []
-    for k in range(event.nGenJetAK8_cons):
-        if event.GenJetAK8_cons_jetIndex[k] == nearest_jet_idx_t:
-            event.matched_jet_nCons += 1
-            event.matched_jet_Cons_pt.append(event.GenJetAK8_cons_pt[k])
+    if event.merged_q_aq_b and event.nearest_jet_pt > 400:
+        event.all_merged_and_high_pt = True
+    else:
+        event.all_merged_and_high_pt = False
 
-    event.matched_jet_Cons_pt_ratio = [elem/event.nearest_jet_pt for elem in event.matched_jet_Cons_pt]
+    if event.all_merged_and_high_pt:
+        event.matched_jet_nCons = 0
+        event.matched_jet_Cons_pt = []
+        for k in range(event.nGenJetAK8_cons):
+            if event.GenJetAK8_cons_jetIndex[k] == nearest_jet_idx_t:
+                event.matched_jet_nCons += 1
+                event.matched_jet_Cons_pt.append(event.GenJetAK8_cons_pt[k])
 
-    matched_jet_cons = getJetConstituents(event=event, idx=nearest_jet_idx_t)
+        event.matched_jet_Cons_pt_ratio = [elem/event.nearest_jet_pt for elem in event.matched_jet_Cons_pt]
+    else:
+        event.matched_jet_nCons = float('nan')
+        event.matched_jet_Cons_pt = float('nan')
+        event.matched_jet_Cons_pt_ratio = float('nan')
 
-    delta_delta = 0.02
-    triplet = [ROOT.TLorentzVector()]*3
-    numb_of_particles = 1000
-    if len(matched_jet_cons) >= numb_of_particles:
+    if event.all_merged_and_high_pt:
+        matched_jet_cons = getJetConstituents(event=event, idx=nearest_jet_idx_t)
+
+        delta_delta = 0.02
+        triplet = [ROOT.TLorentzVector()]*3
+        numb_of_particles = 45
+        if len(matched_jet_cons) < numb_of_particles:
+            numb_of_particles = len(matched_jet_cons)
+
         for i in range(numb_of_particles):
             for j in range(i+1, numb_of_particles):
                 for k in range(j+1, numb_of_particles):
@@ -210,7 +229,7 @@ def gen_tops(event, sample):
 
                                 zeta = (delta_0_1 + delta_0_2 + delta_1_2) / 3
 
-                                hist.Fill(zeta, w)
+                                hist.Fill(zeta*3, w)
 
 
 sequence.append(gen_tops)
@@ -340,35 +359,35 @@ plots.append(Plot(
 plots.append(Plot(
     name = "cut_delta_min_2",
     texX = 'Delta between nearest jet and hadronic top [rad]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.delta_min if event.merged_q_aq_b else float('nan'),
+    attribute = lambda event, sample: event.delta_min if event.all_merged_and_high_pt else float('nan'),
     binning=[25, 0., 7.],
 ))
 
 plots.append(Plot(
     name = "cut_jet_mass_2",
     texX = 'Mass of jet next to hadronic top [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nearest_jet_mass_t if event.merged_q_aq_b else float('nan'),
+    attribute = lambda event, sample: event.nearest_jet_mass_t if event.all_merged_and_high_pt else float('nan'),
     binning=[25, 0., 500.],
 ))
 
 plots.append(Plot(
     name = "cut_jet_pt_2",
     texX = 'P_{t} of jet next to hadronic top [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nearest_jet_pt if event.merged_q_aq_b else float('nan'),
+    attribute = lambda event, sample: event.nearest_jet_pt if event.all_merged_and_high_pt else float('nan'),
     binning=[25, 0., 500.],
 ))
 
 plots.append(Plot(
     name = "cut_jet_eta_2",
     texX = '#eta of jet next to hadronic top [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nearest_jet_eta if event.merged_q_aq_b else float('nan'),
+    attribute = lambda event, sample: event.nearest_jet_eta if event.all_merged_and_high_pt else float('nan'),
     binning=[25, 3.5, 3.5],
 ))
 
 plots.append(Plot(
     name = "cut_jet_phi_2",
     texX = '#phi of jet next to hadronic top [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nearest_jet_phi if event.merged_q_aq_b else float('nan'),
+    attribute = lambda event, sample: event.nearest_jet_phi if event.all_merged_and_high_pt else float('nan'),
     binning=[25, 3.5, 3.5],
 ))
 
@@ -404,5 +423,9 @@ f = ROOT.TFile('correlator.root', 'RECREATE')
 f.cd()
 hist.Write('correlator_hist')
 f.Close()
+
+style_corr_hist(filename_root='correlator.root',
+                hist_name='correlator_hist',
+                filename_graphic='/correlator_hist.png')
 
 logger.info( "Done with prefix %s and selectionString %s", args.selection, cutInterpreter.cutString(args.selection) )
