@@ -41,7 +41,7 @@ import numpy as np
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument('--logLevel',       action='store',      default='INFO', nargs='?', choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'], help="Log level for logging")
-argParser.add_argument('--plot_directory', action='store', default='MTopCorrelations_v1')
+argParser.add_argument('--plot_directory', action='store', default='MTopCorrelations_v2')
 argParser.add_argument('--selection',      action='store', default='nAK81p-AK8pt')
 argParser.add_argument('--era',            action='store', type=str, default="UL2018")
 argParser.add_argument('--small',          action='store_true', help='Run only on a small subset of the data?', )
@@ -67,6 +67,11 @@ lumi_scale = 60
 ################################################################################
 # Correlator Hist
 hist = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
+hist_unweighted = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
+hist1 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
+hist2 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
+hist3 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
+hist4 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
 
 ################################################################################
 # Text on the plots
@@ -144,7 +149,7 @@ def gen_tops(event, sample):
                 top_lep = anti_top_vec
                 top_had = top_vec
 
-    # event.top_had_pt = top_had.Pt()
+    event.top_had_pt = top_had.Pt()
 
     quark_vec = ROOT.TLorentzVector()
     anti_quark_vec = ROOT.TLorentzVector()
@@ -201,6 +206,9 @@ def gen_tops(event, sample):
         event.matched_jet_Cons_pt = float('nan')
         event.matched_jet_Cons_pt_ratio = float('nan')
 
+    event.numb_of_triplets = 0
+    event.numb_of_all_triplets = 0
+
     if event.all_merged_and_high_pt:
         matched_jet_cons = getJetConstituents(event=event, idx=nearest_jet_idx_t)
 
@@ -214,6 +222,7 @@ def gen_tops(event, sample):
             for j in range(i+1, numb_of_particles):
                 for k in range(j+1, numb_of_particles):
 
+                    event.numb_of_all_triplets += 1
                     triplet[0] = matched_jet_cons[i]
                     triplet[1] = matched_jet_cons[j]
                     triplet[2] = matched_jet_cons[k]
@@ -223,6 +232,7 @@ def gen_tops(event, sample):
                     if abs(delta_0_1-delta_0_2) < delta_delta:
                         if abs(delta_1_2-delta_0_1) < delta_delta:
                             if abs(delta_0_2-delta_1_2) < delta_delta:
+                                event.numb_of_triplets += 1
                                 w = (event.GenJetAK8_cons_pt[i]*event.GenJetAK8_cons_pt[j]*event.GenJetAK8_cons_pt[k])
                                 w = w**2
                                 w = w / (event.nearest_jet_pt**(3*2))
@@ -230,6 +240,16 @@ def gen_tops(event, sample):
                                 zeta = (delta_0_1 + delta_0_2 + delta_1_2) / 3
 
                                 hist.Fill(zeta*3, w)
+                                hist_unweighted.Fill(zeta*3, 1)
+
+                                if 400 < event.nearest_jet_pt < 450:
+                                    hist1.Fill(zeta*3, w)
+                                elif 450 < event.nearest_jet_pt < 500:
+                                    hist2.Fill(zeta*3, w)
+                                elif 500 < event.nearest_jet_pt < 550:
+                                    hist3.Fill(zeta*3, w)
+                                elif 550 < event.nearest_jet_pt < 600:
+                                    hist4.Fill(zeta*3, w)
 
 
 sequence.append(gen_tops)
@@ -412,6 +432,27 @@ plots.append(Plot(
     binning=[25, 0., 0.25],
 ))
 
+plots.append(Plot(
+    name = "number_of_triplets",
+    texX = 'Number of all triplets in matched jet', texY = 'Number of Events',
+    attribute = lambda event, sample: event.numb_of_all_triplets,
+    binning=[25, 0., 100000.],
+))
+
+plots.append(Plot(
+    name = "number_of_equidistant_triplets",
+    texX = 'Number of equidistant triplets in matched jet', texY = 'Number of Events',
+    attribute = lambda event, sample: event.numb_of_triplets,
+    binning=[25, 0., 100.],
+))
+
+plots.append(Plot(
+    name = "ratio_top_pt_jet_pt",
+    texX = 'Ratio of p_{T,t} and p_{T,jet}', texY = 'Number of Events',
+    attribute = lambda event, sample: event.top_had_pt/event.nearest_jet_pt,
+    binning=[25, 0.8, 1.2],
+))
+
 
 plotting.fill(plots, read_variables = read_variables, sequence = sequence)
 
@@ -422,10 +463,16 @@ drawPlots(plots)
 f = ROOT.TFile('correlator.root', 'RECREATE')
 f.cd()
 hist.Write('correlator_hist')
+hist_unweighted.Write('correlator_hist_unweighted')
+hist1.Write('correlator_hist_400_450')
+hist2.Write('correlator_hist_450_500')
+hist3.Write('correlator_hist_500_550')
+hist4.Write('correlator_hist_550_600')
 f.Close()
 
-style_corr_hist(filename_root='correlator.root',
-                hist_name='correlator_hist',
-                filename_graphic='/correlator_hist.png')
+for pt_range in ['', '_unweighted', '_400_450', '_450_500', '_500_550', '_550_600']:
+    style_corr_hist(filename_root='correlator.root',
+                    hist_name='correlator_hist'+pt_range,
+                    filename_graphic='/correlator_hist'+pt_range+'.png')
 
 logger.info( "Done with prefix %s and selectionString %s", args.selection, cutInterpreter.cutString(args.selection) )
