@@ -45,6 +45,8 @@ argParser.add_argument('--plot_directory', action='store', default='MTopCorrelat
 argParser.add_argument('--selection',      action='store', default='nAK81p-AK8pt')
 argParser.add_argument('--era',            action='store', type=str, default="UL2018")
 argParser.add_argument('--small',          action='store_true', help='Run only on a small subset of the data?', )
+argParser.add_argument('--nJobs',          action='store',         nargs='?',  type=int, default=1)
+argParser.add_argument('--job',            action='store',                     type=int, default=0)
 args = argParser.parse_args()
 
 ################################################################################
@@ -58,7 +60,11 @@ logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 # Define the MC samples
 from MTopCorrelations.samples.nanoTuples_UL_RunII_nanoAOD import UL2018
 
-mc = [UL2018.TTbar]
+mc_ = [UL2018.TTbar]
+if args.nJobs == 1:
+    mc = mc_
+else:
+    mc = [sample.split(n=args.nJobs, nSub=args.job) for sample in mc_]
 if args.small:
     for sample in mc:
         sample.reduceFiles(to=1)
@@ -72,6 +78,8 @@ hist1 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
 hist2 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
 hist3 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
 hist4 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
+hist_numb_all_triplets = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
+hist_numb_triplets = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
 
 ################################################################################
 # Text on the plots
@@ -206,50 +214,54 @@ def gen_tops(event, sample):
         event.matched_jet_Cons_pt = float('nan')
         event.matched_jet_Cons_pt_ratio = float('nan')
 
-    event.numb_of_triplets = 0
-    event.numb_of_all_triplets = 0
+    if args.nJobs > 1:
+        numb_of_triplets = 0
+        numb_of_all_triplets = 0
 
-    if event.all_merged_and_high_pt:
-        matched_jet_cons = getJetConstituents(event=event, idx=nearest_jet_idx_t)
+        if event.all_merged_and_high_pt:
+            matched_jet_cons = getJetConstituents(event=event, idx=nearest_jet_idx_t)
 
-        delta_delta = 0.02
-        triplet = [ROOT.TLorentzVector()]*3
-        numb_of_particles = 45
-        if len(matched_jet_cons) < numb_of_particles:
-            numb_of_particles = len(matched_jet_cons)
+            delta_delta = 0.02
+            triplet = [ROOT.TLorentzVector()]*3
+            numb_of_particles = 45
+            if len(matched_jet_cons) < numb_of_particles:
+                numb_of_particles = len(matched_jet_cons)
 
-        for i in range(numb_of_particles):
-            for j in range(i+1, numb_of_particles):
-                for k in range(j+1, numb_of_particles):
+            for i in range(numb_of_particles):
+                for j in range(i+1, numb_of_particles):
+                    for k in range(j+1, numb_of_particles):
 
-                    event.numb_of_all_triplets += 1
-                    triplet[0] = matched_jet_cons[i]
-                    triplet[1] = matched_jet_cons[j]
-                    triplet[2] = matched_jet_cons[k]
-                    delta_0_1 = triplet[0].DeltaR(triplet[1])
-                    delta_0_2 = triplet[0].DeltaR(triplet[2])
-                    delta_1_2 = triplet[1].DeltaR(triplet[2])
-                    if abs(delta_0_1-delta_0_2) < delta_delta:
-                        if abs(delta_1_2-delta_0_1) < delta_delta:
-                            if abs(delta_0_2-delta_1_2) < delta_delta:
-                                event.numb_of_triplets += 1
-                                w = (event.GenJetAK8_cons_pt[i]*event.GenJetAK8_cons_pt[j]*event.GenJetAK8_cons_pt[k])
-                                w = w**2
-                                w = w / (event.nearest_jet_pt**(3*2))
+                        numb_of_all_triplets += 1
+                        triplet[0] = matched_jet_cons[i]
+                        triplet[1] = matched_jet_cons[j]
+                        triplet[2] = matched_jet_cons[k]
+                        delta_0_1 = triplet[0].DeltaR(triplet[1])
+                        delta_0_2 = triplet[0].DeltaR(triplet[2])
+                        delta_1_2 = triplet[1].DeltaR(triplet[2])
+                        if abs(delta_0_1-delta_0_2) < delta_delta:
+                            if abs(delta_1_2-delta_0_1) < delta_delta:
+                                if abs(delta_0_2-delta_1_2) < delta_delta:
+                                    numb_of_triplets += 1
+                                    w = (event.GenJetAK8_cons_pt[i]*event.GenJetAK8_cons_pt[j]*event.GenJetAK8_cons_pt[k])
+                                    w = w**2
+                                    w = w / (event.nearest_jet_pt**(3*2))
 
-                                zeta = (delta_0_1 + delta_0_2 + delta_1_2) / 3
+                                    zeta = (delta_0_1 + delta_0_2 + delta_1_2) / 3
 
-                                hist.Fill(zeta*3, w)
-                                hist_unweighted.Fill(zeta*3, 1)
+                                    hist.Fill(zeta*3, w)
+                                    hist_unweighted.Fill(zeta*3, 1)
 
-                                if 400 < event.nearest_jet_pt < 450:
-                                    hist1.Fill(zeta*3, w)
-                                elif 450 < event.nearest_jet_pt < 500:
-                                    hist2.Fill(zeta*3, w)
-                                elif 500 < event.nearest_jet_pt < 550:
-                                    hist3.Fill(zeta*3, w)
-                                elif 550 < event.nearest_jet_pt < 600:
-                                    hist4.Fill(zeta*3, w)
+                                    if 400 < event.nearest_jet_pt < 450:
+                                        hist1.Fill(zeta*3, w)
+                                    elif 450 < event.nearest_jet_pt < 500:
+                                        hist2.Fill(zeta*3, w)
+                                    elif 500 < event.nearest_jet_pt < 550:
+                                        hist3.Fill(zeta*3, w)
+                                    elif 550 < event.nearest_jet_pt < 600:
+                                        hist4.Fill(zeta*3, w)
+
+                                    hist_numb_all_triplets.Fill(numb_of_all_triplets)
+                                    hist_numb_triplets.Fill(numb_of_triplets)
 
 
 sequence.append(gen_tops)
@@ -293,174 +305,169 @@ Plot.setDefaults(stack = stack, weight = staticmethod(weight_), selectionString 
 plots = []
 
 plots.append(Plot(
-    name = "nAK8",
-    texX = 'Number of AK8 jets', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nPFJetAK8,
-    binning=[11, -0.5, 10.5],
+    name="Dummy_Plot",
+    texX='Dummy plot to make plotting.fill() work', texY='Number of Events',
+    attribute=lambda event, sample: 1.,
+    binning=[3, -0.5, 10.5],
 ))
 
-plots.append(Plot(
-    name = "ptjet",
-    texX = 'Leading AK8 jet p_{T} [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.PFJetAK8_pt[0],
-    binning=[25, 0., 500.],
-))
+if args.nJobs == 1:
+    plots.append(Plot(
+        name = "nAK8",
+        texX = 'Number of AK8 jets', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nPFJetAK8,
+        binning=[11, -0.5, 10.5],
+    ))
 
-plots.append(Plot(
-    name = "delta_min",
-    texX = 'Delta between nearest jet and hadronic top [rad]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.delta_min,
-    binning=[25, 0., 7.],
-))
+    plots.append(Plot(
+        name = "ptjet",
+        texX = 'Leading AK8 jet p_{T} [GeV]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.PFJetAK8_pt[0],
+        binning=[25, 0., 500.],
+    ))
 
-plots.append(Plot(
-    name = "jet_mass",
-    texX = 'Mass of jet next to hadronic top [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nearest_jet_mass_t,
-    binning=[25, 0., 500.],
-))
+    plots.append(Plot(
+        name = "delta_min",
+        texX = 'Delta between nearest jet and hadronic top [rad]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.delta_min,
+        binning=[25, 0., 7.],
+    ))
 
-plots.append(Plot(
-    name = "jet_pt",
-    texX = 'P_{t} of jet next to hadronic top [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nearest_jet_pt,
-    binning=[25, 0., 500.],
-))
+    plots.append(Plot(
+        name = "jet_mass",
+        texX = 'Mass of jet next to hadronic top [GeV]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nearest_jet_mass_t,
+        binning=[25, 0., 500.],
+    ))
 
-plots.append(Plot(
-    name = "jet_eta",
-    texX = '#eta of jet next to hadronic top [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nearest_jet_eta,
-    binning=[25, 3.5, 3.5],
-))
+    plots.append(Plot(
+        name = "jet_pt",
+        texX = 'P_{t} of jet next to hadronic top [GeV]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nearest_jet_pt,
+        binning=[25, 0., 500.],
+    ))
 
-plots.append(Plot(
-    name = "jet_phi",
-    texX = '#phi of jet next to hadronic top [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nearest_jet_phi,
-    binning=[25, 3.5, 3.5],
-))
+    plots.append(Plot(
+        name = "jet_eta",
+        texX = '#eta of jet next to hadronic top [GeV]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nearest_jet_eta,
+        binning=[25, 3.5, 3.5],
+    ))
 
-plots.append(Plot(
-    name = "cut_delta_min",
-    texX = 'Delta between nearest jet and hadronic top [rad]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.delta_min if event.merged_top else float('nan'),
-    binning=[25, 0., 7.],
-))
+    plots.append(Plot(
+        name = "jet_phi",
+        texX = '#phi of jet next to hadronic top [GeV]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nearest_jet_phi,
+        binning=[25, 3.5, 3.5],
+    ))
 
-plots.append(Plot(
-    name = "cut_jet_mass",
-    texX = 'Mass of jet next to hadronic top [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nearest_jet_mass_t if event.merged_top else float('nan'),
-    binning=[25, 0., 500.],
-))
+    plots.append(Plot(
+        name = "cut_delta_min",
+        texX = 'Delta between nearest jet and hadronic top [rad]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.delta_min if event.merged_top else float('nan'),
+        binning=[25, 0., 7.],
+    ))
 
-plots.append(Plot(
-    name = "cut_jet_pt",
-    texX = 'P_{t} of jet next to hadronic top [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nearest_jet_pt if event.merged_top else float('nan'),
-    binning=[25, 0., 500.],
-))
+    plots.append(Plot(
+        name = "cut_jet_mass",
+        texX = 'Mass of jet next to hadronic top [GeV]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nearest_jet_mass_t if event.merged_top else float('nan'),
+        binning=[25, 0., 500.],
+    ))
 
-plots.append(Plot(
-    name = "cut_jet_eta",
-    texX = '#eta of jet next to hadronic top [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nearest_jet_eta if event.merged_top else float('nan'),
-    binning=[25, 3.5, 3.5],
-))
+    plots.append(Plot(
+        name = "cut_jet_pt",
+        texX = 'P_{t} of jet next to hadronic top [GeV]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nearest_jet_pt if event.merged_top else float('nan'),
+        binning=[25, 0., 500.],
+    ))
 
-plots.append(Plot(
-    name = "cut_jet_phi",
-    texX = '#phi of jet next to hadronic top [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nearest_jet_phi if event.merged_top else float('nan'),
-    binning=[25, 3.5, 3.5],
-))
+    plots.append(Plot(
+        name = "cut_jet_eta",
+        texX = '#eta of jet next to hadronic top [GeV]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nearest_jet_eta if event.merged_top else float('nan'),
+        binning=[25, 3.5, 3.5],
+    ))
 
-plots.append(Plot(
-    name = "cut_delta_min_2",
-    texX = 'Delta between nearest jet and hadronic top [rad]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.delta_min if event.all_merged_and_high_pt else float('nan'),
-    binning=[25, 0., 7.],
-))
+    plots.append(Plot(
+        name = "cut_jet_phi",
+        texX = '#phi of jet next to hadronic top [GeV]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nearest_jet_phi if event.merged_top else float('nan'),
+        binning=[25, 3.5, 3.5],
+    ))
 
-plots.append(Plot(
-    name = "cut_jet_mass_2",
-    texX = 'Mass of jet next to hadronic top [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nearest_jet_mass_t if event.all_merged_and_high_pt else float('nan'),
-    binning=[25, 0., 500.],
-))
+    plots.append(Plot(
+        name = "cut_delta_min_2",
+        texX = 'Delta between nearest jet and hadronic top [rad]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.delta_min if event.all_merged_and_high_pt else float('nan'),
+        binning=[25, 0., 7.],
+    ))
 
-plots.append(Plot(
-    name = "cut_jet_pt_2",
-    texX = 'P_{t} of jet next to hadronic top [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nearest_jet_pt if event.all_merged_and_high_pt else float('nan'),
-    binning=[25, 0., 500.],
-))
+    plots.append(Plot(
+        name = "cut_jet_mass_2",
+        texX = 'Mass of jet next to hadronic top [GeV]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nearest_jet_mass_t if event.all_merged_and_high_pt else float('nan'),
+        binning=[25, 0., 500.],
+    ))
 
-plots.append(Plot(
-    name = "cut_jet_eta_2",
-    texX = '#eta of jet next to hadronic top [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nearest_jet_eta if event.all_merged_and_high_pt else float('nan'),
-    binning=[25, 3.5, 3.5],
-))
+    plots.append(Plot(
+        name = "cut_jet_pt_2",
+        texX = 'P_{t} of jet next to hadronic top [GeV]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nearest_jet_pt if event.all_merged_and_high_pt else float('nan'),
+        binning=[25, 0., 500.],
+    ))
 
-plots.append(Plot(
-    name = "cut_jet_phi_2",
-    texX = '#phi of jet next to hadronic top [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.nearest_jet_phi if event.all_merged_and_high_pt else float('nan'),
-    binning=[25, 3.5, 3.5],
-))
+    plots.append(Plot(
+        name = "cut_jet_eta_2",
+        texX = '#eta of jet next to hadronic top [GeV]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nearest_jet_eta if event.all_merged_and_high_pt else float('nan'),
+        binning=[25, 3.5, 3.5],
+    ))
 
-plots.append(Plot(
-    name = "number_of_cons",
-    texX = 'Number of constituents in matched jet', texY = 'Number of Events',
-    attribute = lambda event, sample: event.matched_jet_nCons,
-    binning=[25, 0., 150.],
-))
+    plots.append(Plot(
+        name = "cut_jet_phi_2",
+        texX = '#phi of jet next to hadronic top [GeV]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.nearest_jet_phi if event.all_merged_and_high_pt else float('nan'),
+        binning=[25, 3.5, 3.5],
+    ))
 
-plots.append(Plot(
-    name = "cons_pt",
-    texX = 'P_{t} of constituents of matched jet [GeV]', texY = 'Number of Events',
-    attribute = lambda event, sample: event.matched_jet_Cons_pt,
-    binning=[25, 0., 50.],
-))
+    plots.append(Plot(
+        name = "number_of_cons",
+        texX = 'Number of constituents in matched jet', texY = 'Number of Events',
+        attribute = lambda event, sample: event.matched_jet_nCons,
+        binning=[25, 0., 150.],
+    ))
 
-plots.append(Plot(
-    name = "cons_pt_ratio",
-    texX = 'P_{t} ratio of constituents of matched jet', texY = 'Number of Events',
-    attribute = lambda event, sample: event.matched_jet_Cons_pt_ratio,
-    binning=[25, 0., 0.25],
-))
+    plots.append(Plot(
+        name = "cons_pt",
+        texX = 'P_{t} of constituents of matched jet [GeV]', texY = 'Number of Events',
+        attribute = lambda event, sample: event.matched_jet_Cons_pt,
+        binning=[25, 0., 50.],
+    ))
 
-plots.append(Plot(
-    name = "number_of_triplets",
-    texX = 'Number of all triplets in matched jet', texY = 'Number of Events',
-    attribute = lambda event, sample: event.numb_of_all_triplets,
-    binning=[25, 0., 100000.],
-))
+    plots.append(Plot(
+        name = "cons_pt_ratio",
+        texX = 'P_{t} ratio of constituents of matched jet', texY = 'Number of Events',
+        attribute = lambda event, sample: event.matched_jet_Cons_pt_ratio,
+        binning=[25, 0., 0.25],
+    ))
 
-plots.append(Plot(
-    name = "number_of_equidistant_triplets",
-    texX = 'Number of equidistant triplets in matched jet', texY = 'Number of Events',
-    attribute = lambda event, sample: event.numb_of_triplets,
-    binning=[25, 0., 100.],
-))
-
-plots.append(Plot(
-    name = "ratio_top_pt_jet_pt",
-    texX = 'Ratio of p_{T,t} and p_{T,jet}', texY = 'Number of Events',
-    attribute = lambda event, sample: event.top_had_pt/event.nearest_jet_pt,
-    binning=[25, 0.8, 1.2],
-))
+    plots.append(Plot(
+        name = "ratio_top_pt_jet_pt",
+        texX = 'Ratio of p_{T,t} and p_{T,jet}', texY = 'Number of Events',
+        attribute = lambda event, sample: event.top_had_pt/event.nearest_jet_pt,
+        binning=[25, 0.8, 1.2],
+    ))
 
 
 plotting.fill(plots, read_variables = read_variables, sequence = sequence)
 
-drawPlots(plots)
+if args.nJobs == 1:
+    drawPlots(plots)
 
 # print hist.Integral()
 
-f = ROOT.TFile('correlator.root', 'RECREATE')
+f = ROOT.TFile('correlator_'+str(args.job)+'.root', 'RECREATE')
 f.cd()
 hist.Write('correlator_hist')
 hist_unweighted.Write('correlator_hist_unweighted')
@@ -468,11 +475,18 @@ hist1.Write('correlator_hist_400_450')
 hist2.Write('correlator_hist_450_500')
 hist3.Write('correlator_hist_500_550')
 hist4.Write('correlator_hist_550_600')
+hist_numb_all_triplets.Write('number_of_all_triplets')
+hist_numb_triplets.Write('number_of_equidistant_triplets')
 f.Close()
 
-for pt_range in ['', '_unweighted', '_400_450', '_450_500', '_500_550', '_550_600']:
-    style_corr_hist(filename_root='correlator.root',
-                    hist_name='correlator_hist'+pt_range,
-                    filename_graphic='/correlator_hist'+pt_range+'.png')
+# for pt_range in ['', '_unweighted', '_400_450', '_450_500', '_500_550', '_550_600']:
+#     style_corr_hist(filename_root='correlator_'+str(args.job)+'.root',
+#                     hist_name='correlator_hist'+pt_range,
+#                     filename_graphic='/correlator_hist'+pt_range+'.png')
 
 logger.info( "Done with prefix %s and selectionString %s", args.selection, cutInterpreter.cutString(args.selection) )
+
+# Root files zusammen addieren mit Konsolen-Befehl:
+# hadd correlator_joined.root correlator_1.root correlator_2.root correlator_3.root
+# oder
+# hadd correlator_joined.root correlator_*.root
