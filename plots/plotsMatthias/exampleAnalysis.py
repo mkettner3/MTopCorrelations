@@ -78,8 +78,8 @@ hist1 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
 hist2 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
 hist3 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
 hist4 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
-hist_numb_all_triplets = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
-hist_numb_triplets = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
+hist_numb_all_triplets = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 100000)
+hist_numb_triplets = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 100000)
 
 ################################################################################
 # Text on the plots
@@ -487,6 +487,6 @@ f.Close()
 logger.info( "Done with prefix %s and selectionString %s", args.selection, cutInterpreter.cutString(args.selection) )
 
 # Root files zusammen addieren mit Konsolen-Befehl:
-# hadd correlator_joined.root correlator_1.root correlator_2.root correlator_3.root
+# hadd correlator-joined.root correlator_1.root correlator_2.root correlator_3.root
 # oder
-# hadd correlator_joined.root correlator_*.root
+# hadd correlator-joined.root correlator_*.root
