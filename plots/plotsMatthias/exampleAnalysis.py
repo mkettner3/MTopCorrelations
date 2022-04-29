@@ -72,14 +72,14 @@ lumi_scale = 60
 
 ################################################################################
 # Correlator Hist
-hist = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
-hist_unweighted = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
-hist1 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
-hist2 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
-hist3 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
-hist4 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
-hist5 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
-hist6 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
+hist = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3)
+hist_unweighted = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3)
+hist1 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3)
+hist2 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3)
+hist3 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3)
+hist4 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3)
+hist5 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3)
+hist6 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3)
 hist_numb_all_triplets = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 100000)
 hist_numb_triplets = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 1000)
 
