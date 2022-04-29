@@ -78,8 +78,10 @@ hist1 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
 hist2 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
 hist3 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
 hist4 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
+hist5 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
+hist6 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 6)
 hist_numb_all_triplets = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 100000)
-hist_numb_triplets = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 100000)
+hist_numb_triplets = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 1000)
 
 ################################################################################
 # Text on the plots
@@ -223,7 +225,7 @@ def gen_tops(event, sample):
 
             delta_delta = 0.02
             triplet = [ROOT.TLorentzVector()]*3
-            numb_of_particles = 45
+            numb_of_particles = 55
             if len(matched_jet_cons) < numb_of_particles:
                 numb_of_particles = len(matched_jet_cons)
 
@@ -242,7 +244,7 @@ def gen_tops(event, sample):
                             if abs(delta_1_2-delta_0_1) < delta_delta:
                                 if abs(delta_0_2-delta_1_2) < delta_delta:
                                     numb_of_triplets += 1
-                                    w = (event.GenJetAK8_cons_pt[i]*event.GenJetAK8_cons_pt[j]*event.GenJetAK8_cons_pt[k])
+                                    w = (triplet[0].Pt() * triplet[1].Pt() * triplet[2].Pt())
                                     w = w**2
                                     w = w / (event.nearest_jet_pt**(3*2))
 
@@ -259,9 +261,13 @@ def gen_tops(event, sample):
                                         hist3.Fill(zeta*3, w)
                                     elif 550 < event.nearest_jet_pt < 600:
                                         hist4.Fill(zeta*3, w)
+                                    elif 600 < event.nearest_jet_pt < 650:
+                                        hist5.Fill(zeta*3, w)
+                                    elif 650 < event.nearest_jet_pt < 700:
+                                        hist6.Fill(zeta*3, w)
 
-                                    hist_numb_all_triplets.Fill(numb_of_all_triplets)
-                                    hist_numb_triplets.Fill(numb_of_triplets)
+            hist_numb_all_triplets.Fill(numb_of_all_triplets)
+            hist_numb_triplets.Fill(numb_of_triplets)
 
 
 sequence.append(gen_tops)
@@ -454,7 +460,7 @@ if args.nJobs == 1:
 
     plots.append(Plot(
         name = "ratio_top_pt_jet_pt",
-        texX = 'Ratio of p_{T,t} and p_{T,jet}', texY = 'Number of Events',
+        texX = 'Ratio of p_{T,top} and p_{T,jet}', texY = 'Number of Events',
         attribute = lambda event, sample: event.top_had_pt/event.nearest_jet_pt,
         binning=[25, 0.8, 1.2],
     ))
@@ -475,11 +481,13 @@ hist1.Write('correlator_hist_400_450')
 hist2.Write('correlator_hist_450_500')
 hist3.Write('correlator_hist_500_550')
 hist4.Write('correlator_hist_550_600')
+hist5.Write('correlator_hist_600_650')
+hist6.Write('correlator_hist_650_700')
 hist_numb_all_triplets.Write('number_of_all_triplets')
 hist_numb_triplets.Write('number_of_equidistant_triplets')
 f.Close()
 
-# for pt_range in ['', '_unweighted', '_400_450', '_450_500', '_500_550', '_550_600']:
+# for pt_range in ['', '_unweighted', '_400_450', '_450_500', '_500_550', '_550_600', '_600_650', '_650_700']:
 #     style_corr_hist(filename_root='correlator_'+str(args.job)+'.root',
 #                     hist_name='correlator_hist'+pt_range,
 #                     filename_graphic='/correlator_hist'+pt_range+'.png')
