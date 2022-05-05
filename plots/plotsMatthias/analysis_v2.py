@@ -490,7 +490,7 @@ if args.nJobs == 1:
 
 # print hist.Integral()
 
-f = ROOT.TFile('correlator_delta_{:}_{:}.root'.format(numb_of_particles, args.job), 'RECREATE')
+f = ROOT.TFile('correlator_part_{:}_{:}.root'.format(numb_of_particles, args.job), 'RECREATE')
 f.cd()
 hist.Write('correlator_hist')
 hist_unweighted.Write('correlator_hist_unweighted')
