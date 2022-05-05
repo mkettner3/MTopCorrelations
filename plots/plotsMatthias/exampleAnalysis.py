@@ -80,8 +80,16 @@ hist3 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3)
 hist4 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3)
 hist5 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3)
 hist6 = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3)
+hist_top_pt = ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700)
+hist_top_pt1 = ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700)
+hist_top_pt2 = ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700)
+hist_top_pt3 = ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700)
+hist_top_pt4 = ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700)
+hist_top_pt5 = ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700)
+hist_top_pt6 = ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700)
 hist_numb_all_triplets = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 100000)
 hist_numb_triplets = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 1000)
+delta_delta = 0.0
 
 ################################################################################
 # Text on the plots
@@ -140,6 +148,8 @@ def getJetConstituents(event, idx):
 
 
 def gen_tops(event, sample):
+    global delta_delta
+
     top_vec = ROOT.TLorentzVector()
     anti_top_vec = ROOT.TLorentzVector()
     for i in range(event.nGenPart):
@@ -223,7 +233,7 @@ def gen_tops(event, sample):
         if event.all_merged_and_high_pt:
             matched_jet_cons = getJetConstituents(event=event, idx=nearest_jet_idx_t)
 
-            delta_delta = 0.02
+            delta_delta = 0.09
             triplet = [ROOT.TLorentzVector()]*3
             numb_of_particles = 55
             if len(matched_jet_cons) < numb_of_particles:
@@ -252,19 +262,26 @@ def gen_tops(event, sample):
 
                                     hist.Fill(zeta*3, w)
                                     hist_unweighted.Fill(zeta*3, 1)
+                                    hist_top_pt.Fill(event.top_had_pt)
 
                                     if 400 < event.nearest_jet_pt < 450:
                                         hist1.Fill(zeta*3, w)
+                                        hist_top_pt1.Fill(event.top_had_pt)
                                     elif 450 < event.nearest_jet_pt < 500:
                                         hist2.Fill(zeta*3, w)
+                                        hist_top_pt2.Fill(event.top_had_pt)
                                     elif 500 < event.nearest_jet_pt < 550:
                                         hist3.Fill(zeta*3, w)
+                                        hist_top_pt3.Fill(event.top_had_pt)
                                     elif 550 < event.nearest_jet_pt < 600:
                                         hist4.Fill(zeta*3, w)
+                                        hist_top_pt4.Fill(event.top_had_pt)
                                     elif 600 < event.nearest_jet_pt < 650:
                                         hist5.Fill(zeta*3, w)
+                                        hist_top_pt5.Fill(event.top_had_pt)
                                     elif 650 < event.nearest_jet_pt < 700:
                                         hist6.Fill(zeta*3, w)
+                                        hist_top_pt6.Fill(event.top_had_pt)
 
             hist_numb_all_triplets.Fill(numb_of_all_triplets)
             hist_numb_triplets.Fill(numb_of_triplets)
@@ -473,7 +490,7 @@ if args.nJobs == 1:
 
 # print hist.Integral()
 
-f = ROOT.TFile('correlator_'+str(args.job)+'.root', 'RECREATE')
+f = ROOT.TFile('correlator_delta_{:.2f}_{:}.root'.format(delta_delta, args.job), 'RECREATE')
 f.cd()
 hist.Write('correlator_hist')
 hist_unweighted.Write('correlator_hist_unweighted')
@@ -483,6 +500,13 @@ hist3.Write('correlator_hist_500_550')
 hist4.Write('correlator_hist_550_600')
 hist5.Write('correlator_hist_600_650')
 hist6.Write('correlator_hist_650_700')
+hist_top_pt.Write('top_pt_hist')
+hist_top_pt1.Write('top_pt_hist_400_450')
+hist_top_pt2.Write('top_pt_hist_450_500')
+hist_top_pt3.Write('top_pt_hist_500_550')
+hist_top_pt4.Write('top_pt_hist_550_600')
+hist_top_pt5.Write('top_pt_hist_600_650')
+hist_top_pt6.Write('top_pt_hist_650_700')
 hist_numb_all_triplets.Write('number_of_all_triplets')
 hist_numb_triplets.Write('number_of_equidistant_triplets')
 f.Close()
