@@ -135,22 +135,23 @@ def style_numb_triplets_hist(filename_root, hist_name, filename_graphic):
 
 
 if __name__ == '__main__':
-    delta_delta = 0.09
+    subfolder = '/adaptive_delta'
+    numb_of_particles = 55
 
     for pt_range in ['', '_400_450', '_450_500', '_500_550', '_550_600', '_600_650', '_650_700']:
-        style_corr_hist(filename_root='correlator-joined_delta_{:.2f}.root'.format(delta_delta),
+        style_corr_hist(filename_root='correlator-joined_part_{:}.root'.format(numb_of_particles),
                         hist_name='correlator_hist'+pt_range,
-                        filename_graphic='/correlator_hist_delta_{:.2f}{:}.png'.format(delta_delta, pt_range),
+                        filename_graphic='/correlator_hist_part_{:}{:}.png'.format(numb_of_particles, pt_range),
                         ylim=(0, 0.0015), fit=False)
-        style_top_pt_hist(filename_root='correlator-joined_delta_{:.2f}.root'.format(delta_delta),
+        style_top_pt_hist(filename_root='correlator-joined_part_{:}.root'.format(numb_of_particles),
                           hist_name='top_pt_hist'+pt_range,
-                          filename_graphic='/top_pt_hist_delta_{:.2f}{:}.png'.format(delta_delta, pt_range))
+                          filename_graphic='/top_pt_hist_part_{:}{:}.png'.format(numb_of_particles, pt_range))
 
-    style_corr_hist_unweighted(filename_root='correlator-joined_delta_{:.2f}.root'.format(delta_delta),
+    style_corr_hist_unweighted(filename_root='correlator-joined_part_{:}.root'.format(numb_of_particles),
                                hist_name='correlator_hist_unweighted',
-                               filename_graphic='/correlator_hist_unweighted_delta_{:.2f}.png'.format(delta_delta))
+                               filename_graphic='/correlator_hist_unweighted_part_{:}.png'.format(numb_of_particles))
 
     for plot_name in ['number_of_all_triplets', 'number_of_equidistant_triplets']:
-        style_numb_triplets_hist(filename_root='correlator-joined_delta_{:.2f}.root'.format(delta_delta),
+        style_numb_triplets_hist(filename_root='correlator-joined_part_{:}.root'.format(numb_of_particles),
                                  hist_name=plot_name,
-                                 filename_graphic='/'+plot_name+'_delta_{:.2f}.png'.format(delta_delta))
+                                 filename_graphic='/'+plot_name+'_part_{:}.png'.format(numb_of_particles))
