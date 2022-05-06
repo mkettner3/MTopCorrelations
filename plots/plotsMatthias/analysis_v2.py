@@ -47,6 +47,7 @@ argParser.add_argument('--era',            action='store', type=str, default="UL
 argParser.add_argument('--small',          action='store_true', help='Run only on a small subset of the data?', )
 argParser.add_argument('--nJobs',          action='store',         nargs='?',  type=int, default=1)
 argParser.add_argument('--job',            action='store',                     type=int, default=0)
+argParser.add_argument('--max_cons',       action='store', type=int, default=50)
 args = argParser.parse_args()
 
 ################################################################################
@@ -89,7 +90,7 @@ hist_top_pt5 = ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700)
 hist_top_pt6 = ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700)
 hist_numb_all_triplets = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 100000)
 hist_numb_triplets = ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 1000)
-numb_of_particles = 0.0
+max_numb_of_particles = args.max_cons
 
 ################################################################################
 # Text on the plots
@@ -148,7 +149,7 @@ def getJetConstituents(event, idx):
 
 
 def gen_tops(event, sample):
-    global numb_of_particles
+    global max_numb_of_particles
 
     top_vec = ROOT.TLorentzVector()
     anti_top_vec = ROOT.TLorentzVector()
@@ -235,9 +236,11 @@ def gen_tops(event, sample):
 
             delta_delta = 3.5/3. * (170./event.nearest_jet_pt)**2
             triplet = [ROOT.TLorentzVector()]*3
-            numb_of_particles = 55
-            if len(matched_jet_cons) < numb_of_particles:
+            # max_numb_of_particles = 50
+            if len(matched_jet_cons) < max_numb_of_particles:
                 numb_of_particles = len(matched_jet_cons)
+            else:
+                numb_of_particles = max_numb_of_particles
 
             for i in range(numb_of_particles):
                 for j in range(i+1, numb_of_particles):
@@ -262,29 +265,37 @@ def gen_tops(event, sample):
 
                                     hist.Fill(zeta*3, w)
                                     hist_unweighted.Fill(zeta*3, 1)
-                                    hist_top_pt.Fill(event.top_had_pt)
 
                                     if 400 < event.nearest_jet_pt < 450:
-                                        hist1.Fill(zeta*3, w)
-                                        hist_top_pt1.Fill(event.top_had_pt)
+                                        hist1[sample.name].Fill(zeta*3, w)
                                     elif 450 < event.nearest_jet_pt < 500:
                                         hist2.Fill(zeta*3, w)
-                                        hist_top_pt2.Fill(event.top_had_pt)
                                     elif 500 < event.nearest_jet_pt < 550:
                                         hist3.Fill(zeta*3, w)
-                                        hist_top_pt3.Fill(event.top_had_pt)
                                     elif 550 < event.nearest_jet_pt < 600:
                                         hist4.Fill(zeta*3, w)
-                                        hist_top_pt4.Fill(event.top_had_pt)
                                     elif 600 < event.nearest_jet_pt < 650:
                                         hist5.Fill(zeta*3, w)
-                                        hist_top_pt5.Fill(event.top_had_pt)
                                     elif 650 < event.nearest_jet_pt < 700:
                                         hist6.Fill(zeta*3, w)
-                                        hist_top_pt6.Fill(event.top_had_pt)
 
             hist_numb_all_triplets.Fill(numb_of_all_triplets)
             hist_numb_triplets.Fill(numb_of_triplets)
+
+            hist_top_pt.Fill(event.top_had_pt)
+
+            if 400 < event.nearest_jet_pt < 450:
+                hist_top_pt1.Fill(event.top_had_pt)
+            elif 450 < event.nearest_jet_pt < 500:
+                hist_top_pt2.Fill(event.top_had_pt)
+            elif 500 < event.nearest_jet_pt < 550:
+                hist_top_pt3.Fill(event.top_had_pt)
+            elif 550 < event.nearest_jet_pt < 600:
+                hist_top_pt4.Fill(event.top_had_pt)
+            elif 600 < event.nearest_jet_pt < 650:
+                hist_top_pt5.Fill(event.top_had_pt)
+            elif 650 < event.nearest_jet_pt < 700:
+                hist_top_pt6.Fill(event.top_had_pt)
 
 
 sequence.append(gen_tops)
@@ -490,7 +501,7 @@ if args.nJobs == 1:
 
 # print hist.Integral()
 
-f = ROOT.TFile('correlator_part_{:}_{:}.root'.format(numb_of_particles, args.job), 'RECREATE')
+f = ROOT.TFile('correlator_part_{:}_{:}.root'.format(max_numb_of_particles, args.job), 'RECREATE')
 f.cd()
 hist.Write('correlator_hist')
 hist_unweighted.Write('correlator_hist_unweighted')
