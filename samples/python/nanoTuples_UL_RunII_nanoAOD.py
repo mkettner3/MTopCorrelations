@@ -13,4 +13,6 @@ from RootTools.core.standard import *
 import MTopCorrelations.samples.nanoTuples_UL2018_nanoAOD as UL2018
 
 
-TTbar = Sample.combine( "TTbar", [UL2018.TTbar],texName = "t#bar{t}")
+TTbar_1 = Sample.combine( "TTbar", [UL2018.TTbar_1],texName = "t#bar{t}")
+TTbar_2 = Sample.combine( "TTbar", [UL2018.TTbar_2],texName = "t#bar{t}")
+TTbar_3 = Sample.combine( "TTbar", [UL2018.TTbar_3],texName = "t#bar{t}")
