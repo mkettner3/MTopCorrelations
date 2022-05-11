@@ -59,7 +59,7 @@ logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
 ################################################################################
 # Define the MC samples
-from MTopCorrelations.samples.nanoTuples_UL_RunII_nanoAOD import UL2018
+from MTopCorrelations.samples.nanoTuples_UL_RunII_nanoAOD_onesample import UL2018
 
 mc_ = [UL2018.TTbar]
 if args.nJobs == 1:
@@ -267,7 +267,7 @@ def gen_tops(event, sample):
                                     hist_unweighted.Fill(zeta*3, 1)
 
                                     if 400 < event.nearest_jet_pt < 450:
-                                        hist1[sample.name].Fill(zeta*3, w)
+                                        hist1.Fill(zeta*3, w)
                                     elif 450 < event.nearest_jet_pt < 500:
                                         hist2.Fill(zeta*3, w)
                                     elif 500 < event.nearest_jet_pt < 550:
