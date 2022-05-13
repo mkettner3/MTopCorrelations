@@ -70,6 +70,7 @@ else:
     mc = [sample.split(n=args.nJobs, nSub=args.job) for sample in mc_]
     mc_dev = [sample.split(n=args.nJobs, nSub=args.job) for sample in mc_dev_]
 mc_all = mc + mc_dev
+# As the #SPLIT100 function changes sample.name, only the first 11 characters of sample.name can be used!
 if args.small:
     for sample in mc_all:
         sample.reduceFiles(to=1)
@@ -77,23 +78,23 @@ lumi_scale = 60
 
 ################################################################################
 # Correlator Hist
-hist = {sample.name: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
-hist_unweighted = {sample.name: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
-hist1 = {sample.name: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
-hist2 = {sample.name: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
-hist3 = {sample.name: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
-hist4 = {sample.name: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
-hist5 = {sample.name: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
-hist6 = {sample.name: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
-hist_top_pt = {sample.name: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
-hist_top_pt1 = {sample.name: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
-hist_top_pt2 = {sample.name: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
-hist_top_pt3 = {sample.name: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
-hist_top_pt4 = {sample.name: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
-hist_top_pt5 = {sample.name: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
-hist_top_pt6 = {sample.name: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
-hist_numb_all_triplets = {sample.name: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 100000) for sample in mc_all}
-hist_numb_triplets = {sample.name: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 1000) for sample in mc_all}
+hist = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
+hist_unweighted = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
+hist1 = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
+hist2 = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
+hist3 = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
+hist4 = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
+hist5 = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
+hist6 = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
+hist_top_pt = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
+hist_top_pt1 = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
+hist_top_pt2 = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
+hist_top_pt3 = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
+hist_top_pt4 = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
+hist_top_pt5 = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
+hist_top_pt6 = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
+hist_numb_all_triplets = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 100000) for sample in mc_all}
+hist_numb_triplets = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 1000) for sample in mc_all}
 max_numb_of_particles = args.max_cons
 
 ################################################################################
@@ -267,39 +268,39 @@ def gen_tops(event, sample):
 
                                     zeta = (delta_0_1 + delta_0_2 + delta_1_2) / 3
 
-                                    hist[sample.name].Fill(zeta*3, w)
-                                    hist_unweighted[sample.name].Fill(zeta*3, 1)
+                                    hist[sample.name[:11]].Fill(zeta*3, w)
+                                    hist_unweighted[sample.name[:11]].Fill(zeta*3, 1)
 
                                     if 400 < event.nearest_jet_pt < 450:
-                                        hist1[sample.name].Fill(zeta*3, w)
+                                        hist1[sample.name[:11]].Fill(zeta*3, w)
                                     elif 450 < event.nearest_jet_pt < 500:
-                                        hist2[sample.name].Fill(zeta*3, w)
+                                        hist2[sample.name[:11]].Fill(zeta*3, w)
                                     elif 500 < event.nearest_jet_pt < 550:
-                                        hist3[sample.name].Fill(zeta*3, w)
+                                        hist3[sample.name[:11]].Fill(zeta*3, w)
                                     elif 550 < event.nearest_jet_pt < 600:
-                                        hist4[sample.name].Fill(zeta*3, w)
+                                        hist4[sample.name[:11]].Fill(zeta*3, w)
                                     elif 600 < event.nearest_jet_pt < 650:
-                                        hist5[sample.name].Fill(zeta*3, w)
+                                        hist5[sample.name[:11]].Fill(zeta*3, w)
                                     elif 650 < event.nearest_jet_pt < 700:
-                                        hist6[sample.name].Fill(zeta*3, w)
+                                        hist6[sample.name[:11]].Fill(zeta*3, w)
 
-            hist_numb_all_triplets[sample.name].Fill(numb_of_all_triplets)
-            hist_numb_triplets[sample.name].Fill(numb_of_triplets)
+            hist_numb_all_triplets[sample.name[:11]].Fill(numb_of_all_triplets)
+            hist_numb_triplets[sample.name[:11]].Fill(numb_of_triplets)
 
-            hist_top_pt[sample.name].Fill(event.top_had_pt)
+            hist_top_pt[sample.name[:11]].Fill(event.top_had_pt)
 
             if 400 < event.nearest_jet_pt < 450:
-                hist_top_pt1[sample.name].Fill(event.top_had_pt)
+                hist_top_pt1[sample.name[:11]].Fill(event.top_had_pt)
             elif 450 < event.nearest_jet_pt < 500:
-                hist_top_pt2[sample.name].Fill(event.top_had_pt)
+                hist_top_pt2[sample.name[:11]].Fill(event.top_had_pt)
             elif 500 < event.nearest_jet_pt < 550:
-                hist_top_pt3[sample.name].Fill(event.top_had_pt)
+                hist_top_pt3[sample.name[:11]].Fill(event.top_had_pt)
             elif 550 < event.nearest_jet_pt < 600:
-                hist_top_pt4[sample.name].Fill(event.top_had_pt)
+                hist_top_pt4[sample.name[:11]].Fill(event.top_had_pt)
             elif 600 < event.nearest_jet_pt < 650:
-                hist_top_pt5[sample.name].Fill(event.top_had_pt)
+                hist_top_pt5[sample.name[:11]].Fill(event.top_had_pt)
             elif 650 < event.nearest_jet_pt < 700:
-                hist_top_pt6[sample.name].Fill(event.top_had_pt)
+                hist_top_pt6[sample.name[:11]].Fill(event.top_had_pt)
 
 
 sequence.append(gen_tops)
