@@ -510,7 +510,7 @@ if args.nJobs == 1:
 
 f = ROOT.TFile('correlator_part_{:}_{:}.root'.format(max_numb_of_particles, args.job), 'RECREATE')
 f.cd()
-for sample_name, single_hist in hist.items(): single_hist.Write('correlator_hist_'+sample_name)
+for sample_name, single_hist in hist.items(): single_hist.Write('correlator_hist'+sample_name)
 for sample_name, single_hist in hist_unweighted.items(): single_hist.Write('correlator_hist_unweighted'+sample_name)
 for sample_name, single_hist in hist1.items(): single_hist.Write('correlator_hist_400_450'+sample_name)
 for sample_name, single_hist in hist2.items(): single_hist.Write('correlator_hist_450_500'+sample_name)
