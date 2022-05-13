@@ -31,7 +31,7 @@ from MTopCorrelations.Tools.helpers          import getCollection
 # from Analysis.Tools.puReweighting        import getReweightingFunction
 # from Analysis.Tools.leptonJetArbitration     import cleanJetsAndLeptons
 
-from correlator_histogram_styling import style_corr_hist
+# from correlator_histogram_styling_v2 import style_corr_hist
 
 import Analysis.Tools.syncer                # Starts syncing by itself, does not need to be called in script
 import numpy as np
