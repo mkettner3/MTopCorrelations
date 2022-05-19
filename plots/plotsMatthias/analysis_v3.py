@@ -95,7 +95,27 @@ hist_top_pt5 = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 
 hist_top_pt6 = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
 hist_numb_all_triplets = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 100000) for sample in mc_all}
 hist_numb_triplets = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 1000) for sample in mc_all}
+hist_w = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
+hist_unweighted_w = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
+hist1_w = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
+hist2_w = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
+hist3_w = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
+hist4_w = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
+hist5_w = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
+hist6_w = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 3) for sample in mc_all}
+hist_top_pt_w = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
+hist_top_pt1_w = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
+hist_top_pt2_w = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
+hist_top_pt3_w = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
+hist_top_pt4_w = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
+hist_top_pt5_w = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
+hist_top_pt6_w = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400, 700) for sample in mc_all}
+hist_numb_all_triplets_w = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 100000) for sample in mc_all}
+hist_numb_triplets_w = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 1000) for sample in mc_all}
 max_numb_of_particles = args.max_cons
+
+calc_equilateral_triplets = False
+calc_isosceles_triplets = True
 
 ################################################################################
 # Text on the plots
@@ -154,7 +174,7 @@ def getJetConstituents(event, idx):
 
 
 def gen_tops(event, sample):
-    global max_numb_of_particles
+    global max_numb_of_particles, calc_equilateral_triplets, calc_isosceles_triplets
 
     top_vec = ROOT.TLorentzVector()
     anti_top_vec = ROOT.TLorentzVector()
@@ -233,74 +253,139 @@ def gen_tops(event, sample):
         event.matched_jet_Cons_pt_ratio = float('nan')
 
     if args.nJobs > 1:
-        numb_of_triplets = 0
-        numb_of_all_triplets = 0
-
         if event.all_merged_and_high_pt:
             matched_jet_cons = getJetConstituents(event=event, idx=nearest_jet_idx_t)
 
-            delta_delta = 3.5/3. * (170./event.nearest_jet_pt)**2
-            triplet = [ROOT.TLorentzVector()]*3
             # max_numb_of_particles = 50
             if len(matched_jet_cons) < max_numb_of_particles:
                 numb_of_particles = len(matched_jet_cons)
             else:
                 numb_of_particles = max_numb_of_particles
 
-            for i in range(numb_of_particles):
-                for j in range(i+1, numb_of_particles):
-                    for k in range(j+1, numb_of_particles):
+            if calc_equilateral_triplets:
+                numb_of_triplets = 0
+                numb_of_all_triplets = 0
 
-                        numb_of_all_triplets += 1
-                        triplet[0] = matched_jet_cons[i]
-                        triplet[1] = matched_jet_cons[j]
-                        triplet[2] = matched_jet_cons[k]
-                        delta_0_1 = triplet[0].DeltaR(triplet[1])
-                        delta_0_2 = triplet[0].DeltaR(triplet[2])
-                        delta_1_2 = triplet[1].DeltaR(triplet[2])
-                        if abs(delta_0_1-delta_0_2) < delta_delta:
-                            if abs(delta_1_2-delta_0_1) < delta_delta:
-                                if abs(delta_0_2-delta_1_2) < delta_delta:
-                                    numb_of_triplets += 1
-                                    w = (triplet[0].Pt() * triplet[1].Pt() * triplet[2].Pt())
-                                    w = w**2
-                                    w = w / (event.nearest_jet_pt**(3*2))
+                delta_delta = 3.5/3. * (170./event.nearest_jet_pt)**2
+                triplet = [ROOT.TLorentzVector()]*3
 
-                                    zeta = (delta_0_1 + delta_0_2 + delta_1_2) / 3
+                for i in range(numb_of_particles):
+                    for j in range(i+1, numb_of_particles):
+                        for k in range(j+1, numb_of_particles):
 
-                                    hist[sample.name[:11]].Fill(zeta*3, w)
-                                    hist_unweighted[sample.name[:11]].Fill(zeta*3, 1)
+                            numb_of_all_triplets += 1
+                            triplet[0] = matched_jet_cons[i]
+                            triplet[1] = matched_jet_cons[j]
+                            triplet[2] = matched_jet_cons[k]
+                            delta_0_1 = triplet[0].DeltaR(triplet[1])
+                            delta_0_2 = triplet[0].DeltaR(triplet[2])
+                            delta_1_2 = triplet[1].DeltaR(triplet[2])
+                            if abs(delta_0_1-delta_0_2) < delta_delta:
+                                if abs(delta_1_2-delta_0_1) < delta_delta:
+                                    if abs(delta_0_2-delta_1_2) < delta_delta:
+                                        numb_of_triplets += 1
+                                        w = (triplet[0].Pt() * triplet[1].Pt() * triplet[2].Pt())
+                                        w = w**2
+                                        w = w / (event.nearest_jet_pt**(3*2))
 
-                                    if 400 < event.nearest_jet_pt < 450:
-                                        hist1[sample.name[:11]].Fill(zeta*3, w)
-                                    elif 450 < event.nearest_jet_pt < 500:
-                                        hist2[sample.name[:11]].Fill(zeta*3, w)
-                                    elif 500 < event.nearest_jet_pt < 550:
-                                        hist3[sample.name[:11]].Fill(zeta*3, w)
-                                    elif 550 < event.nearest_jet_pt < 600:
-                                        hist4[sample.name[:11]].Fill(zeta*3, w)
-                                    elif 600 < event.nearest_jet_pt < 650:
-                                        hist5[sample.name[:11]].Fill(zeta*3, w)
-                                    elif 650 < event.nearest_jet_pt < 700:
-                                        hist6[sample.name[:11]].Fill(zeta*3, w)
+                                        zeta = (delta_0_1 + delta_0_2 + delta_1_2) / 3
 
-            hist_numb_all_triplets[sample.name[:11]].Fill(numb_of_all_triplets)
-            hist_numb_triplets[sample.name[:11]].Fill(numb_of_triplets)
+                                        hist[sample.name[:11]].Fill(zeta*3, w)
+                                        hist_unweighted[sample.name[:11]].Fill(zeta*3, 1)
 
-            hist_top_pt[sample.name[:11]].Fill(event.top_had_pt)
+                                        if 400 < event.nearest_jet_pt < 450:
+                                            hist1[sample.name[:11]].Fill(zeta*3, w)
+                                        elif 450 < event.nearest_jet_pt < 500:
+                                            hist2[sample.name[:11]].Fill(zeta*3, w)
+                                        elif 500 < event.nearest_jet_pt < 550:
+                                            hist3[sample.name[:11]].Fill(zeta*3, w)
+                                        elif 550 < event.nearest_jet_pt < 600:
+                                            hist4[sample.name[:11]].Fill(zeta*3, w)
+                                        elif 600 < event.nearest_jet_pt < 650:
+                                            hist5[sample.name[:11]].Fill(zeta*3, w)
+                                        elif 650 < event.nearest_jet_pt < 700:
+                                            hist6[sample.name[:11]].Fill(zeta*3, w)
 
-            if 400 < event.nearest_jet_pt < 450:
-                hist_top_pt1[sample.name[:11]].Fill(event.top_had_pt)
-            elif 450 < event.nearest_jet_pt < 500:
-                hist_top_pt2[sample.name[:11]].Fill(event.top_had_pt)
-            elif 500 < event.nearest_jet_pt < 550:
-                hist_top_pt3[sample.name[:11]].Fill(event.top_had_pt)
-            elif 550 < event.nearest_jet_pt < 600:
-                hist_top_pt4[sample.name[:11]].Fill(event.top_had_pt)
-            elif 600 < event.nearest_jet_pt < 650:
-                hist_top_pt5[sample.name[:11]].Fill(event.top_had_pt)
-            elif 650 < event.nearest_jet_pt < 700:
-                hist_top_pt6[sample.name[:11]].Fill(event.top_had_pt)
+                hist_numb_all_triplets[sample.name[:11]].Fill(numb_of_all_triplets)
+                hist_numb_triplets[sample.name[:11]].Fill(numb_of_triplets)
+
+                hist_top_pt[sample.name[:11]].Fill(event.top_had_pt)
+
+                if 400 < event.nearest_jet_pt < 450:
+                    hist_top_pt1[sample.name[:11]].Fill(event.top_had_pt)
+                elif 450 < event.nearest_jet_pt < 500:
+                    hist_top_pt2[sample.name[:11]].Fill(event.top_had_pt)
+                elif 500 < event.nearest_jet_pt < 550:
+                    hist_top_pt3[sample.name[:11]].Fill(event.top_had_pt)
+                elif 550 < event.nearest_jet_pt < 600:
+                    hist_top_pt4[sample.name[:11]].Fill(event.top_had_pt)
+                elif 600 < event.nearest_jet_pt < 650:
+                    hist_top_pt5[sample.name[:11]].Fill(event.top_had_pt)
+                elif 650 < event.nearest_jet_pt < 700:
+                    hist_top_pt6[sample.name[:11]].Fill(event.top_had_pt)
+
+            if calc_isosceles_triplets:
+                numb_of_triplets = 0
+                numb_of_all_triplets = 0
+
+                delta_delta = 3.5/3.*(170./event.nearest_jet_pt)**2
+                short_side = 0.1
+                triplet = [ROOT.TLorentzVector()]*3
+
+                for i in range(numb_of_particles):
+                    for j in range(i + 1, numb_of_particles):
+                        for k in range(j + 1, numb_of_particles):
+
+                            numb_of_all_triplets += 1
+                            triplet[0] = matched_jet_cons[i]
+                            triplet[1] = matched_jet_cons[j]
+                            triplet[2] = matched_jet_cons[k]
+                            delta_0_1 = triplet[0].DeltaR(triplet[1])
+                            delta_0_2 = triplet[0].DeltaR(triplet[2])
+                            delta_1_2 = triplet[1].DeltaR(triplet[2])
+                            if abs(delta_0_1-delta_0_2) < delta_delta and delta_1_2 < short_side or \
+                                    abs(delta_0_2-delta_1_2) < delta_delta and delta_0_1 < short_side or \
+                                    abs(delta_1_2-delta_0_1) < delta_delta and delta_0_2 < short_side:
+                                numb_of_triplets += 1
+                                w = (triplet[0].Pt() * triplet[1].Pt() * triplet[2].Pt())
+                                w = w**2
+                                w = w / (event.nearest_jet_pt**(3*2))
+
+                                zeta = (delta_0_1 + delta_0_2 + delta_1_2)/3
+
+                                hist_w[sample.name[:11]].Fill(zeta*3, w)
+                                hist_unweighted_w[sample.name[:11]].Fill(zeta*3, 1)
+
+                                if 400 < event.nearest_jet_pt < 450:
+                                    hist1_w[sample.name[:11]].Fill(zeta*3, w)
+                                elif 450 < event.nearest_jet_pt < 500:
+                                    hist2_w[sample.name[:11]].Fill(zeta*3, w)
+                                elif 500 < event.nearest_jet_pt < 550:
+                                    hist3_w[sample.name[:11]].Fill(zeta*3, w)
+                                elif 550 < event.nearest_jet_pt < 600:
+                                    hist4_w[sample.name[:11]].Fill(zeta*3, w)
+                                elif 600 < event.nearest_jet_pt < 650:
+                                    hist5_w[sample.name[:11]].Fill(zeta*3, w)
+                                elif 650 < event.nearest_jet_pt < 700:
+                                    hist6_w[sample.name[:11]].Fill(zeta*3, w)
+
+                hist_numb_all_triplets_w[sample.name[:11]].Fill(numb_of_all_triplets)
+                hist_numb_triplets_w[sample.name[:11]].Fill(numb_of_triplets)
+
+                hist_top_pt_w[sample.name[:11]].Fill(event.top_had_pt)
+
+                if 400 < event.nearest_jet_pt < 450:
+                    hist_top_pt1_w[sample.name[:11]].Fill(event.top_had_pt)
+                elif 450 < event.nearest_jet_pt < 500:
+                    hist_top_pt2_w[sample.name[:11]].Fill(event.top_had_pt)
+                elif 500 < event.nearest_jet_pt < 550:
+                    hist_top_pt3_w[sample.name[:11]].Fill(event.top_had_pt)
+                elif 550 < event.nearest_jet_pt < 600:
+                    hist_top_pt4_w[sample.name[:11]].Fill(event.top_had_pt)
+                elif 600 < event.nearest_jet_pt < 650:
+                    hist_top_pt5_w[sample.name[:11]].Fill(event.top_had_pt)
+                elif 650 < event.nearest_jet_pt < 700:
+                    hist_top_pt6_w[sample.name[:11]].Fill(event.top_had_pt)
 
 
 sequence.append(gen_tops)
@@ -511,23 +596,44 @@ if args.nJobs == 1:
 
 f = ROOT.TFile('correlator_part_{:}_{:}.root'.format(max_numb_of_particles, args.job), 'RECREATE')
 f.cd()
-for sample_name, single_hist in hist.items(): single_hist.Write('correlator_hist'+sample_name)
-for sample_name, single_hist in hist_unweighted.items(): single_hist.Write('correlator_hist_unweighted'+sample_name)
-for sample_name, single_hist in hist1.items(): single_hist.Write('correlator_hist_400_450'+sample_name)
-for sample_name, single_hist in hist2.items(): single_hist.Write('correlator_hist_450_500'+sample_name)
-for sample_name, single_hist in hist3.items(): single_hist.Write('correlator_hist_500_550'+sample_name)
-for sample_name, single_hist in hist4.items(): single_hist.Write('correlator_hist_550_600'+sample_name)
-for sample_name, single_hist in hist5.items(): single_hist.Write('correlator_hist_600_650'+sample_name)
-for sample_name, single_hist in hist6.items(): single_hist.Write('correlator_hist_650_700'+sample_name)
-for sample_name, single_hist in hist_top_pt.items(): single_hist.Write('top_pt_hist'+sample_name)
-for sample_name, single_hist in hist_top_pt1.items(): single_hist.Write('top_pt_hist_400_450'+sample_name)
-for sample_name, single_hist in hist_top_pt2.items(): single_hist.Write('top_pt_hist_450_500'+sample_name)
-for sample_name, single_hist in hist_top_pt3.items(): single_hist.Write('top_pt_hist_500_550'+sample_name)
-for sample_name, single_hist in hist_top_pt4.items(): single_hist.Write('top_pt_hist_550_600'+sample_name)
-for sample_name, single_hist in hist_top_pt5.items(): single_hist.Write('top_pt_hist_600_650'+sample_name)
-for sample_name, single_hist in hist_top_pt6.items(): single_hist.Write('top_pt_hist_650_700'+sample_name)
-for sample_name, single_hist in hist_numb_all_triplets.items(): single_hist.Write('number_of_all_triplets'+sample_name)
-for sample_name, single_hist in hist_numb_triplets.items(): single_hist.Write('number_of_equidistant_triplets'+sample_name)
+if calc_equilateral_triplets:
+    for sample_name, single_hist in hist.items(): single_hist.Write('correlator_hist'+sample_name)
+    for sample_name, single_hist in hist_unweighted.items(): single_hist.Write('correlator_hist_unweighted'+sample_name)
+    for sample_name, single_hist in hist1.items(): single_hist.Write('correlator_hist_400_450'+sample_name)
+    for sample_name, single_hist in hist2.items(): single_hist.Write('correlator_hist_450_500'+sample_name)
+    for sample_name, single_hist in hist3.items(): single_hist.Write('correlator_hist_500_550'+sample_name)
+    for sample_name, single_hist in hist4.items(): single_hist.Write('correlator_hist_550_600'+sample_name)
+    for sample_name, single_hist in hist5.items(): single_hist.Write('correlator_hist_600_650'+sample_name)
+    for sample_name, single_hist in hist6.items(): single_hist.Write('correlator_hist_650_700'+sample_name)
+    for sample_name, single_hist in hist_top_pt.items(): single_hist.Write('top_pt_hist'+sample_name)
+    for sample_name, single_hist in hist_top_pt1.items(): single_hist.Write('top_pt_hist_400_450'+sample_name)
+    for sample_name, single_hist in hist_top_pt2.items(): single_hist.Write('top_pt_hist_450_500'+sample_name)
+    for sample_name, single_hist in hist_top_pt3.items(): single_hist.Write('top_pt_hist_500_550'+sample_name)
+    for sample_name, single_hist in hist_top_pt4.items(): single_hist.Write('top_pt_hist_550_600'+sample_name)
+    for sample_name, single_hist in hist_top_pt5.items(): single_hist.Write('top_pt_hist_600_650'+sample_name)
+    for sample_name, single_hist in hist_top_pt6.items(): single_hist.Write('top_pt_hist_650_700'+sample_name)
+    for sample_name, single_hist in hist_numb_all_triplets.items(): single_hist.Write('number_of_all_triplets'+sample_name)
+    for sample_name, single_hist in hist_numb_triplets.items(): single_hist.Write('number_of_selected_triplets'+sample_name)
+
+if calc_isosceles_triplets:
+    for sample_name, single_hist in hist_w.items(): single_hist.Write('correlator_hist_w'+sample_name)
+    for sample_name, single_hist in hist_unweighted_w.items(): single_hist.Write('correlator_hist_unweighted_w'+sample_name)
+    for sample_name, single_hist in hist1_w.items(): single_hist.Write('correlator_hist_400_450_w'+sample_name)
+    for sample_name, single_hist in hist2_w.items(): single_hist.Write('correlator_hist_450_500_w'+sample_name)
+    for sample_name, single_hist in hist3_w.items(): single_hist.Write('correlator_hist_500_550_w'+sample_name)
+    for sample_name, single_hist in hist4_w.items(): single_hist.Write('correlator_hist_550_600_w'+sample_name)
+    for sample_name, single_hist in hist5_w.items(): single_hist.Write('correlator_hist_600_650_w'+sample_name)
+    for sample_name, single_hist in hist6_w.items(): single_hist.Write('correlator_hist_650_700_w'+sample_name)
+    for sample_name, single_hist in hist_top_pt_w.items(): single_hist.Write('top_pt_hist_w'+sample_name)
+    for sample_name, single_hist in hist_top_pt1_w.items(): single_hist.Write('top_pt_hist_400_450_w'+sample_name)
+    for sample_name, single_hist in hist_top_pt2_w.items(): single_hist.Write('top_pt_hist_450_500_w'+sample_name)
+    for sample_name, single_hist in hist_top_pt3_w.items(): single_hist.Write('top_pt_hist_500_550_w'+sample_name)
+    for sample_name, single_hist in hist_top_pt4_w.items(): single_hist.Write('top_pt_hist_550_600_w'+sample_name)
+    for sample_name, single_hist in hist_top_pt5_w.items(): single_hist.Write('top_pt_hist_600_650_w'+sample_name)
+    for sample_name, single_hist in hist_top_pt6_w.items(): single_hist.Write('top_pt_hist_650_700_w'+sample_name)
+    for sample_name, single_hist in hist_numb_all_triplets_w.items(): single_hist.Write('number_of_all_triplets_w'+sample_name)
+    for sample_name, single_hist in hist_numb_triplets_w.items(): single_hist.Write('number_of_selected_triplets_w'+sample_name)
+
 f.Close()
 
 # for pt_range in ['', '_unweighted', '_400_450', '_450_500', '_500_550', '_550_600', '_600_650', '_650_700']:

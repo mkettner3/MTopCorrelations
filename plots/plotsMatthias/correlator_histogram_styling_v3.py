@@ -142,18 +142,18 @@ if __name__ == '__main__':
     for sample_name in sample_names:
         for pt_range in ['', '_400_450', '_450_500', '_500_550', '_550_600', '_600_650', '_650_700']:
             style_corr_hist(filename_root='correlator-joined_part_{:}.root'.format(numb_of_particles),
-                            hist_name='correlator_hist'+pt_range+sample_name,
-                            filename_graphic=subfolder+'/correlator_hist_part_{:}{:}_{:}.png'.format(numb_of_particles, pt_range, sample_name),
-                            ylim=(0, 0.0015), fit=False)
+                            hist_name='correlator_hist'+pt_range+'_w'+sample_name,
+                            filename_graphic=subfolder+'/correlator_hist_w_part_{:}{:}_{:}.png'.format(numb_of_particles, pt_range, sample_name),
+                            ylim=(0, 0.03), fit=False)
             style_top_pt_hist(filename_root='correlator-joined_part_{:}.root'.format(numb_of_particles),
-                              hist_name='top_pt_hist'+pt_range+sample_name,
-                              filename_graphic=subfolder+'/top_pt_hist_part_{:}{:}_{:}.png'.format(numb_of_particles, pt_range, sample_name))
+                              hist_name='top_pt_hist'+pt_range+'_w'+sample_name,
+                              filename_graphic=subfolder+'/top_pt_hist_w_part_{:}{:}_{:}.png'.format(numb_of_particles, pt_range, sample_name))
 
         style_corr_hist_unweighted(filename_root='correlator-joined_part_{:}.root'.format(numb_of_particles),
-                                   hist_name='correlator_hist_unweighted'+sample_name,
-                                   filename_graphic=subfolder+'/correlator_hist_unweighted_part_{:}_{:}.png'.format(numb_of_particles, sample_name))
+                                   hist_name='correlator_hist_unweighted'+'_w'+sample_name,
+                                   filename_graphic=subfolder+'/correlator_hist_w_unweighted_part_{:}_{:}.png'.format(numb_of_particles, sample_name))
 
-        for plot_name in ['number_of_all_triplets', 'number_of_equidistant_triplets']:
+        for plot_name in ['number_of_all_triplets', 'number_of_selected_triplets']:
             style_numb_triplets_hist(filename_root='correlator-joined_part_{:}.root'.format(numb_of_particles),
-                                     hist_name=plot_name+sample_name,
-                                     filename_graphic=subfolder+'/'+plot_name+'_part_{:}_{:}.png'.format(numb_of_particles, sample_name))
+                                     hist_name=plot_name+'_w'+sample_name,
+                                     filename_graphic=subfolder+'/'+plot_name+'_w_part_{:}_{:}.png'.format(numb_of_particles, sample_name))
