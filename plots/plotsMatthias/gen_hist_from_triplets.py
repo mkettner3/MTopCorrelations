@@ -1,0 +1,71 @@
+# -*- coding: utf-8 -*-
+
+"""
+Script to generate histograms from a numpy array of triplet parameters.
+"""
+
+import numpy as np
+from MTopCorrelations.samples.nanoTuples_UL_RunII_nanoAOD import UL2018
+import ROOT
+import argparse
+
+
+def read_triplets_from_hdf5_file(filename):
+    # type: (str) -> np.ndarray
+
+    import h5py
+
+    with h5py.File(filename, 'r') as f:
+        all_triplets = f['triplet-parameters'][:, :]
+
+    return all_triplets
+
+
+def calc_triplet_histogram(triplets, jet_pt_range, max_delta_zeta=None, delta_legs=None, shortest_side=None):
+    # type: (np.ndarray, tuple, float, float, float) -> tuple
+
+    if max_delta_zeta is not None:
+        triplets_cut = (triplets[2] < max_delta_zeta) & (triplets[5] > jet_pt_range[0]) & (triplets[5] < jet_pt_range[1])
+    elif delta_legs is not None and shortest_side is not None:
+        triplets_cut = (triplets[3] < delta_legs) & (triplets[4] < shortest_side) & \
+                       (triplets[5] > jet_pt_range[0]) & (triplets[5] < jet_pt_range[1])
+    else:
+        triplets_cut = np.full(triplets.shape[0], True, dtype=bool)
+
+    np_hist = np.histogram(triplets[triplets_cut, 0], weights=triplets[triplets_cut, 1], bins=40, range=(0, 3),
+                           density=False)
+
+    return np_hist
+
+
+def store_np_hist_in_root(numpy_hist, filename):
+    # type: (tuple, str) -> None
+
+    hist = ROOT.TH1F("Correlator", "3 #zeta", len(numpy_hist[0]), numpy_hist[1][0], numpy_hist[1][-1])
+    for i, hist_value in enumerate(numpy_hist[0]):
+        hist.Fill(np.mean([numpy_hist[1][i+1], numpy_hist[1][i]]), hist_value)
+
+    f = ROOT.TFile(filename, 'RECREATE')
+    f.cd()
+    hist.Write('correlator_hist')
+    f.Close()
+
+
+if __name__ == '__main__':
+    argParser = argparse.ArgumentParser(description='Argument parser')    # So #SPLIT100 can be used in the bash script.
+    argParser.add_argument('--nJobs', action='store', nargs='?', type=int, default=1)
+    argParser.add_argument('--job', action='store', type=int, default=0)
+    args = argParser.parse_args()
+
+    mc_ = [UL2018.TTbar_1]            # + [UL2018.TTbar_2, UL2018.TTbar_3]
+    samples = [sample.split(n=args.nJobs, nSub=args.job) for sample in mc_]
+
+    pt_jet_range = (450, 500)
+
+    for sample in samples:
+        triplets = read_triplets_from_hdf5_file(filename='EWC_triplets_{:}_{:02}.h5'.format(sample.name[:11], args.job))
+        delta_zeta = 3.5 / 3. * (170. / np.mean(triplets[:, 5])) ** 2
+        np_hist = calc_triplet_histogram(triplets=triplets, jet_pt_range=pt_jet_range, max_delta_zeta=delta_zeta)
+        store_np_hist_in_root(numpy_hist=np_hist, filename='correlator_hist_trip_{:}_{:}_{:}'.format(pt_jet_range[0],
+                                                                                                     pt_jet_range[1],
+                                                                                                     sample.name[:11]))
