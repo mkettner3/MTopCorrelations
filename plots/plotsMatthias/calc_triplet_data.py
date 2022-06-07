@@ -9,6 +9,7 @@ from MTopCorrelations.samples.nanoTuples_UL_RunII_nanoAOD import UL2018
 from MTopCorrelations.Tools.python.triplet_maker import Triplets
 from MTopCorrelations.Tools.python.jet_constituents import JetConstituents
 from ROOT import TLorentzVector, TNtuple, TFile
+from RootTools.core.TreeVariable import VectorTreeVariable
 import argparse
 
 
@@ -50,8 +51,7 @@ def calc_triplet_data(sample):
         "nGenJetAK8/I",
         "GenJetAK8[pt/F,eta/F,phi/F,mass/F]",
         "nGenJetAK8_cons/I",
-        VectorTreeVariable.fromString("GenJetAK8_cons[pt/F,eta/F,phi/F,mass/F,pdgId/I,jetIndex/I]", nMax=1000),
-    ]
+        VectorTreeVariable.fromString("GenJetAK8_cons[pt/F,eta/F,phi/F,mass/F,pdgId/I,jetIndex/I]", nMax=1000)]
 
     triplets = []
 
