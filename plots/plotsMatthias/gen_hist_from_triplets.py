@@ -25,10 +25,10 @@ def calc_triplet_histogram(triplets, jet_pt_range, max_delta_zeta=None, delta_le
     # type: (np.ndarray, tuple, float, float, float) -> tuple
 
     if max_delta_zeta is not None:
-        triplets_cut = (triplets[2] < max_delta_zeta) & (triplets[5] > jet_pt_range[0]) & (triplets[5] < jet_pt_range[1])
+        triplets_cut = (triplets[:, 2] < max_delta_zeta) & (triplets[:, 5] > jet_pt_range[0]) & (triplets[:, 5] < jet_pt_range[1])
     elif delta_legs is not None and shortest_side is not None:
-        triplets_cut = (triplets[3] < delta_legs) & (triplets[4] < shortest_side) & \
-                       (triplets[5] > jet_pt_range[0]) & (triplets[5] < jet_pt_range[1])
+        triplets_cut = (triplets[:, 3] < delta_legs) & (triplets[:, 4] < shortest_side) & \
+                       (triplets[:, 5] > jet_pt_range[0]) & (triplets[:, 5] < jet_pt_range[1])
     else:
         triplets_cut = np.full(triplets.shape[0], True, dtype=bool)
 
@@ -63,9 +63,10 @@ if __name__ == '__main__':
     pt_jet_range = (450, 500)
 
     for sample in samples:
-        triplets = read_triplets_from_hdf5_file(filename='EWC_triplets_{:}_{:02}.h5'.format(sample.name[:11], args.job))
+        triplets = read_triplets_from_hdf5_file(filename='triplet_files/EWC_triplets_{:}_{:02}.h5'.format(sample.name[:11], args.job))
         delta_zeta = 3.5 / 3. * (170. / np.mean(triplets[:, 5])) ** 2
         np_hist = calc_triplet_histogram(triplets=triplets, jet_pt_range=pt_jet_range, max_delta_zeta=delta_zeta)
-        store_np_hist_in_root(numpy_hist=np_hist, filename='correlator_hist_trip_{:}_{:}_{:}'.format(pt_jet_range[0],
-                                                                                                     pt_jet_range[1],
-                                                                                                     sample.name[:11]))
+        store_np_hist_in_root(numpy_hist=np_hist,
+                              filename='correlator_hist_trip_{:}_{:}_{:}.root'.format(pt_jet_range[0],
+                                                                                      pt_jet_range[1],
+                                                                                      sample.name[:11]))

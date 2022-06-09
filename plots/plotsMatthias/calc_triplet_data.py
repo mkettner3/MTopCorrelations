@@ -5,9 +5,10 @@ Script to produce numpy arrays of triplet parameters.
 """
 
 import numpy as np
+import time
 from MTopCorrelations.samples.nanoTuples_UL_RunII_nanoAOD import UL2018
-from MTopCorrelations.Tools.python.triplet_maker import Triplets
-from MTopCorrelations.Tools.python.jet_constituents import JetConstituents
+from MTopCorrelations.Tools.triplet_maker import Triplets
+from MTopCorrelations.Tools.jet_constituents import JetConstituents
 from ROOT import TLorentzVector, TNtuple, TFile
 from RootTools.core.TreeVariable import VectorTreeVariable
 import argparse
@@ -61,9 +62,10 @@ def calc_triplet_data(sample):
     while r.run():                                                              # Event-Loop
         nearest_jet_idx, nearest_jet_pt = find_hadronic_jet(r.event)
 
-        jet_constituents = JetConstituents.get(event=r.event, index=nearest_jet_idx)
+        jet_constituents = JetConstituents.get(event=r.event, index=nearest_jet_idx, max_numb_of_cons=50)
 
-        triplets.append(Triplets.make(jet_pt=nearest_jet_pt, particle_vectors=jet_constituents))
+        if len(jet_constituents) > 0:
+            triplets.append(Triplets.make(jet_pt=nearest_jet_pt, particle_vectors=jet_constituents))
 
     return np.concatenate(triplets, axis=0)
 
@@ -94,6 +96,7 @@ def save_triplets_to_root_file(triplets_data, filename):
 
 
 if __name__ == '__main__':
+    start = time.time()
     argParser = argparse.ArgumentParser(description='Argument parser')    # So #SPLIT100 can be used in the bash script.
     argParser.add_argument('--nJobs', action='store', nargs='?', type=int, default=1)
     argParser.add_argument('--job', action='store', type=int, default=0)
@@ -105,4 +108,7 @@ if __name__ == '__main__':
     for sample in samples:
         all_triplets = calc_triplet_data(sample=sample)
         save_triplets_to_hdf5_file(triplets_data=all_triplets,
-                                   filename='EWC_triplets_{:}_{:02}.h5'.format(sample.name[:11], args.job))
+                                   filename='triplet_files/EWC_triplets_{:}_{:02}.h5'.format(sample.name[:11], args.job))
+
+    end = time.time()
+    print('Executing calc_triplet_data.py took {:.0f}:{:.2f} minutes:seconds.'.format((end-start)//60, (end-start)%60))
