@@ -16,12 +16,20 @@ import argparse
 
 def find_hadronic_jet(event):
     top_vec, anti_top_vec = TLorentzVector(), TLorentzVector()
+    quark_vec, anti_quark_vec, bottom_vec = TLorentzVector(), TLorentzVector(), TLorentzVector()
     for i in range(event.nGenPart):
         if event.GenPart_pdgId[i] == 6:
             top_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_m[i])
         elif event.GenPart_pdgId[i] == -6:
             anti_top_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i],
                                       event.GenPart_m[i])
+        elif event.GenPart_pdgId[i] in range(1, 7) and abs(event.GenPart_grmompdgId[i]) == 6:
+            quark_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_m[i])
+        elif event.GenPart_pdgId[i] in range(-1, -7, -1) and abs(event.GenPart_grmompdgId[i]) == 6:
+            anti_quark_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i],
+                                        event.GenPart_m[i])
+        elif event.GenPart_pdgId[i] == 5 and abs(event.GenPart_mompdgId[i]) == 6:
+            bottom_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_m[i])
 
     top_lep, top_had = TLorentzVector(), TLorentzVector()
     for i in range(event.nGenPart):
@@ -32,6 +40,7 @@ def find_hadronic_jet(event):
             elif event.GenPart_grmompdgId[i] == -6:
                 # top_lep = anti_top_vec
                 top_had = top_vec
+            break
 
     jets = []
     for i in range(event.nGenJetAK8):
@@ -39,10 +48,18 @@ def find_hadronic_jet(event):
         jets[-1].SetPtEtaPhiM(event.GenJetAK8_pt[i], event.GenJetAK8_eta[i],
                               event.GenJetAK8_phi[i], event.GenJetAK8_mass[i])
     deltas = [jets[j].DeltaR(top_had) for j in range(event.nGenJetAK8)]
-    nearest_jet_idx = np.argmin(deltas)
-    nearest_jet_pt = jets[nearest_jet_idx].Pt()
+    delta_min = min(deltas)
+    hadronic_jet_idx = np.argmin(deltas)
+    hadronic_jet_pt = jets[hadronic_jet_idx].Pt()
 
-    return nearest_jet_idx, nearest_jet_pt
+    delta_q = jets[hadronic_jet_idx].DeltaR(quark_vec)
+    delta_aq = jets[hadronic_jet_idx].DeltaR(anti_quark_vec)
+    delta_b = jets[hadronic_jet_idx].DeltaR(bottom_vec)
+
+    if not (delta_min < 0.8 and delta_q < 0.8 and delta_aq < 0.8 and delta_b < 0.8):
+        hadronic_jet_idx, hadronic_jet_pt = None, None
+
+    return hadronic_jet_idx, hadronic_jet_pt
 
 
 def calc_triplet_data(sample):
