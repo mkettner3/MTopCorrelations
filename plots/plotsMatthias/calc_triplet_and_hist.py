@@ -27,7 +27,7 @@ def calc_triplets_and_hist(sample, pt_jet_ranges, max_delta_zeta=None, delta_leg
 
     np_hists = [np.full(nbins, 0, dtype=np.float32)]*len(pt_jet_ranges)
 
-    r = sample.treeReader(variables=read_variables, selectionString="GenJetAK8_pt>400")
+    r = sample.treeReader(variables=read_variables, selectionString="Sum$(GenJetAK8_pt>400)>=1")
 
     # count = 0
     r.start()
@@ -95,4 +95,4 @@ if __name__ == '__main__':
                                                                                                     args.job))
     end = time.time()
 
-    print('Executing calc_triplet_data.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))
+    print('Executing calc_triplet_and_hist.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))
