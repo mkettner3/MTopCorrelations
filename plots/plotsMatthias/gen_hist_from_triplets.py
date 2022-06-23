@@ -39,7 +39,24 @@ def calc_triplet_histogram(triplets, jet_pt_range, max_delta_zeta=None, delta_le
     return np_hist
 
 
-def store_np_hist_in_root(numpy_hist, pt_jet_ranges, filename):
+def store_np_hist_in_root(numpy_hist, sample_names, pt_jet_ranges, filename):
+    # type: (tuple, list, list, str) -> None
+
+    f = ROOT.TFile(filename, 'RECREATE')
+    f.cd()
+
+    for h, sample_name in enumerate(sample_names):
+        for j, pt_jet_range in enumerate(pt_jet_ranges):
+            hist = ROOT.TH1F("Correlator", "3 #zeta", len(numpy_hist[0][h][j]), numpy_hist[1][0], numpy_hist[1][-1])
+            for i, hist_value in enumerate(numpy_hist[0][h][j]):
+                hist.Fill(np.mean([numpy_hist[1][i+1], numpy_hist[1][i]]), hist_value)
+
+            hist.Write('correlator_hist_{:}_{:}_{:}'.format(sample_name, pt_jet_range[0], pt_jet_range[1]))
+
+    f.Close()
+
+
+def store_np_hist_in_root_old(numpy_hist, pt_jet_ranges, filename):
     # type: (tuple, list, str) -> None
 
     f = ROOT.TFile(filename, 'RECREATE')
@@ -70,6 +87,6 @@ if __name__ == '__main__':
         triplets = read_triplets_from_hdf5_file(filename='triplet_files/EWC_triplets_{:}_{:02}.h5'.format(sample.name[:11], args.job))
         delta_zeta = 3.5 / 3. * (170. / np.mean(triplets[:, 5])) ** 2
         np_hist = calc_triplet_histogram(triplets=triplets, jet_pt_range=pt_jet_range, max_delta_zeta=delta_zeta)
-        store_np_hist_in_root(numpy_hist=np_hist, pt_jet_ranges=[pt_jet_range],
-                              filename='histogram_files/correlator_hist_trip_{:}_{:02}.root'.format(sample.name[:11],
-                                                                                                    args.job))
+        store_np_hist_in_root_old(numpy_hist=np_hist, pt_jet_ranges=[pt_jet_range],
+                                  filename='histogram_files/correlator_hist_trip_{:}_{:02}.root'.format(sample.name[:11],
+                                                                                                        args.job))

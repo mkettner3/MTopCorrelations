@@ -47,16 +47,16 @@ def find_hadronic_jet(event):
         jets.append(TLorentzVector())
         jets[-1].SetPtEtaPhiM(event.GenJetAK8_pt[i], event.GenJetAK8_eta[i],
                               event.GenJetAK8_phi[i], event.GenJetAK8_mass[i])
-    deltas = [jets[j].DeltaR(top_had) for j in range(event.nGenJetAK8)]
-    delta_min = min(deltas)
-    hadronic_jet_idx = np.argmin(deltas)
+    deltas_top = [jets[j].DeltaR(top_had) for j in range(event.nGenJetAK8)]
+    delta_top_min = min(deltas_top)
+    hadronic_jet_idx = np.argmin(deltas_top)
     hadronic_jet_pt = jets[hadronic_jet_idx].Pt()
 
     delta_q = jets[hadronic_jet_idx].DeltaR(quark_vec)
     delta_aq = jets[hadronic_jet_idx].DeltaR(anti_quark_vec)
     delta_b = jets[hadronic_jet_idx].DeltaR(bottom_vec)
 
-    if not (delta_min < 0.8 and delta_q < 0.8 and delta_aq < 0.8 and delta_b < 0.8):
+    if not (delta_top_min < 0.8 and delta_q < 0.8 and delta_aq < 0.8 and delta_b < 0.8):
         hadronic_jet_idx, hadronic_jet_pt = None, None
 
     return hadronic_jet_idx, hadronic_jet_pt
