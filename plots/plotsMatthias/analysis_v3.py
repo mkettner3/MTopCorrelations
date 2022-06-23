@@ -57,6 +57,9 @@ import RootTools.core.logger as logger_rt
 logger    = logger.get_logger(   args.logLevel, logFile = None)
 logger_rt = logger_rt.get_logger(args.logLevel, logFile = None)
 
+import time
+start = time.time()
+
 ################################################################################
 # Define the MC samples
 from MTopCorrelations.samples.nanoTuples_UL_RunII_nanoAOD import UL2018
@@ -113,9 +116,10 @@ hist_top_pt6_w = {sample.name[:11]: ROOT.TH1F("Correlator", "p_{T,top}", 40, 400
 hist_numb_all_triplets_w = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 100000) for sample in mc_all}
 hist_numb_triplets_w = {sample.name[:11]: ROOT.TH1F("Correlator", "3 #zeta", 40, 0, 1000) for sample in mc_all}
 max_numb_of_particles = args.max_cons
+count = 0
 
-calc_equilateral_triplets = False
-calc_isosceles_triplets = True
+calc_equilateral_triplets = True
+calc_isosceles_triplets = False
 
 ################################################################################
 # Text on the plots
@@ -174,15 +178,24 @@ def getJetConstituents(event, idx):
 
 
 def gen_tops(event, sample):
-    global max_numb_of_particles, calc_equilateral_triplets, calc_isosceles_triplets
+    global max_numb_of_particles, calc_equilateral_triplets, calc_isosceles_triplets, count
 
     top_vec = ROOT.TLorentzVector()
     anti_top_vec = ROOT.TLorentzVector()
+    quark_vec = ROOT.TLorentzVector()
+    anti_quark_vec = ROOT.TLorentzVector()
+    bottom_vec = ROOT.TLorentzVector()
     for i in range(event.nGenPart):
         if event.GenPart_pdgId[i] == 6:
             top_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_m[i])
         elif event.GenPart_pdgId[i] == -6:
             anti_top_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_m[i])
+        elif event.GenPart_pdgId[i] in range(1, 7) and abs(event.GenPart_grmompdgId[i]) == 6:
+            quark_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_m[i])
+        elif event.GenPart_pdgId[i] in range(-1, -7, -1) and abs(event.GenPart_grmompdgId[i]) == 6:
+            anti_quark_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_m[i])
+        elif event.GenPart_pdgId[i] == 5 and abs(event.GenPart_mompdgId[i]) == 6:
+            bottom_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_m[i])
 
     top_lep = ROOT.TLorentzVector()
     top_had = ROOT.TLorentzVector()
@@ -194,19 +207,9 @@ def gen_tops(event, sample):
             elif event.GenPart_grmompdgId[i] == -6:
                 top_lep = anti_top_vec
                 top_had = top_vec
+            break
 
     event.top_had_pt = top_had.Pt()
-
-    quark_vec = ROOT.TLorentzVector()
-    anti_quark_vec = ROOT.TLorentzVector()
-    bottom_vec = ROOT.TLorentzVector()
-    for i in range(event.nGenPart):
-        if event.GenPart_pdgId[i] in range(1, 7) and abs(event.GenPart_grmompdgId[i]) == 6:
-            quark_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_m[i])
-        elif event.GenPart_pdgId[i] in range(-1, -7, -1) and abs(event.GenPart_grmompdgId[i]) == 6:
-            anti_quark_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_m[i])
-        elif event.GenPart_pdgId[i] == 5 and abs(event.GenPart_mompdgId[i]) == 6:
-            bottom_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_m[i])
 
     jets = []
     for i in range(event.nGenJetAK8):
@@ -254,7 +257,10 @@ def gen_tops(event, sample):
 
     if args.nJobs > 1:
         if event.all_merged_and_high_pt:
+            count += 1                                      # TEST-Line
             matched_jet_cons = getJetConstituents(event=event, idx=nearest_jet_idx_t)
+            if count < 10 and len(matched_jet_cons) > 0:    # TEST-Line
+                print(nearest_jet_idx_t)                    # TEST-Line
 
             # max_numb_of_particles = 50
             if len(matched_jet_cons) < max_numb_of_particles:
@@ -594,7 +600,7 @@ if args.nJobs == 1:
 
 # print hist.Integral()
 
-f = ROOT.TFile('correlator_part_{:}_{:}.root'.format(max_numb_of_particles, args.job), 'RECREATE')
+f = ROOT.TFile('histogram_files/correlator_part_{:}_{:}.root'.format(max_numb_of_particles, args.job), 'RECREATE')
 f.cd()
 if calc_equilateral_triplets:
     for sample_name, single_hist in hist.items(): single_hist.Write('correlator_hist'+sample_name)
@@ -642,6 +648,10 @@ f.Close()
 #                     filename_graphic='/correlator_hist'+pt_range+'.png')
 
 logger.info( "Done with prefix %s and selectionString %s", args.selection, cutInterpreter.cutString(args.selection) )
+
+end = time.time()
+
+print('Executing analysis_v3.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))
 
 # Root files zusammen addieren mit Konsolen-Befehl:
 # hadd correlator-joined.root correlator_1.root correlator_2.root correlator_3.root
