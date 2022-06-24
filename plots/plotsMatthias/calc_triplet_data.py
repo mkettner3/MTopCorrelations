@@ -14,7 +14,7 @@ from RootTools.core.TreeVariable import VectorTreeVariable
 import argparse
 
 
-def find_hadronic_jet(event):
+def find_hadronic_jet(event, merge_tolerance=0.8, jet_pt_min=400):
     top_vec, anti_top_vec = TLorentzVector(), TLorentzVector()
     quark_vec, anti_quark_vec, bottom_vec = TLorentzVector(), TLorentzVector(), TLorentzVector()
     for i in range(event.nGenPart):
@@ -56,7 +56,8 @@ def find_hadronic_jet(event):
     delta_aq = jets[hadronic_jet_idx].DeltaR(anti_quark_vec)
     delta_b = jets[hadronic_jet_idx].DeltaR(bottom_vec)
 
-    if not (delta_top_min < 0.8 and delta_q < 0.8 and delta_aq < 0.8 and delta_b < 0.8):
+    if not (delta_top_min < merge_tolerance and delta_q < merge_tolerance and
+            delta_aq < merge_tolerance and delta_b < merge_tolerance and hadronic_jet_pt > jet_pt_min):
         hadronic_jet_idx, hadronic_jet_pt = None, None
 
     return hadronic_jet_idx, hadronic_jet_pt
