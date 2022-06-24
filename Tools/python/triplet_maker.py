@@ -4,7 +4,58 @@
 Function to produce triplets.
 """
 
-import numpy as np
+
+def make_triplets_and_cut(jet_pt, particle_vectors, n=2, max_delta_zeta=None, delta_legs=None, shortest_side=None):
+    # type: (float, list, int, float, float, float) -> tuple
+    """
+    Method to produce triplets from the particle vectors.
+
+    :param jet_pt: float; The Pt of the jet from the top quark.
+    :param particle_vectors: list of ROOT.TLorentzVector(); The lorentz-vectors of the particles inside the
+        mentioned jet of one event.
+    :param n: integer; Order of energy weighting. Default is quadratic order (n=2).
+    :param max_delta_zeta: floating; The maximum value for delta zeta of the equilateral triangle.
+    :param delta_legs: floating; The maximum value for the delta between the two legs of the isosceles triangle.
+    :param shortest_side: floating; The maximum value for the shortest side of the isosceles triangle.
+
+    :return: tuple of two lists; The first list contains the values for three_zeta and the second contains the weights.
+    """
+
+    three_zeta = []
+    w = []
+
+    for i in range(len(particle_vectors)):
+        for j in range(i+1, len(particle_vectors)):
+            for k in range(j+1, len(particle_vectors)):
+                zeta_value = [particle_vectors[i].DeltaR(particle_vectors[j]),
+                              particle_vectors[i].DeltaR(particle_vectors[k]),
+                              particle_vectors[j].DeltaR(particle_vectors[k])]
+                zeta_value.sort()
+
+                if max_delta_zeta is not None:
+                    if (zeta_value[2]-zeta_value[0]) < max_delta_zeta:
+                        if delta_legs is not None and shortest_side is not None:
+                            if (zeta_value[2]-zeta_value[1]) < delta_legs and zeta_value[0] < shortest_side:
+                                accepted = True
+                            else:
+                                accepted = False
+                        else:
+                            accepted = True
+                    else:
+                        accepted = False
+                elif delta_legs is not None and shortest_side is not None:
+                    if (zeta_value[2] - zeta_value[1]) < delta_legs and zeta_value[0] < shortest_side:
+                        accepted = True
+                    else:
+                        accepted = False
+                else:
+                    accepted = True
+
+                if accepted:
+                    three_zeta.append(sum(zeta_value))
+                    w.append((particle_vectors[i].Pt() * particle_vectors[j].Pt() * particle_vectors[k].Pt())**n / ((jet_pt**3)**n))
+
+    return three_zeta, w
 
 
 def make_triplets(jet_pt, particle_vectors, n=2, top_data=True, w_data=True, pt_value=True):
@@ -25,6 +76,8 @@ def make_triplets(jet_pt, particle_vectors, n=2, top_data=True, w_data=True, pt_
         delta_zeta, the delta_zeta between the legs of an isosceles triangle, the length of the shortest triangle
         side, the pt of the surrounding jet]
     """
+    import numpy as np
+
     w = []
     zeta_value = []
 
@@ -44,11 +97,11 @@ def make_triplets(jet_pt, particle_vectors, n=2, top_data=True, w_data=True, pt_
     triplet_param_list = [three_zeta, np.array(w, dtype=np.float32)]
 
     if top_data:
-        triplet_param_list.append(zeta_value[:, 0] - zeta_value[:, 2])          # max_delta_zeta
+        triplet_param_list.append(zeta_value[:, 2] - zeta_value[:, 0])          # max_delta_zeta
 
     if w_data:
-        triplet_param_list.append(zeta_value[:, 0] - zeta_value[:, 1])          # delta_legs
-        triplet_param_list.append(zeta_value[:, 2])                             # shortest_side
+        triplet_param_list.append(zeta_value[:, 2] - zeta_value[:, 1])          # delta_legs
+        triplet_param_list.append(zeta_value[:, 0])                             # shortest_side
 
     if pt_value:
         triplet_param_list.append(np.full((len(w)), jet_pt, dtype=np.float32))
