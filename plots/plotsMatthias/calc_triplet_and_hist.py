@@ -36,7 +36,7 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=None, delta_le
             # count += 1
             # if count % 100 == 0:
             #     print('Event {} is calculated.'.format(count))
-            hadronic_jet_idx, hadronic_jet_pt = find_hadronic_jet(r.event)
+            hadronic_jet_idx, hadronic_jet_pt = find_hadronic_jet(r.event, merge_tolerance=0.8, jet_pt_min=400)
 
             if hadronic_jet_idx is not None:
                 jet_constituents = get_jet_constituents(event=r.event, index=hadronic_jet_idx, max_numb_of_cons=50)
@@ -49,10 +49,12 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=None, delta_le
                                              pt_value=False)
 
                     if np.isnan(max_delta_zeta):
-                        max_delta_zeta = 3.5 / 3. * (170. / hadronic_jet_pt) ** 2
+                        max_delta_zeta_calc = 3.5 / 3. * (170. / hadronic_jet_pt) ** 2
+                    else:
+                        max_delta_zeta_calc = max_delta_zeta
 
                     if max_delta_zeta is not None:
-                        triplets_cut = (triplets[:, 2] < max_delta_zeta)
+                        triplets_cut = (triplets[:, 2] < max_delta_zeta_calc)
                         if delta_legs is not None and shortest_side is not None:
                             triplets_cut = triplets_cut & (triplets[:, 3] < delta_legs) & (triplets[:, 4] < shortest_side)
                     elif delta_legs is not None and shortest_side is not None:
