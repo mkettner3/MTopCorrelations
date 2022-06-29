@@ -10,3 +10,6 @@ if os.environ["USER"] in ["dennis.schwarz"]:
     mva_directory                   = "/groups/hephy/cms/dennis.schwarz/MTopCorrelations/MVA"
     cern_proxy_certificate          = "/users/dennis.schwarz/.private/.proxy"
     combineReleaseLocation          = "/users/dennis.schwarz/CMSSW_10_6_0/src"
+
+if os.environ["USER"] == "matthias.kettner":
+    plot_directory = "/groups/hephy/cms/matthias.kettner/www/MTopCorrelations/plots"
