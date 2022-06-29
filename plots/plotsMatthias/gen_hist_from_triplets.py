@@ -45,13 +45,15 @@ def store_np_hist_in_root(numpy_hist, sample_names, pt_jet_ranges, filename):
     f = ROOT.TFile(filename, 'RECREATE')
     f.cd()
 
-    for h, sample_name in enumerate(sample_names):
-        for j, pt_jet_range in enumerate(pt_jet_ranges):
-            hist = ROOT.TH1F("Correlator", "3 #zeta", len(numpy_hist[0][h][j]), numpy_hist[1][0], numpy_hist[1][-1])
-            for i, hist_value in enumerate(numpy_hist[0][h][j]):
-                hist.Fill(np.mean([numpy_hist[1][i+1], numpy_hist[1][i]]), hist_value)
+    for g, level in enumerate(['Gen', 'PF']):
+        for h, sample_name in enumerate(sample_names):
+            for j, pt_jet_range in enumerate(pt_jet_ranges):
+                hist = ROOT.TH1F("Correlator", "3 #zeta", len(numpy_hist[0][g][h][j]), numpy_hist[1][0], numpy_hist[1][-1])
+                for i, hist_value in enumerate(numpy_hist[0][g][h][j]):
+                    hist.Fill(np.mean([numpy_hist[1][i+1], numpy_hist[1][i]]), hist_value)
 
-            hist.Write('correlator_hist_{:}_{:}_{:}'.format(sample_name, pt_jet_range[0], pt_jet_range[1]))
+                hist.Write('correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name, pt_jet_range[0], pt_jet_range[1]))
+                del hist
 
     f.Close()
 

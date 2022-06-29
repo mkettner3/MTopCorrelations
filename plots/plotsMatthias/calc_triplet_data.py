@@ -14,7 +14,16 @@ from RootTools.core.TreeVariable import VectorTreeVariable
 import argparse
 
 
-def find_hadronic_jet(event, merge_tolerance=0.8, jet_pt_min=400):
+def find_hadronic_jet(event, level, merge_tolerance=0.8, jet_pt_min=400):
+    if level == 'Gen':
+        event_para = {'nJet': event.nGenJetAK8, 'Jet_pt': event.GenJetAK8_pt, 'Jet_eta': event.GenJetAK8_eta,
+                      'Jet_phi': event.GenJetAK8_phi, 'Jet_mass': event.GenJetAK8_mass}
+    elif level == 'PF':
+        event_para = {'nJet': event.nPFJetAK8, 'Jet_pt': event.PFJetAK8_pt, 'Jet_eta': event.PFJetAK8_eta,
+                      'Jet_phi': event.PFJetAK8_phi, 'Jet_mass': event.PFJetAK8_mass}
+    else:
+        raise ValueError('The parameter "level" must be either "Gen" or "PF"!')
+
     top_vec, anti_top_vec = TLorentzVector(), TLorentzVector()
     quark_vec, anti_quark_vec, bottom_vec = TLorentzVector(), TLorentzVector(), TLorentzVector()
     for i in range(event.nGenPart):
@@ -43,11 +52,11 @@ def find_hadronic_jet(event, merge_tolerance=0.8, jet_pt_min=400):
             break
 
     jets = []
-    for i in range(event.nGenJetAK8):
+    for i in range(event_para['nJet']):
         jets.append(TLorentzVector())
-        jets[-1].SetPtEtaPhiM(event.GenJetAK8_pt[i], event.GenJetAK8_eta[i],
-                              event.GenJetAK8_phi[i], event.GenJetAK8_mass[i])
-    deltas_top = [jets[j].DeltaR(top_had) for j in range(event.nGenJetAK8)]
+        jets[-1].SetPtEtaPhiM(event_para['Jet_pt'][i], event_para['Jet_eta'][i],
+                              event_para['Jet_phi'][i], event_para['Jet_mass'][i])
+    deltas_top = [jets[j].DeltaR(top_had) for j in range(event_para['nJet'])]
     delta_top_min = min(deltas_top)
     hadronic_jet_idx = np.argmin(deltas_top)
     hadronic_jet_pt = jets[hadronic_jet_idx].Pt()

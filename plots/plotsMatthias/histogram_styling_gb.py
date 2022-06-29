@@ -44,12 +44,13 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, yl
 
 if __name__ == '__main__':
     subfolder = '/generation_b'
-    filename = 'histogram_files/correlator_hist_trip.root'
+    filename = 'histogram_files/correlator_hist_trip_pp_00.root'
     sample_names = ['TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5']
 
-    for pt_range in pt_jet_ranges:
-        style_corr_hist(filename_root=filename,
-                        hist_name='correlator_hist_$_{:}_{:}'.format(pt_range[0], pt_range[1]),
-                        sample_names=sample_names,
-                        filename_graphic=subfolder+'/correlator_hist_{:}-{:}.png'.format(pt_range[0], pt_range[1]),
-                        ylim=(0, 0.1))
+    for level in ['Gen', 'PF']:
+        for pt_range in pt_jet_ranges:
+            style_corr_hist(filename_root=filename,
+                            hist_name='correlator_hist_{:}_$_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
+                            sample_names=sample_names,
+                            filename_graphic=subfolder+'/correlator_hist_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
+                            ylim=(0, 0.1))
