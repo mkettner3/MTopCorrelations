@@ -35,22 +35,29 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=None, delta_le
         global count
         r.start()
         while r.run():                                                              # Event-Loop
-            # if count % 100 == 0:
-            #     print('Event {} is calculated.'.format(count))
             hadronic_jet_idx, hadronic_jet_pt = find_hadronic_jet(r.event, merge_tolerance=0.8, jet_pt_min=400)
 
             if hadronic_jet_idx is not None:
                 jet_constituents = get_jet_constituents(event=r.event, index=hadronic_jet_idx, max_numb_of_cons=50)
 
                 if len(jet_constituents) > 0:
-                    if np.isnan(max_delta_zeta):
+                    if max_delta_zeta is None:
+                        max_delta_zeta_calc = max_delta_zeta
+                    elif np.isnan(max_delta_zeta):
                         max_delta_zeta_calc = 3.5 / 3. * (170. / hadronic_jet_pt) ** 2
                     else:
                         max_delta_zeta_calc = max_delta_zeta
 
+                    if delta_legs is None:
+                        delta_legs_calc = delta_legs
+                    elif np.isnan(delta_legs):
+                        delta_legs_calc = 3.5 / 3. * (170. / hadronic_jet_pt) ** 2
+                    else:
+                        delta_legs_calc = delta_legs
+
                     triplets = make_triplets_and_cut(jet_pt=hadronic_jet_pt, particle_vectors=jet_constituents,
                                                      max_delta_zeta=max_delta_zeta_calc,
-                                                     delta_legs=delta_legs, shortest_side=shortest_side)
+                                                     delta_legs=delta_legs_calc, shortest_side=shortest_side)
 
                     k = None
                     for i, jet_range in enumerate(pt_jet_ranges):
