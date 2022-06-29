@@ -259,11 +259,9 @@ def gen_tops(event, sample):
         if event.all_merged_and_high_pt:
             count += 1                                      # TEST-Line
             matched_jet_cons = getJetConstituents(event=event, idx=nearest_jet_idx_t)
-            if count < 10 and len(matched_jet_cons) > 0:    # TEST-Line
-                print(nearest_jet_idx_t)                    # TEST-Line
 
             # max_numb_of_particles = 50
-            if len(matched_jet_cons) < max_numb_of_particles:
+            if len(matched_jet_cons) <= max_numb_of_particles:
                 numb_of_particles = len(matched_jet_cons)
             else:
                 numb_of_particles = max_numb_of_particles
