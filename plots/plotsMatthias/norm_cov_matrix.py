@@ -10,7 +10,7 @@ import ROOT
 
 
 def calc_norm_cov_matrix(filename_root_hist, hist_name):
-    # type: (str, str) -> np.ndarray
+    # type: (str, str) -> tuple
     """
     Documentation
     """
@@ -19,14 +19,15 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name):
     root_hist = f.Get(hist_name)
 
     num_bins = root_hist.GetNbinsX()
+    hist_axis_range_min = root_hist.GetXaxis().GetXmin()
+    hist_axis_range_max = root_hist.GetXaxis().GetXmax()
     matrix_orig = np.zeros((num_bins, num_bins), dtype=np.float64)
     for i in range(num_bins):
-        for j in range(num_bins):
-            matrix_orig[i, j] = root_hist.GetBinError(i+1) * root_hist.GetBinError(j+1)
+        matrix_orig[i, i] = root_hist.GetBinError(i+1) ** 2
 
     matrix_norm = normalize_cov_matrix(matrix_orig=matrix_orig, root_hist=root_hist)
 
-    return matrix_norm
+    return matrix_norm, matrix_orig, (hist_axis_range_min, hist_axis_range_max)
 
 
 def normalize_cov_matrix(matrix_orig, root_hist):
@@ -112,8 +113,8 @@ def NormalizeMatrix(old_cov, hist_):
     return new_cov
 
 
-def store_matrix_in_root(matrices, sample_names, pt_jet_ranges, filename):
-    # type: (list, list, list, str) -> None
+def store_matrix_in_root(matrices_norm, matrices_orig, sample_names, pt_jet_ranges, filename, hist_axis_range):
+    # type: (list, list, list, list, str, tuple) -> None
 
     f = ROOT.TFile(filename, 'RECREATE')
     f.cd()
@@ -121,14 +122,23 @@ def store_matrix_in_root(matrices, sample_names, pt_jet_ranges, filename):
     for g, level in enumerate(['Gen', 'PF']):
         for h, sample_name in enumerate(sample_names):
             for k, pt_jet_range in enumerate(pt_jet_ranges):
-                hist = ROOT.TH2F("Covariance Matrix", "Normalized Covariance Matrix",
-                                 matrices[g][h][k].shape[0], 0, 1, matrices[g][h][k].shape[1], 0, 1)
-                for i in range(matrices[g][h][k].shape[0]):
-                    for j in range(matrices[g][h][k].shape[1]):
-                        hist.SetBinContent(i, j, matrices[g][h][k][i, j])
+                hist_norm = ROOT.TH2F("Covariance Matrix", "Normalized Covariance Matrix",
+                                      matrices_norm[g][h][k].shape[0], hist_axis_range[0], hist_axis_range[1],
+                                      matrices_norm[g][h][k].shape[1], hist_axis_range[0], hist_axis_range[1])
+                hist_orig = ROOT.TH2F("Covariance Matrix", "Original Covariance Matrix",
+                                      matrices_orig[g][h][k].shape[0], hist_axis_range[0], hist_axis_range[1],
+                                      matrices_orig[g][h][k].shape[1], hist_axis_range[0], hist_axis_range[1])
+                for i in range(matrices_norm[g][h][k].shape[0]):
+                    for j in range(matrices_norm[g][h][k].shape[1]):
+                        hist_norm.SetBinContent(i, j, matrices_norm[g][h][k][i, j])
+                for i in range(matrices_orig[g][h][k].shape[0]):
+                    for j in range(matrices_orig[g][h][k].shape[1]):
+                        hist_orig.SetBinContent(i, j, matrices_orig[g][h][k][i, j])
 
-                hist.Write('norm_cov_matrix_{}_{}_{}-{}'.format(level, sample_name, pt_jet_range[0], pt_jet_range[1]))
-                del hist
+                hist_norm.Write('norm_cov_matrix_{}_{}_{}-{}'.format(level, sample_name, pt_jet_range[0], pt_jet_range[1]))
+                hist_orig.Write('norm_cov_matrix_{}_{}_{}-{}_orig'.format(level, sample_name, pt_jet_range[0], pt_jet_range[1]))
+                del hist_norm
+                del hist_orig
 
     f.Close()
 
@@ -145,18 +155,23 @@ if __name__ == '__main__':
     filename = 'histogram_files/correlator_hist_trip.root'
     sample_names = ['TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5']
 
-    matrices = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
+    matrices_norm = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
+    matrices_orig = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
+    hist_axis_range = (0, 3)
 
     for g, level in enumerate(['Gen', 'PF']):
         for h, sample_name in enumerate(sample_names):
             print('Working on sample "{}" ...'.format(sample_name))
             for k, pt_range in enumerate(pt_jet_ranges):
-                matrices[g][h][k] = calc_norm_cov_matrix(filename_root_hist=filename,
+                (matrices_norm[g][h][k],
+                 matrices_orig[g][h][k],
+                 hist_axis_range) = calc_norm_cov_matrix(filename_root_hist=filename,
                                                          hist_name='correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name,
                                                                                                             pt_range[0], pt_range[1]))
 
-    store_matrix_in_root(matrices=matrices, sample_names=sample_names,
-                         pt_jet_ranges=pt_jet_ranges, filename='cov_matrices/norm_cov_matrices.root')
+    store_matrix_in_root(matrices_norm=matrices_norm, matrices_orig=matrices_orig, sample_names=sample_names,
+                         pt_jet_ranges=pt_jet_ranges, filename='cov_matrices/norm_cov_matrices.root',
+                         hist_axis_range=hist_axis_range)
 
     """
     # f = ROOT.TFile(filename)
