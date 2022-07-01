@@ -53,6 +53,61 @@ def normalize_cov_matrix(matrix_orig, root_hist):
     return matrix_norm
 
 
+def normalize_cov_matrix_dennis(matrix_orig, root_hist):
+    # type: (np.ndarray, Any) -> np.ndarray
+
+    num_bins = matrix_orig.shape[0]
+    integral = 10
+
+    matrix_norm = np.zeros((num_bins, num_bins), dtype=np.float64)
+    for i in range(num_bins):
+        for j in range(num_bins):
+            bincontent_i = 5                   # root_hist.GetBinContent(idx+1)
+            bincontent_j = 5
+            binwidth_i = 1                     # root_hist.GetBinWidth(idx+1)
+            binwidth_j = 1
+            derivation_i_a = - bincontent_i / (integral ** 2 * binwidth_i)
+            derivation_i_b = (integral - bincontent_i) / (integral ** 2 * binwidth_i)
+            derivation_j_a = - bincontent_j / (integral ** 2 * binwidth_j)
+            derivation_j_b = (integral - bincontent_j) / (integral ** 2 * binwidth_j)
+            sum_element = 0
+            for h in range(num_bins):
+                for k in range(num_bins):
+                    derivation_i = derivation_i_b if i == k else derivation_i_a
+                    derivation_j = derivation_j_b if j == h else derivation_j_a
+                    sum_element += derivation_i * derivation_j * matrix_orig[h, k]
+            matrix_norm[i, j] = sum_element
+
+    return matrix_norm
+
+
+def NormalizeMatrix(old_cov, hist_):
+
+    nbins = old_cov.shape[0]
+    new_cov = np.empty((nbins, nbins), dtype=np.float64)
+    integral = hist_.Integral()
+    for i in range(1, nbins+1):
+        for j in range(1, nbins+1):
+            sum_value = 0
+            for k in range(1, nbins+1):
+                for l in range(1, nbins+1):
+                    old_entry = old_cov[k, l]
+                    binwidth_i = hist_.GetBinWidth(i)
+                    binwidth_j = hist_.GetBinWidth(j)
+                    if i == k:
+                        derivation_i = (integral - hist_.GetBinContent(i)) / pow(integral, 2) * (1 / binwidth_i)
+                    else:
+                        derivation_i = - hist_.GetBinContent(i) / pow(integral, 2) * (1 / binwidth_i)
+                    if j == l:
+                        derivation_j = (integral - hist_.GetBinContent(j)) / pow(integral, 2) * (1 / binwidth_j)
+                    else:
+                        derivation_j = - hist_.GetBinContent(j) / pow(integral, 2) * (1 / binwidth_j)
+                    sum_value += derivation_i * derivation_j * old_entry
+            new_cov[i, j] = sum_value
+
+    return new_cov
+
+
 def store_matrix_in_root(matrices, sample_names, pt_jet_ranges, filename):
     # type: (list, list, list, str) -> None
 
