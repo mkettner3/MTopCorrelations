@@ -24,6 +24,7 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name):
         matrix_orig[i, i] = root_hist.GetBinError(i+1)**2
 
     matrix_norm = normalize_cov_matrix(matrix_orig=matrix_orig, root_hist=root_hist)
+    # matrix_norm = NormalizeMatrix(old_cov=matrix_orig, hist_=root_hist)
 
     return matrix_norm
 
@@ -37,44 +38,46 @@ def normalize_cov_matrix(matrix_orig, root_hist):
     matrix_norm = np.zeros((num_bins, num_bins), dtype=np.float64)
     for i in range(num_bins):
         for j in range(num_bins):
-            for idx in [i, j]:
-                bincontent = root_hist.GetBinContent(idx)
-                binwidth = root_hist.GetBinWidth(idx)
-                derivation_a = - bincontent / (integral ** 2 * binwidth)
-                derivation_b = (integral - bincontent) / (integral ** 2 * binwidth)
-                deriv_mat = np.full((num_bins, num_bins), derivation_a, dtype=np.float64)
-                if idx == i:
-                    deriv_mat[i, :] = derivation_b
-                elif idx == j:
-                    deriv_mat[:, j] = derivation_b
-                matrix_orig = deriv_mat * matrix_orig
-            matrix_norm[i, j] = matrix_orig.sum()
+            bincontent_i = root_hist.GetBinContent(i+1)
+            bincontent_j = root_hist.GetBinContent(j+1)
+            binwidth_i = root_hist.GetBinWidth(i+1)
+            binwidth_j = root_hist.GetBinWidth(j+1)
+            derivation_i_a = - bincontent_i / (integral**2 * binwidth_i)
+            derivation_i_b = (integral - bincontent_i) / (integral**2 * binwidth_i)
+            derivation_j_a = - bincontent_j / (integral**2 * binwidth_j)
+            derivation_j_b = (integral - bincontent_j) / (integral**2 * binwidth_j)
+            deriv_mat_i = np.full((num_bins, num_bins), derivation_i_a, dtype=np.float64)
+            deriv_mat_i[i, :] = derivation_i_b
+            deriv_mat_j = np.full((num_bins, num_bins), derivation_j_a, dtype=np.float64)
+            deriv_mat_j[:, j] = derivation_j_b
+            matrix_deriv = deriv_mat_i * deriv_mat_j * matrix_orig
+            matrix_norm[i, j] = matrix_deriv.sum()
 
     return matrix_norm
 
 
-def normalize_cov_matrix_dennis(matrix_orig, root_hist):
+def normalize_cov_matrix_python(matrix_orig, root_hist):
     # type: (np.ndarray, Any) -> np.ndarray
 
     num_bins = matrix_orig.shape[0]
-    integral = 10
+    integral = root_hist.Integral()
 
     matrix_norm = np.zeros((num_bins, num_bins), dtype=np.float64)
     for i in range(num_bins):
         for j in range(num_bins):
-            bincontent_i = 5                   # root_hist.GetBinContent(idx+1)
-            bincontent_j = 5
-            binwidth_i = 1                     # root_hist.GetBinWidth(idx+1)
-            binwidth_j = 1
-            derivation_i_a = - bincontent_i / (integral ** 2 * binwidth_i)
-            derivation_i_b = (integral - bincontent_i) / (integral ** 2 * binwidth_i)
-            derivation_j_a = - bincontent_j / (integral ** 2 * binwidth_j)
-            derivation_j_b = (integral - bincontent_j) / (integral ** 2 * binwidth_j)
+            bincontent_i = root_hist.GetBinContent(i+1)
+            bincontent_j = root_hist.GetBinContent(j+1)
+            binwidth_i = root_hist.GetBinWidth(i+1)
+            binwidth_j = root_hist.GetBinWidth(j+1)
+            derivation_i_a = - bincontent_i / (integral**2 * binwidth_i)
+            derivation_i_b = (integral - bincontent_i) / (integral**2 * binwidth_i)
+            derivation_j_a = - bincontent_j / (integral**2 * binwidth_j)
+            derivation_j_b = (integral - bincontent_j) / (integral**2 * binwidth_j)
             sum_element = 0
             for h in range(num_bins):
                 for k in range(num_bins):
-                    derivation_i = derivation_i_b if i == k else derivation_i_a
-                    derivation_j = derivation_j_b if j == h else derivation_j_a
+                    derivation_i = derivation_i_b if i == h else derivation_i_a
+                    derivation_j = derivation_j_b if j == k else derivation_j_a
                     sum_element += derivation_i * derivation_j * matrix_orig[h, k]
             matrix_norm[i, j] = sum_element
 
@@ -82,26 +85,27 @@ def normalize_cov_matrix_dennis(matrix_orig, root_hist):
 
 
 def NormalizeMatrix(old_cov, hist_):
+    # type: (np.ndarray, Any) -> np.ndarray
 
     nbins = old_cov.shape[0]
     new_cov = np.empty((nbins, nbins), dtype=np.float64)
     integral = hist_.Integral()
-    for i in range(1, nbins+1):
-        for j in range(1, nbins+1):
+    for i in range(nbins):
+        for j in range(nbins):
             sum_value = 0
-            for k in range(1, nbins+1):
-                for l in range(1, nbins+1):
+            for k in range(nbins):
+                for l in range(nbins):
                     old_entry = old_cov[k, l]
-                    binwidth_i = hist_.GetBinWidth(i)
-                    binwidth_j = hist_.GetBinWidth(j)
+                    binwidth_i = hist_.GetBinWidth(i+1)
+                    binwidth_j = hist_.GetBinWidth(j+1)
                     if i == k:
-                        derivation_i = (integral - hist_.GetBinContent(i)) / pow(integral, 2) * (1 / binwidth_i)
+                        derivation_i = (integral - hist_.GetBinContent(i+1)) / pow(integral, 2) * (1 / binwidth_i)
                     else:
-                        derivation_i = - hist_.GetBinContent(i) / pow(integral, 2) * (1 / binwidth_i)
+                        derivation_i = - hist_.GetBinContent(i+1) / pow(integral, 2) * (1 / binwidth_i)
                     if j == l:
-                        derivation_j = (integral - hist_.GetBinContent(j)) / pow(integral, 2) * (1 / binwidth_j)
+                        derivation_j = (integral - hist_.GetBinContent(j+1)) / pow(integral, 2) * (1 / binwidth_j)
                     else:
-                        derivation_j = - hist_.GetBinContent(j) / pow(integral, 2) * (1 / binwidth_j)
+                        derivation_j = - hist_.GetBinContent(j+1) / pow(integral, 2) * (1 / binwidth_j)
                     sum_value += derivation_i * derivation_j * old_entry
             new_cov[i, j] = sum_value
 
@@ -141,6 +145,7 @@ if __name__ == '__main__':
     filename = 'histogram_files/correlator_hist_trip.root'
     sample_names = ['TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5']
 
+    """
     matrices = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
 
     for g, level in enumerate(['Gen', 'PF']):
@@ -150,6 +155,13 @@ if __name__ == '__main__':
                                                          hist_name='correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name,
                                                                                                             pt_range[0], pt_range[1]))
 
-    # norm_cov_matrix = normalize_cov_matrix(matrix_orig=np.full((40, 40), 5), )
     store_matrix_in_root(matrices=matrices, sample_names=sample_names,
                          pt_jet_ranges=pt_jet_ranges, filename='cov_matrices/norm_cov_matrices.root')
+    """
+
+    f = ROOT.TFile(filename)
+    root_hist = f.Get('correlator_hist_Gen_TTbar_172p5_450_500')
+    norm_cov_matrix = normalize_cov_matrix(matrix_orig=np.full((8, 8), 5), root_hist=root_hist)
+
+    # norm_cov_matrix = calc_norm_cov_matrix(filename_root_hist=filename, hist_name='correlator_hist_Gen_TTbar_172p5_450_500')
+    print(norm_cov_matrix)
