@@ -21,10 +21,10 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name):
     num_bins = root_hist.GetNbinsX()
     matrix_orig = np.zeros((num_bins, num_bins), dtype=np.float64)
     for i in range(num_bins):
-        matrix_orig[i, i] = root_hist.GetBinError(i+1)**2
+        for j in range(num_bins):
+            matrix_orig[i, j] = root_hist.GetBinError(i+1) * root_hist.GetBinError(j+1)
 
     matrix_norm = normalize_cov_matrix(matrix_orig=matrix_orig, root_hist=root_hist)
-    # matrix_norm = NormalizeMatrix(old_cov=matrix_orig, hist_=root_hist)
 
     return matrix_norm
 
@@ -145,11 +145,11 @@ if __name__ == '__main__':
     filename = 'histogram_files/correlator_hist_trip.root'
     sample_names = ['TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5']
 
-    """
     matrices = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
 
     for g, level in enumerate(['Gen', 'PF']):
         for h, sample_name in enumerate(sample_names):
+            print('Working on sample "{}" ...'.format(sample_name))
             for k, pt_range in enumerate(pt_jet_ranges):
                 matrices[g][h][k] = calc_norm_cov_matrix(filename_root_hist=filename,
                                                          hist_name='correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name,
@@ -157,11 +157,30 @@ if __name__ == '__main__':
 
     store_matrix_in_root(matrices=matrices, sample_names=sample_names,
                          pt_jet_ranges=pt_jet_ranges, filename='cov_matrices/norm_cov_matrices.root')
+
     """
+    # f = ROOT.TFile(filename)
+    # root_hist = f.Get('correlator_hist_Gen_TTbar_172p5_450_500')
+    root_hist = ROOT.TH1F("Correlator", "3 #zeta", 5, 0, 3)
+    root_hist.SetBinContent(1, 80)
+    root_hist.SetBinContent(2, 40)
+    root_hist.SetBinContent(3, 100)
+    root_hist.SetBinContent(4, 10)
+    root_hist.SetBinContent(5, 20)
+    root_hist.SetBinError(1, 8)
+    root_hist.SetBinError(2, 4)
+    root_hist.SetBinError(3, 10)
+    root_hist.SetBinError(4, 1)
+    root_hist.SetBinError(5, 2)
 
-    f = ROOT.TFile(filename)
-    root_hist = f.Get('correlator_hist_Gen_TTbar_172p5_450_500')
-    norm_cov_matrix = normalize_cov_matrix(matrix_orig=np.full((8, 8), 5), root_hist=root_hist)
+    num_bins = root_hist.GetNbinsX()
+    matrix_orig = np.zeros((num_bins, num_bins), dtype=np.float64)
+    for i in range(num_bins):
+        for j in range(num_bins):
+            matrix_orig[i, j] = root_hist.GetBinError(i+1) * root_hist.GetBinError(j+1)
 
-    # norm_cov_matrix = calc_norm_cov_matrix(filename_root_hist=filename, hist_name='correlator_hist_Gen_TTbar_172p5_450_500')
+    norm_cov_matrix = normalize_cov_matrix(matrix_orig=matrix_orig, root_hist=root_hist)
+
+    norm_cov_matrix = calc_norm_cov_matrix(filename_root_hist=filename, hist_name='correlator_hist_Gen_TTbar_172p5_450_500')
     print(norm_cov_matrix)
+    """
