@@ -60,6 +60,7 @@ def find_hadronic_jet(event, level, merge_tolerance=0.8, jet_pt_min=400):
     delta_top_min = min(deltas_top)
     hadronic_jet_idx = np.argmin(deltas_top)
     hadronic_jet_pt = jets[hadronic_jet_idx].Pt()
+    hadronic_jet_mass = jets[hadronic_jet_idx].M()
 
     delta_q = jets[hadronic_jet_idx].DeltaR(quark_vec)
     delta_aq = jets[hadronic_jet_idx].DeltaR(anti_quark_vec)
@@ -67,9 +68,9 @@ def find_hadronic_jet(event, level, merge_tolerance=0.8, jet_pt_min=400):
 
     if not (delta_top_min < merge_tolerance and delta_q < merge_tolerance and
             delta_aq < merge_tolerance and delta_b < merge_tolerance and hadronic_jet_pt > jet_pt_min):
-        hadronic_jet_idx, hadronic_jet_pt = None, None
+        hadronic_jet_idx, hadronic_jet_pt, hadronic_jet_mass = None, None, None
 
-    return hadronic_jet_idx, hadronic_jet_pt
+    return hadronic_jet_idx, hadronic_jet_pt, hadronic_jet_mass
 
 
 def calc_triplet_data(sample):
@@ -87,7 +88,7 @@ def calc_triplet_data(sample):
 
     r.start()
     while r.run():                                                              # Event-Loop
-        nearest_jet_idx, nearest_jet_pt = find_hadronic_jet(r.event)
+        nearest_jet_idx, nearest_jet_pt, _ = find_hadronic_jet(r.event, level='Gen')
         jet_constituents = get_jet_constituents(event=r.event, index=nearest_jet_idx, max_numb_of_cons=50)
 
         if len(jet_constituents) > 0:
