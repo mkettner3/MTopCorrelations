@@ -12,6 +12,9 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, yl
 
     f = ROOT.TFile(filename_root)
     hists = [f.Get(hist_name.replace('$', sample_name)) for sample_name in sample_names]
+    for i in range(len(hists)):
+        hists[i].SetDirectory(ROOT.nullptr)
+    f.Close()
     c = ROOT.TCanvas('c', 'c', 600, 600)
     ROOT.gPad.SetLeftMargin(0.19)
     ROOT.gPad.SetBottomMargin(0.2)
@@ -20,10 +23,10 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, yl
         hist.SetLineColor(line_color)
         hist.SetTitle('')
         hist.SetLineWidth(2)
-        # hist.SetFillColor(ROOT.kRed)
         hist.SetLineStyle(1)
-        hist.Scale(1/hist.Integral())
-    hists[0].GetXaxis().SetRangeUser(0, 3)    # x axis range (also works for y axis)
+        if hist_name[-6] != 'abscou':
+            hist.Scale(1/hist.Integral())
+    hists[0].GetXaxis().SetRangeUser(0, 3)    # x-axis range (also works for y-axis)
     hists[0].GetXaxis().SetTitle("3#zeta")
     hists[0].GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
     hists[0].GetYaxis().SetRangeUser(ylim[0], ylim[1])
@@ -44,7 +47,7 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, yl
 
 if __name__ == '__main__':
     subfolder = '/generation_b'
-    filename = 'histogram_files/correlator_hist_trip_pp_00.root'
+    filename = 'histogram_files/correlator_hist_trip.root'
     sample_names = ['TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5']
 
     for level in ['Gen', 'PF']:
