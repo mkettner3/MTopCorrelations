@@ -11,23 +11,22 @@ import ROOT
 
 def calc_norm_cov_matrix(filename_root_hist, hist_name):
     # type: (str, str) -> tuple
-    """
-    Documentation
-    """
 
-    f = ROOT.TFile(filename_root_hist)
+    f = ROOT.TFile(filename_root_hist, 'read')
     root_hist = f.Get(hist_name)
+    root_hist.SetDirectory(ROOT.nullptr)            # Returns a pointer to root_hist in memory.
+    f.Close()                                       # f.Get only returns a handle, which gets lost when TFile is closed
 
     num_bins = root_hist.GetNbinsX()
     hist_axis_range_min = root_hist.GetXaxis().GetXmin()
     hist_axis_range_max = root_hist.GetXaxis().GetXmax()
     matrix_orig = np.zeros((num_bins, num_bins), dtype=np.float64)
     for i in range(num_bins):
-        matrix_orig[i, i] = root_hist.GetBinError(i+1) ** 2
+        matrix_orig[i, i] = root_hist.GetBinError(i+1) ** 2             # weight is set to Kronecker-Delta
 
     matrix_norm = normalize_cov_matrix(matrix_orig=matrix_orig, root_hist=root_hist)
 
-    return matrix_norm, matrix_orig, (hist_axis_range_min, hist_axis_range_max)
+    return matrix_norm, matrix_orig, root_hist, (hist_axis_range_min, hist_axis_range_max)
 
 
 def normalize_cov_matrix(matrix_orig, root_hist):
@@ -113,6 +112,24 @@ def NormalizeMatrix(old_cov, hist_):
     return new_cov
 
 
+def compute_chi2(template_hist, data_hist, data_cov_matrix):
+    # type: (Any, Any, np.ndarray) -> float
+
+    num_bins = template_hist.GetNbinsX()
+    template_hist_cont = np.zeros(num_bins, dtype=np.float64)
+    for i in range(num_bins):
+        template_hist_cont[i] = template_hist.GetBinContent(i+1)
+    data_hist_cont = np.zeros(num_bins, dtype=np.float64)
+    for i in range(num_bins):
+        data_hist_cont[i] = data_hist.GetBinContent(i+1)
+    d_vec = data_hist_cont - template_hist_cont
+
+    data_cov_matrix_inv = np.linalg.inv(data_cov_matrix)
+    chi2 = np.linalg.multi_dot([d_vec, data_cov_matrix_inv, d_vec])
+
+    return chi2
+
+
 def store_matrix_in_root(matrices_norm, matrices_orig, sample_names, pt_jet_ranges, filename, hist_axis_range):
     # type: (list, list, list, list, str, tuple) -> None
 
@@ -157,6 +174,8 @@ if __name__ == '__main__':
 
     matrices_norm = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
     matrices_orig = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
+    root_hist = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
+    chi2 = [None for _ in range(2)]
     hist_axis_range = (0, 3)
 
     for g, level in enumerate(['Gen', 'PF']):
@@ -165,9 +184,14 @@ if __name__ == '__main__':
             for k, pt_range in enumerate(pt_jet_ranges):
                 (matrices_norm[g][h][k],
                  matrices_orig[g][h][k],
+                 root_hist[g][h][k],
                  hist_axis_range) = calc_norm_cov_matrix(filename_root_hist=filename,
                                                          hist_name='correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name,
                                                                                                             pt_range[0], pt_range[1]))
+
+        chi2[g] = compute_chi2(template_hist=root_hist[g][1][2], data_hist=root_hist[g][0][2],
+                               data_cov_matrix=matrices_norm[g][0][2])
+    print(chi2)
 
     store_matrix_in_root(matrices_norm=matrices_norm, matrices_orig=matrices_orig, sample_names=sample_names,
                          pt_jet_ranges=pt_jet_ranges, filename='cov_matrices/norm_cov_matrices.root',
