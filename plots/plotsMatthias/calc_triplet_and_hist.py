@@ -15,7 +15,7 @@ from RootTools.core.TreeVariable import VectorTreeVariable
 import argparse
 
 
-def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=None, delta_legs=None, shortest_side=None,
+def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), delta_legs=float('nan'), shortest_side=0.1,
                            nbins=50, hist_range=(0, 3)):
     read_variables = [
         # "Generator_weight/F",
@@ -31,6 +31,7 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=None, delta_le
         VectorTreeVariable.fromString("PFJetAK8_cons[pt/F,eta/F,phi/F,mass/F,pdgId/I,jetIndex/I]", nMax=1000)]
 
     hists = [[[[ROOT.TH1F("Correlator", "3 #zeta", nbins, hist_range[0], hist_range[1]) for _ in range(2)] for _ in range(len(pt_jet_ranges))] for _ in range(len(samples))] for _ in range(2)]
+    hists_w = [[[[ROOT.TH1F("Correlator", "3 #zeta", nbins, hist_range[0], hist_range[1]) for _ in range(2)] for _ in range(len(pt_jet_ranges))] for _ in range(len(samples))] for _ in range(2)]
     hists_jet_pt = [ROOT.TH1F("Hadronic Top-Jet-p_{t}", "Jet-p_{t}", nbins, 380, 730) for _ in range(2)]
     hists_jet_mass = [ROOT.TH1F("Hadronic Top-Jet-mass", "Jet-mass", nbins, 0, 450) for _ in range(2)]
 
@@ -39,7 +40,7 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=None, delta_le
             r = sample.treeReader(variables=read_variables, selectionString="Sum$({:}JetAK8_pt>400)>=1".format(level))
 
             global count
-            count_int = 0
+            # count_int = 0
             r.start()
             while r.run():                                                              # Event-Loop
                 # event_weight = 60 * 831.762 * 3*0.108 * (1-3*0.108)*2 * 1000 / number_events[h] * r.event.Generator_weight
@@ -56,29 +57,32 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=None, delta_le
                                                             index=hadronic_jet_idx, max_numb_of_cons=50)
 
                     if len(jet_constituents) > 0:
-                        if max_delta_zeta is None:
-                            max_delta_zeta_calc = max_delta_zeta
-                        elif isnan(max_delta_zeta):
+                        if isnan(max_delta_zeta):
                             max_delta_zeta_calc = 3.5 / 3. * (170. / hadronic_jet_pt) ** 2
                         else:
                             max_delta_zeta_calc = max_delta_zeta
 
-                        if delta_legs is None:
-                            delta_legs_calc = delta_legs
-                        elif isnan(delta_legs):
+                        if isnan(delta_legs):
                             delta_legs_calc = 3.5 / 3. * (170. / hadronic_jet_pt) ** 2
                         else:
                             delta_legs_calc = delta_legs
 
                         triplets = make_triplets_and_cut(jet_pt=hadronic_jet_pt, particle_vectors=jet_constituents,
                                                          max_delta_zeta=max_delta_zeta_calc,
-                                                         delta_legs=delta_legs_calc, shortest_side=shortest_side)
+                                                         delta_legs=None, shortest_side=None)
+
+                        triplets_w = make_triplets_and_cut(jet_pt=hadronic_jet_pt, particle_vectors=jet_constituents,
+                                                           max_delta_zeta=None,
+                                                           delta_legs=delta_legs_calc, shortest_side=shortest_side)
 
                         for k, jet_range in enumerate(pt_jet_ranges):
                             if jet_range[0] <= hadronic_jet_pt < jet_range[1]:
                                 for three_zeta, weight in zip(triplets[0], triplets[1]):
                                     hists[g][h][k][0].Fill(three_zeta, weight)   # *event_weight)
                                     hists[g][h][k][1].Fill(three_zeta)    # event_weight)
+                                for three_zeta, weight in zip(triplets_w[0], triplets_w[1]):
+                                    hists_w[g][h][k][0].Fill(three_zeta, weight)   # *event_weight)
+                                    hists_w[g][h][k][1].Fill(three_zeta)    # event_weight)
                                 break
 
                         # if count_int < 10:
@@ -87,13 +91,13 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=None, delta_le
                         hists_jet_pt[g].Fill(hadronic_jet_pt)    # event_weight)
                         hists_jet_mass[g].Fill(hadronic_jet_mass)    # event_weight)
                         count += 1
-                        count_int += 1
+                        # count_int += 1
 
-    return hists, hists_jet_pt, hists_jet_mass
+    return hists, hists_w, hists_jet_pt, hists_jet_mass
 
 
-def save_root_hists(root_hists, hists_jet_pt, hists_jet_mass, sample_names, pt_jet_ranges, filename):
-    # type: (list, list, list, list, list, str) -> None
+def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_jet_mass, sample_names, pt_jet_ranges, filename):
+    # type: (list, list, list, list, list, list, str) -> None
 
     r_file = ROOT.TFile(filename, 'RECREATE')
     r_file.cd()
@@ -102,7 +106,8 @@ def save_root_hists(root_hists, hists_jet_pt, hists_jet_mass, sample_names, pt_j
         for h, sample_name in enumerate(sample_names):
             for k, pt_jet_range in enumerate(pt_jet_ranges):
                 for f, weighted in enumerate(['', '_abscou']):
-                    root_hists[g][h][k][f].Write('correlator_hist_{:}_{:}_{:}_{:}{:}'.format(level, sample_name, pt_jet_range[0], pt_jet_range[1], weighted))
+                    hists_top[g][h][k][f].Write('correlator_hist_{:}_{:}_{:}_{:}{:}'.format(level, sample_name, pt_jet_range[0], pt_jet_range[1], weighted))
+                    hists_w[g][h][k][f].Write('correlator_hist_W_{:}_{:}_{:}_{:}{:}'.format(level, sample_name, pt_jet_range[0], pt_jet_range[1], weighted))
         hists_jet_pt[g].Write('hadronic_top_jet_pt_hist_{:}'.format(level))
         hists_jet_mass[g].Write('hadronic_top_jet_mass_hist_{:}'.format(level))
 
@@ -129,10 +134,10 @@ if __name__ == '__main__':
 
     start = time.time()
     count = 0
-    hists, hists_jet_pt, hists_jet_mass = calc_triplets_and_hist(samples=samples, pt_jet_ranges=pt_jet_ranges,
-                                                                 max_delta_zeta=float('nan'))
-                                                # delta_legs=float('nan'), shortest_side=0.1)
-    save_root_hists(root_hists=hists, hists_jet_pt=hists_jet_pt, hists_jet_mass=hists_jet_mass,
+    hists, hists_w, hists_jet_pt, hists_jet_mass = calc_triplets_and_hist(samples=samples, pt_jet_ranges=pt_jet_ranges,
+                                                                          max_delta_zeta=float('nan'),
+                                                                          delta_legs=float('nan'), shortest_side=0.1)
+    save_root_hists(hists_top=hists, hists_w=hists_w, hists_jet_pt=hists_jet_pt, hists_jet_mass=hists_jet_mass,
                     sample_names=[sample.name[:11] for sample in samples],
                     pt_jet_ranges=pt_jet_ranges,
                     filename='histogram_files/correlator_hist_trip_pp_{:02}.root'.format(args.job))
