@@ -32,6 +32,7 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=None, delta_le
 
     hists = [[[[ROOT.TH1F("Correlator", "3 #zeta", nbins, hist_range[0], hist_range[1]) for _ in range(2)] for _ in range(len(pt_jet_ranges))] for _ in range(len(samples))] for _ in range(2)]
     hists_jet_pt = [ROOT.TH1F("Hadronic Top-Jet-p_{t}", "Jet-p_{t}", nbins, hist_range[0], hist_range[1]) for _ in range(2)]
+    hists_jet_mass = [ROOT.TH1F("Hadronic Top-Jet-p_{t}", "Jet-p_{t}", nbins, hist_range[0], hist_range[1]) for _ in range(2)]
 
     for g, level in enumerate(['Gen', 'PF']):
         for h, sample in enumerate(samples):
@@ -42,8 +43,9 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=None, delta_le
             while r.run():                                                              # Event-Loop
                 event_weight = 60 * 831.762 * 3*0.108 * (1-3*0.108)*2 * 1000 / number_events[h] * r.event.Generator_weight
 
-                hadronic_jet_idx, hadronic_jet_pt = find_hadronic_jet(r.event, level=level,
-                                                                      merge_tolerance=0.8, jet_pt_min=400)
+                hadronic_jet_idx, hadronic_jet_pt, hadronic_jet_mass = find_hadronic_jet(r.event, level=level,
+                                                                                         merge_tolerance=0.8,
+                                                                                         jet_pt_min=400)
 
                 if hadronic_jet_idx is not None:
                     jet_constituents = get_jet_constituents(event=r.event, level=level,
@@ -76,13 +78,14 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=None, delta_le
                                 break
 
                         hists_jet_pt[g].Fill(hadronic_jet_pt, event_weight)
+                        hists_jet_mass[g].Fill(hadronic_jet_mass, event_weight)
                         count += 1
 
-    return hists, hists_jet_pt
+    return hists, hists_jet_pt, hists_jet_mass
 
 
-def save_root_hists(root_hists, hists_jet_pt, sample_names, pt_jet_ranges, filename):
-    # type: (list, list, list, list, str) -> None
+def save_root_hists(root_hists, hists_jet_pt, hists_jet_mass, sample_names, pt_jet_ranges, filename):
+    # type: (list, list, list, list, list, str) -> None
 
     f = ROOT.TFile(filename, 'RECREATE')
     f.cd()
@@ -92,8 +95,8 @@ def save_root_hists(root_hists, hists_jet_pt, sample_names, pt_jet_ranges, filen
             for k, pt_jet_range in enumerate(pt_jet_ranges):
                 for f, weighted in enumerate(['', '_abscou']):
                     root_hists[g][h][k][f].Write('correlator_hist_{:}_{:}_{:}_{:}{:}'.format(level, sample_name, pt_jet_range[0], pt_jet_range[1], weighted))
-    for g, level in enumerate(['Gen', 'PF']):
         hists_jet_pt[g].Write('hadronic_top_jet_pt_hist_{:}'.format(level))
+        hists_jet_mass[g].Write('hadronic_top_jet_mass_hist_{:}'.format(level))
 
     f.Close()
 
@@ -118,11 +121,13 @@ if __name__ == '__main__':
 
     start = time.time()
     count = 0
-    hists, hists_jet_pt = calc_triplets_and_hist(samples=samples, pt_jet_ranges=pt_jet_ranges, max_delta_zeta=float('nan'))
+    hists, hists_jet_pt, hists_jet_mass = calc_triplets_and_hist(samples=samples, pt_jet_ranges=pt_jet_ranges,
+                                                                 max_delta_zeta=float('nan'))
                                                 # delta_legs=float('nan'), shortest_side=0.1)
-    save_root_hists(root_hists=hists, hists_jet_pt=hists_jet_pt, sample_names=[sample.name[:11] for sample in samples],
+    save_root_hists(root_hists=hists, hists_jet_pt=hists_jet_pt, hists_jet_mass=hists_jet_mass,
+                    sample_names=[sample.name[:11] for sample in samples],
                     pt_jet_ranges=pt_jet_ranges,
-                    filename='histogram_files/correlator_hist_trip_test_new_{:02}.root'.format(args.job))
+                    filename='histogram_files/correlator_hist_trip_pp_{:02}.root'.format(args.job))
     end = time.time()
 
     print('Executing calc_triplet_and_hist.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))
