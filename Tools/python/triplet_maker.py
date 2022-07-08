@@ -21,8 +21,8 @@ def make_triplets_and_cut(jet_pt, particle_vectors, n=2, max_delta_zeta=None, de
     :return: tuple of two lists; The first list contains the values for three_zeta and the second contains the weights.
     """
 
-    three_zeta = []
-    w = []
+    three_zeta_top, w_top = [], []
+    three_zeta_w, w_w = [], []
 
     for i in range(len(particle_vectors)):
         for j in range(i+1, len(particle_vectors)):
@@ -32,30 +32,15 @@ def make_triplets_and_cut(jet_pt, particle_vectors, n=2, max_delta_zeta=None, de
                               particle_vectors[j].DeltaR(particle_vectors[k])]
                 zeta_value.sort()
 
-                if max_delta_zeta is not None:
-                    if (zeta_value[2]-zeta_value[0]) < max_delta_zeta:
-                        if delta_legs is not None and shortest_side is not None:
-                            if (zeta_value[2]-zeta_value[1]) < delta_legs and zeta_value[0] < shortest_side:
-                                accepted = True
-                            else:
-                                accepted = False
-                        else:
-                            accepted = True
-                    else:
-                        accepted = False
-                elif delta_legs is not None and shortest_side is not None:
-                    if (zeta_value[2] - zeta_value[1]) < delta_legs and zeta_value[0] < shortest_side:
-                        accepted = True
-                    else:
-                        accepted = False
-                else:
-                    accepted = True
+                if (zeta_value[2]-zeta_value[0]) < max_delta_zeta:
+                    three_zeta_top.append(sum(zeta_value))
+                    w_top.append((particle_vectors[i].Pt() * particle_vectors[j].Pt() * particle_vectors[k].Pt())**n / ((jet_pt**3)**n))
 
-                if accepted:
-                    three_zeta.append(sum(zeta_value))
-                    w.append((particle_vectors[i].Pt() * particle_vectors[j].Pt() * particle_vectors[k].Pt())**n / ((jet_pt**3)**n))
+                if (zeta_value[2]-zeta_value[1]) < delta_legs and zeta_value[0] < shortest_side:
+                    three_zeta_w.append(sum(zeta_value))
+                    w_w.append((particle_vectors[i].Pt() * particle_vectors[j].Pt() * particle_vectors[k].Pt())**n / ((jet_pt**3)**n))
 
-    return three_zeta, w
+    return (three_zeta_top, w_top), (three_zeta_w, w_w)
 
 
 def make_triplets(jet_pt, particle_vectors, n=2, top_data=True, w_data=True, pt_value=True):

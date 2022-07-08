@@ -67,13 +67,10 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
                         else:
                             delta_legs_calc = delta_legs
 
-                        triplets = make_triplets_and_cut(jet_pt=hadronic_jet_pt, particle_vectors=jet_constituents,
-                                                         max_delta_zeta=max_delta_zeta_calc,
-                                                         delta_legs=None, shortest_side=None)
-
-                        triplets_w = make_triplets_and_cut(jet_pt=hadronic_jet_pt, particle_vectors=jet_constituents,
-                                                           max_delta_zeta=None,
-                                                           delta_legs=delta_legs_calc, shortest_side=shortest_side)
+                        (triplets,
+                         triplets_w) = make_triplets_and_cut(jet_pt=hadronic_jet_pt, particle_vectors=jet_constituents,
+                                                             max_delta_zeta=max_delta_zeta_calc,
+                                                             delta_legs=delta_legs_calc, shortest_side=shortest_side)
 
                         for k, jet_range in enumerate(pt_jet_ranges):
                             if jet_range[0] <= hadronic_jet_pt < jet_range[1]:

@@ -14,6 +14,7 @@ def get_jet_constituents(event, level, index, max_numb_of_cons=None):
     Method to obtain the lorentz-vectors of the constituents of a jet.
 
     :param event: A ROOT event.
+    :param level: str; 'Gen' or 'PF' determines if the particle level or the detector level is used.
     :param index: int; The index of the respective jet.
     :param max_numb_of_cons: int; The maximum number of jet constituents, which should be returned.
 
