@@ -98,13 +98,23 @@ def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_jet_mass, sample_nam
 
     r_file = ROOT.TFile(filename, 'RECREATE')
     r_file.cd()
+    for p_type in ['Top-Quark', 'W-Boson', 'Others']:
+        for lev in ['Gen-Level', 'PF-Level']:
+            if p_type in ['Top-Quark', 'W-Boson']:
+                for weight in ['weighted', 'absolute']:
+                    r_file.mkdir(p_type+'/'+lev+'/'+weight)
+            else:
+                r_file.mkdir(p_type+'/'+lev)
 
     for g, level in enumerate(['Gen', 'PF']):
         for h, sample_name in enumerate(sample_names):
             for k, pt_jet_range in enumerate(pt_jet_ranges):
-                for f, weighted in enumerate(['', '_abscou']):
+                for f, (weighted, weight_dir) in enumerate(zip(['', '_abscou'], ['weighted', 'absolute'])):
+                    r_file.cd('/Top-Quark/'+level+'-Level/'+weight_dir)
                     hists_top[g][h][k][f].Write('correlator_hist_{:}_{:}_{:}_{:}{:}'.format(level, sample_name, pt_jet_range[0], pt_jet_range[1], weighted))
+                    r_file.cd('/W-Boson/'+level+'-Level/'+weight_dir)
                     hists_w[g][h][k][f].Write('correlator_hist_W_{:}_{:}_{:}_{:}{:}'.format(level, sample_name, pt_jet_range[0], pt_jet_range[1], weighted))
+        r_file.cd('/Others/'+level+'-Level')
         hists_jet_pt[g].Write('hadronic_top_jet_pt_hist_{:}'.format(level))
         hists_jet_mass[g].Write('hadronic_top_jet_mass_hist_{:}'.format(level))
 
@@ -133,7 +143,7 @@ if __name__ == '__main__':
     count = 0
     hists, hists_w, hists_jet_pt, hists_jet_mass = calc_triplets_and_hist(samples=samples, pt_jet_ranges=pt_jet_ranges,
                                                                           max_delta_zeta=float('nan'),
-                                                                          delta_legs=float('nan'), shortest_side=0.1)
+                                                                          delta_legs=float('nan'), shortest_side=0.05)
     save_root_hists(hists_top=hists, hists_w=hists_w, hists_jet_pt=hists_jet_pt, hists_jet_mass=hists_jet_mass,
                     sample_names=[sample.name[:11] for sample in samples],
                     pt_jet_ranges=pt_jet_ranges,
