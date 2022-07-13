@@ -18,7 +18,7 @@ import argparse
 def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), delta_legs=float('nan'), shortest_side=0.1,
                            nbins=50, hist_range=(0, 3)):
     read_variables = [
-        # "Generator_weight/F",
+        "Generator_weight/F",
         "nGenPart/I",
         "GenPart[pt/F,eta/F,phi/F,m/F,pdgId/I,mompdgId/I,grmompdgId/I]",
         "nGenJetAK8/I",
@@ -43,7 +43,7 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
             # count_int = 0
             r.start()
             while r.run():                                                              # Event-Loop
-                # event_weight = 60 * 831.762 * 3*0.108 * (1-3*0.108)*2 * 1000 / number_events[h] * r.event.Generator_weight
+                event_weight = 60 * 831.762 * 3*0.108 * (1-3*0.108)*2 * 1000 / number_events[h] * r.event.Generator_weight
 
                 # if count_int < 10:
                 #     print('Event-Weight ({:}): {:}'.format(sample.name, event_weight))
@@ -75,18 +75,18 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
                         for k, jet_range in enumerate(pt_jet_ranges):
                             if jet_range[0] <= hadronic_jet_pt < jet_range[1]:
                                 for three_zeta, weight in zip(triplets[0], triplets[1]):
-                                    hists[g][h][k][0].Fill(three_zeta, weight)   # *event_weight)
-                                    hists[g][h][k][1].Fill(three_zeta)    # event_weight)
+                                    hists[g][h][k][0].Fill(three_zeta, weight*event_weight)
+                                    hists[g][h][k][1].Fill(three_zeta, event_weight)
                                 for three_zeta, weight in zip(triplets_w[0], triplets_w[1]):
-                                    hists_w[g][h][k][0].Fill(three_zeta, weight)   # *event_weight)
-                                    hists_w[g][h][k][1].Fill(three_zeta)    # event_weight)
+                                    hists_w[g][h][k][0].Fill(three_zeta, weight*event_weight)
+                                    hists_w[g][h][k][1].Fill(three_zeta, event_weight)
                                 break
 
                         # if count_int < 10:
                         #     print('Corr-Weight ({:}): {:}'.format(sample.name, weight))
 
-                        hists_jet_pt[g].Fill(hadronic_jet_pt)    # event_weight)
-                        hists_jet_mass[g].Fill(hadronic_jet_mass)    # event_weight)
+                        hists_jet_pt[g].Fill(hadronic_jet_pt, event_weight)
+                        hists_jet_mass[g].Fill(hadronic_jet_mass, event_weight)
                         count += 1
                         # count_int += 1
 
