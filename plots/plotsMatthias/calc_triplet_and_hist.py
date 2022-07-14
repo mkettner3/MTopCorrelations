@@ -18,7 +18,7 @@ import argparse
 def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), delta_legs=float('nan'), shortest_side=0.1,
                            nbins=50, hist_range=(0, 3)):
     read_variables = [
-        "Generator_weight/F",
+        "Generator_weight/D",
         "nGenPart/I",
         "GenPart[pt/F,eta/F,phi/F,m/F,pdgId/I,mompdgId/I,grmompdgId/I]",
         "nGenJetAK8/I",
@@ -46,6 +46,7 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
                 event_weight = 60 * 831.762 * 3*0.108 * (1-3*0.108)*2 * 1000 / number_events[h] * r.event.Generator_weight
 
                 # if count_int < 10:
+                #     print('Generator-Weight ({:}): {:}'.format(sample.name, r.event.Generator_weight))
                 #     print('Event-Weight ({:}): {:}'.format(sample.name, event_weight))
 
                 hadronic_jet_idx, hadronic_jet_pt, hadronic_jet_mass = find_hadronic_jet(r.event, level=level,
