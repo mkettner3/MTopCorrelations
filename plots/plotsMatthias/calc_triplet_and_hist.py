@@ -7,8 +7,8 @@ Script to calculate triplets and generate histograms event-wise. The triplet dat
 import time
 from math import isnan
 from MTopCorrelations.samples.nanoTuples_UL_RunII_nanoAOD import UL2018
-from MTopCorrelations.Tools.triplet_maker import make_triplets_and_cut
-from MTopCorrelations.Tools.jet_constituents import get_jet_constituents
+from triplet_maker import make_triplets_and_cut
+from jet_constituents import get_jet_constituents
 from calc_triplet_data import find_hadronic_jet
 import ROOT
 from RootTools.core.TreeVariable import VectorTreeVariable
@@ -33,7 +33,7 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
     hists = [[[[ROOT.TH1F("Correlator", "3 #zeta", nbins, hist_range[0], hist_range[1]) for _ in range(2)] for _ in range(len(pt_jet_ranges))] for _ in range(len(samples))] for _ in range(2)]
     hists_w = [[[[ROOT.TH1F("Correlator", "3 #zeta", nbins, hist_range[0], hist_range[1]) for _ in range(2)] for _ in range(len(pt_jet_ranges))] for _ in range(len(samples))] for _ in range(2)]
     hists_jet_pt = [ROOT.TH1F("Hadronic Top-Jet-p_{t}", "Jet-p_{t}", nbins, 380, 730) for _ in range(2)]
-    hists_jet_mass = [ROOT.TH1F("Hadronic Top-Jet-mass", "Jet-mass", nbins, 0, 450) for _ in range(2)]
+    hists_jet_mass = [ROOT.TH1F("Hadronic Top-Jet-mass", "Jet-mass", nbins, 75, 300) for _ in range(2)]
 
     for g, level in enumerate(['Gen', 'PF']):
         for h, sample in enumerate(samples):
@@ -45,17 +45,14 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
             while r.run():                                                              # Event-Loop
                 event_weight = 60 * 831.762 * 3*0.108 * (1-3*0.108)*2 * 1000 / number_events[h] * r.event.Generator_weight
 
-                # if count_int < 10:
-                #     print('Generator-Weight ({:}): {:}'.format(sample.name, r.event.Generator_weight))
-                #     print('Event-Weight ({:}): {:}'.format(sample.name, event_weight))
-
                 hadronic_jet_idx, hadronic_jet_pt, hadronic_jet_mass = find_hadronic_jet(r.event, level=level,
                                                                                          merge_tolerance=0.8,
                                                                                          jet_pt_min=400)
 
                 if hadronic_jet_idx is not None:
                     jet_constituents = get_jet_constituents(event=r.event, level=level,
-                                                            index=hadronic_jet_idx, max_numb_of_cons=50)
+                                                            index=hadronic_jet_idx, particle_types='charged_par',
+                                                            max_numb_of_cons=50)
 
                     if len(jet_constituents) > 0:
                         if isnan(max_delta_zeta):
@@ -82,9 +79,6 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
                                     hists_w[g][h][k][0].Fill(three_zeta, weight*event_weight)
                                     hists_w[g][h][k][1].Fill(three_zeta, event_weight)
                                 break
-
-                        # if count_int < 10:
-                        #     print('Corr-Weight ({:}): {:}'.format(sample.name, weight))
 
                         hists_jet_pt[g].Fill(hadronic_jet_pt, event_weight)
                         hists_jet_mass[g].Fill(hadronic_jet_mass, event_weight)
@@ -148,7 +142,7 @@ if __name__ == '__main__':
     save_root_hists(hists_top=hists, hists_w=hists_w, hists_jet_pt=hists_jet_pt, hists_jet_mass=hists_jet_mass,
                     sample_names=[sample.name[:11] for sample in samples],
                     pt_jet_ranges=pt_jet_ranges,
-                    filename='histogram_files/correlator_hist_trip_pp_{:02}.root'.format(args.job))
+                    filename='histogram_files/correlator_hist_trip_5_pp_{:02}.root'.format(args.job))
     end = time.time()
 
     print('Executing calc_triplet_and_hist.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))
