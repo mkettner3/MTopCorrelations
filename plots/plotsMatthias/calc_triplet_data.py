@@ -7,8 +7,8 @@ Script to produce numpy arrays of triplet parameters.
 import numpy as np
 import time
 from MTopCorrelations.samples.nanoTuples_UL_RunII_nanoAOD import UL2018
-from MTopCorrelations.Tools.triplet_maker import make_triplets
-from MTopCorrelations.Tools.jet_constituents import get_jet_constituents
+from triplet_maker import make_triplets
+from jet_constituents import get_jet_constituents
 from ROOT import TLorentzVector, TNtuple, TFile
 from RootTools.core.TreeVariable import VectorTreeVariable
 import argparse
@@ -89,7 +89,7 @@ def calc_triplet_data(sample):
     r.start()
     while r.run():                                                              # Event-Loop
         nearest_jet_idx, nearest_jet_pt, _ = find_hadronic_jet(r.event, level='Gen')
-        jet_constituents = get_jet_constituents(event=r.event, index=nearest_jet_idx, max_numb_of_cons=50)
+        jet_constituents = get_jet_constituents(event=r.event, level='Gen', index=nearest_jet_idx, max_numb_of_cons=50)
 
         if len(jet_constituents) > 0:
             triplets.append(make_triplets(jet_pt=nearest_jet_pt, particle_vectors=jet_constituents))

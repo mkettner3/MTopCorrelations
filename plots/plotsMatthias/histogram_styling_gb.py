@@ -25,7 +25,7 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, yl
         hist.SetTitle('')
         hist.SetLineWidth(2)
         hist.SetLineStyle(1)
-        if hist_name[-6] != 'abscou':
+        if hist_name[-6:] != 'abscou':
             hist.Scale(1/hist.Integral())
     hists[0].GetXaxis().SetRangeUser(0, 3)    # x-axis range (also works for y-axis)
     hists[0].GetXaxis().SetTitle("3#zeta")
@@ -101,7 +101,7 @@ if __name__ == '__main__':
                             hist_name='/Top-Quark/'+level+'-Level/absolute/correlator_hist_{:}_$_{:}_{:}_abscou'.format(level, pt_range[0], pt_range[1]),
                             sample_names=sample_names,
                             filename_graphic=subfolder+'/correlator_hist_{:}_{:}-{:}_abs.png'.format(level, pt_range[0], pt_range[1]),
-                            ylim=(0, 0.2), verb=False)
+                            ylim=(0, 500000), verb=False)
 
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_jet_pt_hist_{:}'.format(level),

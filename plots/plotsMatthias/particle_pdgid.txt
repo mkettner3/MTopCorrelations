@@ -1,0 +1,17 @@
+1: Down-Quark
+11: Electron
+13: Muon
+22: Photon
+130: K-Meson (K_L^0)
+211: Pion (Pi+)
+
+321: K-Meson (K+)
+310: K-Meson (K_S^0)
+2212: Proton
+2112: Neutron
+3122: Lambda-Baryon
+3222: Sigma-Baryon (Sigma+)
+3112: Sigma-Baryon (Sigma-)
+3322: Xi-Baryon (X0)
+3312: Xi-Baryon (X-)
+3334: Omega-Baryon (Omega-)
