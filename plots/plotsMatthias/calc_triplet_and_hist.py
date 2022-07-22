@@ -116,7 +116,7 @@ def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_jet_mass, sample_nam
     r_file.Close()
 
 
-mc = [UL2018.TTbar_1, UL2018.TTbar_2, UL2018.TTbar_3]
+mc = [UL2018.TTbar_1, UL2018.TTbar_2, UL2018.TTbar_3, UL2018.TTbar_4, UL2018.TTbar_5, UL2018.QCD_0]
 number_events = [14815731313, 17230816904, 12779934801]
 
 pt_jet_lowest = 400
@@ -142,7 +142,7 @@ if __name__ == '__main__':
     save_root_hists(hists_top=hists, hists_w=hists_w, hists_jet_pt=hists_jet_pt, hists_jet_mass=hists_jet_mass,
                     sample_names=[sample.name[:11] for sample in samples],
                     pt_jet_ranges=pt_jet_ranges,
-                    filename='histogram_files/correlator_hist_trip_5_pp_{:02}.root'.format(args.job))
+                    filename='histogram_files/correlator_hist_trip_7_pp_{:02}.root'.format(args.job))
     end = time.time()
 
     print('Executing calc_triplet_and_hist.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))

@@ -40,7 +40,7 @@ def get_jet_constituents(event, level, index, particle_types='all', max_numb_of_
         if event_para['Jet_cons_jetIndex'][i] == index:
             if particle_types == 'all' or \
                     (particle_types == 'charged_par' and abs(event_para['Jet_cons_pdgId'][i]) in [211, 13, 11, 1, 321, 2212, 3222, 3112, 3312, 3334]) or \
-                    (particle_types == 'charged_had' and abs(event_para['Jet_cons_pdgId'][i]) in [211, 321, 3222, 3112, 3312, 3334]):
+                    (particle_types == 'charged_had' and abs(event_para['Jet_cons_pdgId'][i]) in [211, 321, 2212, 3222, 3112, 3312, 3334]):
                 particle = TLorentzVector()
                 particle.SetPtEtaPhiM(event_para['Jet_cons_pt'][i], event_para['Jet_cons_eta'][i],
                                       event_para['Jet_cons_phi'][i], event_para['Jet_cons_mass'][i])
