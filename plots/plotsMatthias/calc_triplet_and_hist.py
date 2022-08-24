@@ -39,7 +39,7 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
         for h, sample in enumerate(samples):
             r = sample.treeReader(variables=read_variables, selectionString="Sum$({:}JetAK8_pt>400)>=1".format(level))
 
-            global count
+            global count, number_events
             # count_int = 0
             r.start()
             while r.run():                                                              # Event-Loop
@@ -116,8 +116,10 @@ def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_jet_mass, sample_nam
     r_file.Close()
 
 
-mc = [UL2018.TTbar_1, UL2018.TTbar_2, UL2018.TTbar_3, UL2018.TTbar_4, UL2018.TTbar_5, UL2018.QCD_0]
-number_events = [14815731313, 17230816904, 12779934801]
+mc_ttbar = [UL2018.TTbar_1, UL2018.TTbar_2, UL2018.TTbar_3, UL2018.TTbar_4, UL2018.TTbar_5]
+mc_qcd = [UL2018.QCD_0]
+number_events_ttbar = [61694526814.8, 55968875821.1, 139438020309, 51889503097.9, 42054325908.3]
+number_events_qcd = [13849346.0]
 
 pt_jet_lowest = 400
 pt_jet_highest = 700
@@ -130,8 +132,11 @@ if __name__ == '__main__':
     argParser = argparse.ArgumentParser(description='Argument parser')    # So #SPLIT100 can be used in the bash script.
     argParser.add_argument('--nJobs', action='store', nargs='?', type=int, default=1)
     argParser.add_argument('--job', action='store', type=int, default=0)
+    argParser.add_argument('--sample_type', action='store', type=str, default='TTbar')  # Can either be 'TTbar' or 'QCD'
     args = argParser.parse_args()
 
+    mc = mc_ttbar if args.sample_type != 'QCD' else mc_qcd
+    number_events = number_events_ttbar if args.sample_type != 'QCD' else number_events_qcd
     samples = [sample.split(n=args.nJobs, nSub=args.job) for sample in mc]
 
     start = time.time()
@@ -142,7 +147,7 @@ if __name__ == '__main__':
     save_root_hists(hists_top=hists, hists_w=hists_w, hists_jet_pt=hists_jet_pt, hists_jet_mass=hists_jet_mass,
                     sample_names=[sample.name[:11] for sample in samples],
                     pt_jet_ranges=pt_jet_ranges,
-                    filename='histogram_files/correlator_hist_trip_7_pp_{:02}.root'.format(args.job))
+                    filename='histogram_files/correlator_hist_trip_7_pp_{:03}_{:}.root'.format(args.job, args.sample_type))
     end = time.time()
 
     print('Executing calc_triplet_and_hist.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))
