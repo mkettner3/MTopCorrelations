@@ -7,10 +7,11 @@ Function to normalize the covariance matrix
 from typing import Any
 import numpy as np
 import ROOT
+from MTopCorrelations.Tools.user import plot_directory
 
 
-def calc_norm_cov_matrix(filename_root_hist, hist_name):
-    # type: (str, str) -> tuple
+def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_level=None, id_sample=None, id_range=None):
+    # type: (str, str, bool, str, str, tuple) -> tuple
 
     f = ROOT.TFile(filename_root_hist, 'read')
     root_hist = f.Get(hist_name)
@@ -26,7 +27,10 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name):
 
     matrix_norm = normalize_cov_matrix(matrix_orig=matrix_orig, root_hist=root_hist)
 
-    return matrix_norm, matrix_orig, root_hist, (hist_axis_range_min, hist_axis_range_max)
+    if plot_matrix:
+        plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, (hist_axis_range_min, hist_axis_range_max))
+
+    return matrix_norm, root_hist, (hist_axis_range_min, hist_axis_range_max)
 
 
 def normalize_cov_matrix(matrix_orig, root_hist):
@@ -124,6 +128,10 @@ def compute_chi2(template_hist, data_hist, data_cov_matrix):
         data_hist_cont[i] = data_hist.GetBinContent(i+1)
     d_vec = data_hist_cont - template_hist_cont
 
+    # print(d_vec)
+    # print(data_cov_matrix)
+    # print('')
+
     data_cov_matrix_inv = np.linalg.inv(data_cov_matrix)
     chi2 = np.linalg.multi_dot([d_vec, data_cov_matrix_inv, d_vec])
 
@@ -160,6 +168,26 @@ def store_matrix_in_root(matrices_norm, matrices_orig, sample_names, pt_jet_rang
     f.Close()
 
 
+def plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, hist_axis_range):
+    # type: (np.ndarray, str, str, tuple, tuple) -> None
+
+    hist_norm = ROOT.TH2F("Covariance Matrix", "Normalized Covariance Matrix",
+                          matrix_norm.shape[0], hist_axis_range[0], hist_axis_range[1],
+                          matrix_norm.shape[1], hist_axis_range[0], hist_axis_range[1])
+    for i in range(matrix_norm.shape[0]):
+        for j in range(matrix_norm.shape[1]):
+            hist_norm.SetBinContent(i, j, matrix_norm[i, j])
+
+    ROOT.gStyle.SetOptStat(0)  # Do not display stat box
+    c = ROOT.TCanvas('c', 'c', 1000, 1000)
+    ROOT.gPad.SetRightMargin(0.2)
+    hist_norm.SetTitle('Normalized Covariance Matrix')
+    hist_norm.Draw('COLZ')
+
+    c.Print(plot_directory+'/corr_matrix_plots/correlation_matrix_norm_{:}_{:}_{:}-{:}.png'.format(id_level, id_sample,
+                                                                                                   id_range[0], id_range[1]))
+
+
 pt_jet_lowest = 400
 pt_jet_highest = 700
 pt_jet_step = 50
@@ -169,13 +197,13 @@ pt_jet_ranges = zip(range(pt_jet_lowest, pt_jet_highest, pt_jet_step),
 
 if __name__ == '__main__':
     subfolder = '/cov_matrices'
-    filename = 'histogram_files/correlator_hist_trip.root'
-    sample_names = ['TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5']
+    filename = 'histogram_files/correlator_hist_trip_8.root'
+    sample_names = ['TTbar_169p5', 'TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5', 'TTbar_175p5']
 
     matrices_norm = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
-    matrices_orig = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
+    # matrices_orig = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
     root_hist = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
-    chi2 = [None for _ in range(2)]
+    chi2 = []
     hist_axis_range = (0, 3)
 
     for g, level in enumerate(['Gen', 'PF']):
@@ -183,19 +211,22 @@ if __name__ == '__main__':
             print('Working on sample "{}" ...'.format(sample_name))
             for k, pt_range in enumerate(pt_jet_ranges):
                 (matrices_norm[g][h][k],
-                 matrices_orig[g][h][k],
                  root_hist[g][h][k],
                  hist_axis_range) = calc_norm_cov_matrix(filename_root_hist=filename,
-                                                         hist_name='correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name,
-                                                                                                            pt_range[0], pt_range[1]))
+                                                         hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name,
+                                                                                                            pt_range[0], pt_range[1]),
+                                                         plot_matrix=True,
+                                                         id_level=level, id_sample=sample_name, id_range=pt_range)
 
-        chi2[g] = compute_chi2(template_hist=root_hist[g][1][2], data_hist=root_hist[g][0][2],
-                               data_cov_matrix=matrices_norm[g][0][2])
+    for h in [0, 2]:
+        chi2.append(compute_chi2(template_hist=root_hist[0][h][2], data_hist=root_hist[0][1][2],
+                                 data_cov_matrix=matrices_norm[0][1][2]))
     print(chi2)
 
-    store_matrix_in_root(matrices_norm=matrices_norm, matrices_orig=matrices_orig, sample_names=sample_names,
-                         pt_jet_ranges=pt_jet_ranges, filename='cov_matrices/norm_cov_matrices.root',
-                         hist_axis_range=hist_axis_range)
+    chi2_graph = ROOT.TGraph(4, [169.5, 171.5, 173.5, 175.5], chi2)
+    fit_func = ROOT.TF1('pol2_fit', 'pol2', 169.5, 175.5)
+    fit_result = chi2_graph.Fit(fit_func, 'R')
+    fit = chi2_graph.GetFunction(fit_func)
 
     """
     # f = ROOT.TFile(filename)
