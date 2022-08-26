@@ -218,15 +218,20 @@ if __name__ == '__main__':
                                                          plot_matrix=True,
                                                          id_level=level, id_sample=sample_name, id_range=pt_range)
 
-    for h in [0, 2]:
-        chi2.append(compute_chi2(template_hist=root_hist[0][h][2], data_hist=root_hist[0][1][2],
-                                 data_cov_matrix=matrices_norm[0][1][2]))
+    for h in [0, 1, 3, 4]:
+        chi2.append(compute_chi2(template_hist=root_hist[0][h][2], data_hist=root_hist[0][2][2],
+                                 data_cov_matrix=matrices_norm[0][2][2]))
     print(chi2)
 
-    chi2_graph = ROOT.TGraph(4, [169.5, 171.5, 173.5, 175.5], chi2)
+    chi2_graph = ROOT.TGraph(4, np.array([169.5, 171.5, 173.5, 175.5]), np.asarray(chi2))
     fit_func = ROOT.TF1('pol2_fit', 'pol2', 169.5, 175.5)
     fit_result = chi2_graph.Fit(fit_func, 'R')
-    fit = chi2_graph.GetFunction(fit_func)
+    fit = chi2_graph.GetFunction('pol2_fit')
+    obt_top_mass = fit.GetMinimumX()
+    print('The calculated mass of the Top-Quark equals to {:.5f} GeV.'.format(obt_top_mass))
+    chi2min = fit.GetMinimum()
+    uncertainty = fit.GetX(chi2min+1, 169.5, 175.5)
+    print(uncertainty)
 
     """
     # f = ROOT.TFile(filename)
