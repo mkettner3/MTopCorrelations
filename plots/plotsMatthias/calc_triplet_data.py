@@ -14,6 +14,7 @@ from RootTools.core.TreeVariable import VectorTreeVariable
 import argparse
 
 
+# The function find_hadronic_jet() can be imported from find_hadronic_jet.py
 def find_hadronic_jet(event, level, merge_tolerance=0.8, jet_pt_min=400):
     if level == 'Gen':
         event_para = {'nJet': event.nGenJetAK8, 'Jet_pt': event.GenJetAK8_pt, 'Jet_eta': event.GenJetAK8_eta,

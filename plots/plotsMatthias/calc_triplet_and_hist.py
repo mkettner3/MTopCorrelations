@@ -6,10 +6,10 @@ Script to calculate triplets and generate histograms event-wise. The triplet dat
 
 import time
 from math import isnan
-from MTopCorrelations.samples.nanoTuples_UL_RunII_nanoAOD import UL2018
+import MTopCorrelations.samples.nanoTuples_UL2018_nanoAOD as UL2018
 from triplet_maker import make_triplets_and_cut
+from find_hadronic_jet import find_hadronic_jet
 from jet_constituents import get_jet_constituents
-from calc_triplet_data import find_hadronic_jet
 import ROOT
 from RootTools.core.TreeVariable import VectorTreeVariable
 import argparse
@@ -40,7 +40,6 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
             r = sample.treeReader(variables=read_variables, selectionString="Sum$({:}JetAK8_pt>400)>=1".format(level))
 
             global count, number_events
-            # count_int = 0
             r.start()
             while r.run():                                                              # Event-Loop
                 event_weight = 60 * 831.762 * 3*0.108 * (1-3*0.108)*2 * 1000 / number_events[h] * r.event.Generator_weight
@@ -83,7 +82,6 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
                         hists_jet_pt[g].Fill(hadronic_jet_pt, event_weight)
                         hists_jet_mass[g].Fill(hadronic_jet_mass, event_weight)
                         count += 1
-                        # count_int += 1
 
     return hists, hists_w, hists_jet_pt, hists_jet_mass
 
@@ -147,7 +145,7 @@ if __name__ == '__main__':
     save_root_hists(hists_top=hists, hists_w=hists_w, hists_jet_pt=hists_jet_pt, hists_jet_mass=hists_jet_mass,
                     sample_names=[sample.name[:11] for sample in samples],
                     pt_jet_ranges=pt_jet_ranges,
-                    filename='histogram_files/correlator_hist_trip_7_pp_{:03}_{:}.root'.format(args.job, args.sample_type))
+                    filename='histogram_files/correlator_hist_trip_8_pp_{:03}_{:}.root'.format(args.job, args.sample_type))
     end = time.time()
 
     print('Executing calc_triplet_and_hist.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))
