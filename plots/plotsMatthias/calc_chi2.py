@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Function to normalize the covariance matrix
+Script to calculate the chi2 between histograms
 """
 
 from typing import Any
@@ -128,10 +128,6 @@ def compute_chi2(template_hist, data_hist, data_cov_matrix):
         data_hist_cont[i] = data_hist.GetBinContent(i+1)
     d_vec = data_hist_cont - template_hist_cont
 
-    # print(d_vec)
-    # print(data_cov_matrix)
-    # print('')
-
     data_cov_matrix_inv = np.linalg.inv(data_cov_matrix)
     chi2 = np.linalg.multi_dot([d_vec, data_cov_matrix_inv, d_vec])
 
@@ -180,12 +176,26 @@ def plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, hist_axis_ra
 
     ROOT.gStyle.SetOptStat(0)  # Do not display stat box
     c = ROOT.TCanvas('c', 'c', 1000, 1000)
+    c.SetLogz()
     ROOT.gPad.SetRightMargin(0.2)
     hist_norm.SetTitle('Normalized Covariance Matrix')
     hist_norm.Draw('COLZ')
 
     c.Print(plot_directory+'/corr_matrix_plots/correlation_matrix_norm_{:}_{:}_{:}-{:}.png'.format(id_level, id_sample,
                                                                                                    id_range[0], id_range[1]))
+
+
+def plot_chi2(root_graph, id_level, id_range):
+    # type: (Any) -> None
+
+    ROOT.gStyle.SetOptStat(0)  # Do not display stat box
+    c = ROOT.TCanvas('c', 'c', 1000, 1000)
+    root_graph.SetTitle("Chi^{2}")
+    root_graph.GetXaxis().SetTitle("Top-Mass (GeV)")
+    # root_graph.GetYaxis().SetRangeUser(root_graph.GetMinimum()-1e10, root_graph.GetMaximum()+1e10)
+    root_graph.Draw('')
+
+    c.Print(plot_directory+'/chi2_plots/chi2_data_{}_{}-{}.png'.format(id_level, id_range[0], id_range[1]))
 
 
 pt_jet_lowest = 400
@@ -201,9 +211,8 @@ if __name__ == '__main__':
     sample_names = ['TTbar_169p5', 'TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5', 'TTbar_175p5']
 
     matrices_norm = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
-    # matrices_orig = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
     root_hist = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
-    chi2 = []
+    chi2 = [[[] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
     hist_axis_range = (0, 3)
 
     for g, level in enumerate(['Gen', 'PF']):
@@ -215,23 +224,25 @@ if __name__ == '__main__':
                  hist_axis_range) = calc_norm_cov_matrix(filename_root_hist=filename,
                                                          hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name,
                                                                                                             pt_range[0], pt_range[1]),
-                                                         plot_matrix=True,
+                                                         plot_matrix=False,
                                                          id_level=level, id_sample=sample_name, id_range=pt_range)
 
-    for h in [0, 1, 3, 4]:
-        chi2.append(compute_chi2(template_hist=root_hist[0][h][2], data_hist=root_hist[0][2][2],
-                                 data_cov_matrix=matrices_norm[0][2][2]))
-    print(chi2)
+        for k, pt_range in enumerate(pt_jet_ranges):
+            for h in [0, 1, 3, 4]:
+                chi2[g][k].append(compute_chi2(template_hist=root_hist[g][h][k], data_hist=root_hist[g][2][k],
+                                               data_cov_matrix=matrices_norm[g][2][k]))
+            # print(chi2)
 
-    chi2_graph = ROOT.TGraph(4, np.array([169.5, 171.5, 173.5, 175.5]), np.asarray(chi2))
-    fit_func = ROOT.TF1('pol2_fit', 'pol2', 169.5, 175.5)
-    fit_result = chi2_graph.Fit(fit_func, 'R')
-    fit = chi2_graph.GetFunction('pol2_fit')
-    obt_top_mass = fit.GetMinimumX()
-    print('The calculated mass of the Top-Quark equals to {:.5f} GeV.'.format(obt_top_mass))
-    chi2min = fit.GetMinimum()
-    uncertainty = fit.GetX(chi2min+1, 169.5, 175.5)
-    print(uncertainty)
+            chi2_graph = ROOT.TGraph(4, np.array([169.5, 171.5, 173.5, 175.5]), np.asarray(chi2[g][k]))
+            fit_func = ROOT.TF1('pol2_fit', 'pol2', 169.5, 175.5)
+            fit_result = chi2_graph.Fit(fit_func, 'R')
+            fit = chi2_graph.GetFunction('pol2_fit')
+            plot_chi2(root_graph=chi2_graph, id_level=level, id_range=pt_range)
+            obt_top_mass = fit.GetMinimumX()
+            print('The calculated mass of the Top-Quark equals to {:.5f} GeV.'.format(obt_top_mass))
+            chi2min = fit.GetMinimum()
+            uncertainty = fit.GetX(chi2min+1, 169.5, 175.5)
+            print(uncertainty)
 
     """
     # f = ROOT.TFile(filename)
