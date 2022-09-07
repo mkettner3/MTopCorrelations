@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
 """
-Compute the statistical uncertainty of as expected from data
+Compute the statistical uncertainty as expected from data
 """
 
-from norm_cov_matrix import calc_norm_cov_matrix
+from calc_chi2 import calc_norm_cov_matrix
 
 
 pt_jet_lowest = 400
@@ -31,4 +31,5 @@ for g, level in enumerate(['Gen', 'PF']):
                                                      hist_name='/Top-Quark/'+level+'-Level/absolute/correlator_hist_{:}_{:}_{:}_{:}_abscou'.format(level, sample_name,
                                                                                                         pt_range[0], pt_range[1]),
                                                      plot_matrix=True,
-                                                     id_level=level, id_sample=sample_name, id_range=pt_range)
+                                                     id_level=level, id_sample=sample_name, id_range=pt_range,
+                                                     absolute_hist=True)

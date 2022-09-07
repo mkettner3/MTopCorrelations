@@ -10,7 +10,8 @@ import ROOT
 from MTopCorrelations.Tools.user import plot_directory
 
 
-def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_level=None, id_sample=None, id_range=None):
+def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_level=None, id_sample=None, id_range=None,
+                         absolute_hist=False):
     # type: (str, str, bool, str, str, tuple) -> tuple
 
     f = ROOT.TFile(filename_root_hist, 'read')
@@ -22,13 +23,18 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_le
     hist_axis_range_min = root_hist.GetXaxis().GetXmin()
     hist_axis_range_max = root_hist.GetXaxis().GetXmax()
     matrix_orig = np.zeros((num_bins, num_bins), dtype=np.float64)
-    for i in range(num_bins):
-        matrix_orig[i, i] = root_hist.GetBinError(i+1) ** 2             # weight is set to Kronecker-Delta
+    if absolute_hist:
+        for i in range(num_bins):
+            matrix_orig[i, i] = np.sqrt(root_hist.GetBinContent(i+1))
+    else:
+        for i in range(num_bins):
+            matrix_orig[i, i] = root_hist.GetBinError(i+1) ** 2             # weight is set to Kronecker-Delta
 
     matrix_norm = normalize_cov_matrix(matrix_orig=matrix_orig, root_hist=root_hist)
 
     if plot_matrix:
-        plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, (hist_axis_range_min, hist_axis_range_max))
+        plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, (hist_axis_range_min, hist_axis_range_max),
+                            absolute_hist)
 
     return matrix_norm, root_hist, (hist_axis_range_min, hist_axis_range_max)
 
@@ -164,7 +170,7 @@ def store_matrix_in_root(matrices_norm, matrices_orig, sample_names, pt_jet_rang
     f.Close()
 
 
-def plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, hist_axis_range):
+def plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, hist_axis_range, absolute_hist):
     # type: (np.ndarray, str, str, tuple, tuple) -> None
 
     hist_norm = ROOT.TH2F("Covariance Matrix", "Normalized Covariance Matrix",
@@ -181,8 +187,9 @@ def plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, hist_axis_ra
     hist_norm.SetTitle('Normalized Covariance Matrix')
     hist_norm.Draw('COLZ')
 
-    c.Print(plot_directory+'/corr_matrix_plots/correlation_matrix_norm_{:}_{:}_{:}-{:}.png'.format(id_level, id_sample,
-                                                                                                   id_range[0], id_range[1]))
+    abs = 'abs_' if absolute_hist else ''
+    c.Print(plot_directory+'/corr_matrix_plots/correlation_matrix_norm_{}{:}_{:}_{:}-{:}.png'.format(abs, id_level, id_sample,
+                                                                                                     id_range[0], id_range[1]))
 
 
 def plot_chi2(root_graph, id_level, id_range):
@@ -231,7 +238,6 @@ if __name__ == '__main__':
             for h in [0, 1, 3, 4]:
                 chi2[g][k].append(compute_chi2(template_hist=root_hist[g][h][k], data_hist=root_hist[g][2][k],
                                                data_cov_matrix=matrices_norm[g][2][k]))
-            # print(chi2)
 
             chi2_graph = ROOT.TGraph(4, np.array([169.5, 171.5, 173.5, 175.5]), np.asarray(chi2[g][k]))
             fit_func = ROOT.TF1('pol2_fit', 'pol2', 169.5, 175.5)
