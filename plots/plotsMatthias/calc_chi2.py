@@ -12,7 +12,7 @@ from MTopCorrelations.Tools.user import plot_directory
 
 def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_level=None, id_sample=None, id_range=None,
                          absolute_hist=False):
-    # type: (str, str, bool, str, str, tuple) -> tuple
+    # type: (str, str, bool, str, str, tuple, bool) -> tuple
 
     f = ROOT.TFile(filename_root_hist, 'read')
     root_hist = f.Get(hist_name)
@@ -171,7 +171,7 @@ def store_matrix_in_root(matrices_norm, matrices_orig, sample_names, pt_jet_rang
 
 
 def plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, hist_axis_range, absolute_hist):
-    # type: (np.ndarray, str, str, tuple, tuple) -> None
+    # type: (np.ndarray, str, str, tuple, tuple, bool) -> None
 
     hist_norm = ROOT.TH2F("Covariance Matrix", "Normalized Covariance Matrix",
                           matrix_norm.shape[0], hist_axis_range[0], hist_axis_range[1],
@@ -193,7 +193,7 @@ def plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, hist_axis_ra
 
 
 def plot_chi2(root_graph, id_level, id_range):
-    # type: (Any) -> None
+    # type: (Any, str, tuple) -> None
 
     ROOT.gStyle.SetOptStat(0)  # Do not display stat box
     c = ROOT.TCanvas('c', 'c', 1000, 1000)

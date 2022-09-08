@@ -16,7 +16,9 @@ import argparse
 
 
 def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), delta_legs=float('nan'), shortest_side=0.1,
-                           nbins=50, hist_range=(0, 3)):
+                           nbins=50, hist_range=(0, 3), pt_variations=None):
+    global count, number_events
+
     read_variables = [
         "Generator_weight/D",
         "nGenPart/I",
@@ -32,14 +34,13 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
 
     hists = [[[[ROOT.TH1F("Correlator", "3 #zeta", nbins, hist_range[0], hist_range[1]) for _ in range(2)] for _ in range(len(pt_jet_ranges))] for _ in range(len(samples))] for _ in range(2)]
     hists_w = [[[[ROOT.TH1F("Correlator", "3 #zeta", nbins, hist_range[0], hist_range[1]) for _ in range(2)] for _ in range(len(pt_jet_ranges))] for _ in range(len(samples))] for _ in range(2)]
+    hists_varied = [[[ROOT.TH1F("Correlator", "3 #zeta", nbins, hist_range[0], hist_range[1]) for _ in range(2)] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
     hists_jet_pt = [ROOT.TH1F("Hadronic Top-Jet-p_{t}", "Jet-p_{t}", nbins, 380, 730) for _ in range(2)]
     hists_jet_mass = [ROOT.TH1F("Hadronic Top-Jet-mass", "Jet-mass", nbins, 75, 300) for _ in range(2)]
 
     for g, level in enumerate(['Gen', 'PF']):
         for h, sample in enumerate(samples):
             r = sample.treeReader(variables=read_variables, selectionString="Sum$({:}JetAK8_pt>400)>=1".format(level))
-
-            global count, number_events
             r.start()
             while r.run():                                                              # Event-Loop
                 event_weight = 60 * 831.762 * 3*0.108 * (1-3*0.108)*2 * 1000 / number_events[h] * r.event.Generator_weight
@@ -54,20 +55,8 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
                                                             max_numb_of_cons=50)
 
                     if len(jet_constituents) > 0:
-                        if isnan(max_delta_zeta):
-                            max_delta_zeta_calc = 3.5 / 3. * (170. / hadronic_jet_pt) ** 2
-                        else:
-                            max_delta_zeta_calc = max_delta_zeta
-
-                        if isnan(delta_legs):
-                            delta_legs_calc = 3.5 / 3. * (170. / hadronic_jet_pt) ** 2
-                        else:
-                            delta_legs_calc = delta_legs
-
-                        (triplets,
-                         triplets_w) = make_triplets_and_cut(jet_pt=hadronic_jet_pt, particle_vectors=jet_constituents,
-                                                             max_delta_zeta=max_delta_zeta_calc,
-                                                             delta_legs=delta_legs_calc, shortest_side=shortest_side)
+                        triplets, triplets_w = construct_triplets(hadronic_jet_pt, jet_constituents,
+                                                                  max_delta_zeta, delta_legs, shortest_side)
 
                         for k, jet_range in enumerate(pt_jet_ranges):
                             if jet_range[0] <= hadronic_jet_pt < jet_range[1]:
@@ -83,11 +72,72 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
                         hists_jet_mass[g].Fill(hadronic_jet_mass, event_weight)
                         count += 1
 
-    return hists, hists_w, hists_jet_pt, hists_jet_mass
+        # -- Histograms for varied pT --
+        r = samples[2].treeReader(variables=read_variables, selectionString="Sum$({:}JetAK8_pt>400)>=1".format(level))
+        for v, var_fac in enumerate(pt_variations):
+            r.start()
+            while r.run():  # Event-Loop
+                event_weight = 60 * 831.762 * 3*0.108 * (1-3*0.108)*2 * 1000 / number_events[2] * r.event.Generator_weight
+
+                hadronic_jet_idx, hadronic_jet_pt, hadronic_jet_mass = find_hadronic_jet(r.event, level=level,
+                                                                                         merge_tolerance=0.8,
+                                                                                         jet_pt_min=400)
+
+                if hadronic_jet_idx is not None:
+                    jet_constituents = get_jet_constituents(event=r.event, level=level,
+                                                            index=hadronic_jet_idx, particle_types='charged_par',
+                                                            max_numb_of_cons=50)
+
+                    hadronic_jet_pt, jet_constituents = vary_pt(jet_pt=hadronic_jet_pt, constituents=jet_constituents,
+                                                                factor=var_fac)
+
+                    if len(jet_constituents) > 0:
+                        triplets, triplets_w = construct_triplets(hadronic_jet_pt, jet_constituents,
+                                                                  max_delta_zeta, delta_legs, shortest_side)
+
+                        for k, jet_range in enumerate(pt_jet_ranges):
+                            if jet_range[0] <= hadronic_jet_pt < jet_range[1]:
+                                for three_zeta, weight in zip(triplets[0], triplets[1]):
+                                    hists_varied[g][k][v].Fill(three_zeta, weight*event_weight)
+                                break
+
+    return hists, hists_w, hists_jet_pt, hists_jet_mass, hists_varied
 
 
-def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_jet_mass, sample_names, pt_jet_ranges, filename):
-    # type: (list, list, list, list, list, list, str) -> None
+def construct_triplets(hadronic_jet_pt, jet_constituents, max_delta_zeta, delta_legs, shortest_side):
+    # type: (float, list, float, float, float) -> tuple
+
+    if isnan(max_delta_zeta):
+        max_delta_zeta_calc = 3.5 / 3. * (170. / hadronic_jet_pt) ** 2
+    else:
+        max_delta_zeta_calc = max_delta_zeta
+
+    if isnan(delta_legs):
+        delta_legs_calc = 3.5 / 3. * (170. / hadronic_jet_pt) ** 2
+    else:
+        delta_legs_calc = delta_legs
+
+    (triplets,
+     triplets_w) = make_triplets_and_cut(jet_pt=hadronic_jet_pt, particle_vectors=jet_constituents,
+                                         max_delta_zeta=max_delta_zeta_calc,
+                                         delta_legs=delta_legs_calc, shortest_side=shortest_side)
+
+    return triplets, triplets_w
+
+
+def vary_pt(jet_pt, constituents, factor):
+    # type: (float, list, float) -> tuple
+
+    jet_pt = jet_pt * factor
+    for i in range(len(constituents)):
+        constituents[i].SetPtEtaPhiM(constituents[i].Pt() * factor, constituents[i].Eta(), constituents[i].Phi(), constituents[i].M())
+
+    return jet_pt, constituents
+
+
+def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_jet_mass, hists_varied, pt_variations,
+                    sample_names, pt_jet_ranges, filename):
+    # type: (list, list, list, list, list, tuple, list, list, str) -> None
 
     r_file = ROOT.TFile(filename, 'RECREATE')
     r_file.cd()
@@ -110,6 +160,10 @@ def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_jet_mass, sample_nam
         r_file.cd('/Others/'+level+'-Level')
         hists_jet_pt[g].Write('hadronic_top_jet_pt_hist_{:}'.format(level))
         hists_jet_mass[g].Write('hadronic_top_jet_mass_hist_{:}'.format(level))
+        for k, pt_jet_range in enumerate(pt_jet_ranges):
+            for v, var_fac in enumerate(pt_variations):
+                r_file.cd('/Top-Quark/'+level+'-Level/weighted')
+                hists_varied[g][k][v].Write('correlator_hist_varied_{:.2f}_{:}_{:}_{:}'.format(var_fac, level, pt_jet_range[0], pt_jet_range[1]))
 
     r_file.Close()
 
@@ -139,13 +193,15 @@ if __name__ == '__main__':
 
     start = time.time()
     count = 0
-    hists, hists_w, hists_jet_pt, hists_jet_mass = calc_triplets_and_hist(samples=samples, pt_jet_ranges=pt_jet_ranges,
-                                                                          max_delta_zeta=float('nan'),
-                                                                          delta_legs=float('nan'), shortest_side=0.05)
+    (hists, hists_w,
+     hists_jet_pt, hists_jet_mass,
+     hists_varied) = calc_triplets_and_hist(samples=samples, pt_jet_ranges=pt_jet_ranges,
+                                            max_delta_zeta=float('nan'), delta_legs=float('nan'), shortest_side=0.05,
+                                            pt_variations=(1.02, 0.98))
     save_root_hists(hists_top=hists, hists_w=hists_w, hists_jet_pt=hists_jet_pt, hists_jet_mass=hists_jet_mass,
-                    sample_names=[sample.name[:11] for sample in samples],
-                    pt_jet_ranges=pt_jet_ranges,
-                    filename='histogram_files/correlator_hist_trip_8_pp_{:03}_{:}.root'.format(args.job, args.sample_type))
+                    hists_varied=hists_varied, pt_variations=(1.02, 0.98),
+                    sample_names=[sample.name[:11] for sample in samples], pt_jet_ranges=pt_jet_ranges,
+                    filename='histogram_files/correlator_hist_trip_9_pp_{:03}_{:}.root'.format(args.job, args.sample_type))
     end = time.time()
 
     print('Executing calc_triplet_and_hist.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))
