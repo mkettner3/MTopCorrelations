@@ -37,6 +37,7 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
     hists_varied = [[[ROOT.TH1F("Correlator", "3 #zeta", nbins, hist_range[0], hist_range[1]) for _ in range(2)] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
     hists_jet_pt = [ROOT.TH1F("Hadronic Top-Jet-p_{t}", "Jet-p_{t}", nbins, 380, 730) for _ in range(2)]
     hists_jet_mass = [ROOT.TH1F("Hadronic Top-Jet-mass", "Jet-mass", nbins, 75, 300) for _ in range(2)]
+    hists_event_weight = [[ROOT.TH1F("Event weights", "event-weight", nbins, -1, 1) for _ in range(len(samples))] for _ in range(2)]
 
     for g, level in enumerate(['Gen', 'PF']):
         for h, sample in enumerate(samples):
@@ -70,6 +71,7 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
 
                         hists_jet_pt[g].Fill(hadronic_jet_pt, event_weight)
                         hists_jet_mass[g].Fill(hadronic_jet_mass, event_weight)
+                        hists_event_weight[g][h].Fill(event_weight)
                         count += 1
 
         # -- Histograms for varied pT --
@@ -101,7 +103,7 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
                                     hists_varied[g][k][v].Fill(three_zeta, weight*event_weight)
                                 break
 
-    return hists, hists_w, hists_jet_pt, hists_jet_mass, hists_varied
+    return hists, hists_w, hists_jet_pt, hists_jet_mass, hists_varied, hists_event_weight
 
 
 def construct_triplets(hadronic_jet_pt, jet_constituents, max_delta_zeta, delta_legs, shortest_side):
@@ -135,9 +137,9 @@ def vary_pt(jet_pt, constituents, factor):
     return jet_pt, constituents
 
 
-def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_jet_mass, hists_varied, pt_variations,
+def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_jet_mass, hists_varied, pt_variations, hists_ev_weight,
                     sample_names, pt_jet_ranges, filename):
-    # type: (list, list, list, list, list, tuple, list, list, str) -> None
+    # type: (list, list, list, list, list, tuple, list, list, list, str) -> None
 
     r_file = ROOT.TFile(filename, 'RECREATE')
     r_file.cd()
@@ -160,6 +162,8 @@ def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_jet_mass, hists_vari
         r_file.cd('/Others/'+level+'-Level')
         hists_jet_pt[g].Write('hadronic_top_jet_pt_hist_{:}'.format(level))
         hists_jet_mass[g].Write('hadronic_top_jet_mass_hist_{:}'.format(level))
+        for h, sample_name in enumerate(sample_names):
+            hists_ev_weight[g][h].Write('event_weights_{:}_{:}'.format(level, sample_name))
         for k, pt_jet_range in enumerate(pt_jet_ranges):
             for v, var_fac in enumerate(pt_variations):
                 r_file.cd('/Top-Quark/'+level+'-Level/weighted')
@@ -195,13 +199,14 @@ if __name__ == '__main__':
     count = 0
     (hists, hists_w,
      hists_jet_pt, hists_jet_mass,
-     hists_varied) = calc_triplets_and_hist(samples=samples, pt_jet_ranges=pt_jet_ranges,
-                                            max_delta_zeta=float('nan'), delta_legs=float('nan'), shortest_side=0.05,
-                                            pt_variations=(1.02, 0.98))
+     hists_varied,
+     hists_event_weight) = calc_triplets_and_hist(samples=samples, pt_jet_ranges=pt_jet_ranges,
+                                                  max_delta_zeta=float('nan'), delta_legs=float('nan'), shortest_side=0.05,
+                                                  pt_variations=(1.02, 0.98))
     save_root_hists(hists_top=hists, hists_w=hists_w, hists_jet_pt=hists_jet_pt, hists_jet_mass=hists_jet_mass,
-                    hists_varied=hists_varied, pt_variations=(1.02, 0.98),
+                    hists_varied=hists_varied, pt_variations=(1.02, 0.98), hists_ev_weight=hists_event_weight,
                     sample_names=[sample.name[:11] for sample in samples], pt_jet_ranges=pt_jet_ranges,
-                    filename='histogram_files/correlator_hist_trip_9_pp_{:03}_{:}.root'.format(args.job, args.sample_type))
+                    filename='histogram_files/correlator_hist_trip_10_pp_{:03}_{:}.root'.format(args.job, args.sample_type))
     end = time.time()
 
     print('Executing calc_triplet_and_hist.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))
