@@ -10,6 +10,35 @@ import ROOT
 from MTopCorrelations.Tools.user import plot_directory
 
 
+def create_test_histograms(sample_name):
+    if sample_name == 'TTbar_169p5':
+        bin_con = [20, 80, 40, 10, 5]
+    elif sample_name == 'TTbar_171p5':
+        bin_con = [20, 70, 70, 10, 5]
+    elif sample_name == 'TTbar_172p5':
+        bin_con = [20, 50, 100, 10, 5]
+    elif sample_name == 'TTbar_173p5':
+        bin_con = [20, 40, 90, 50, 5]
+    elif sample_name == 'TTbar_175p5':
+        bin_con = [20, 30, 60, 80, 5]
+    else:
+        raise ValueError('The variable "sample_name" has an unexpected value!')
+
+    root_hist = ROOT.TH1F("Correlator", "3 #zeta", 5, 0, 3)
+    root_hist.SetBinContent(1, bin_con[0])
+    root_hist.SetBinContent(2, bin_con[1])
+    root_hist.SetBinContent(3, bin_con[2])
+    root_hist.SetBinContent(4, bin_con[3])
+    root_hist.SetBinContent(5, bin_con[4])
+    root_hist.SetBinError(1, np.sqrt(bin_con[0]))
+    root_hist.SetBinError(2, np.sqrt(bin_con[1]))
+    root_hist.SetBinError(3, np.sqrt(bin_con[2]))
+    root_hist.SetBinError(4, np.sqrt(bin_con[3]))
+    root_hist.SetBinError(5, np.sqrt(bin_con[4]))
+
+    return root_hist
+
+
 def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_level=None, id_sample=None, id_range=None,
                          absolute_hist=False):
     # type: (str, str, bool, str, str, tuple, bool) -> tuple
@@ -18,6 +47,8 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_le
     root_hist = f.Get(hist_name)
     root_hist.SetDirectory(ROOT.nullptr)            # Returns a pointer to root_hist in memory.
     f.Close()                                       # f.Get only returns a handle, which gets lost when TFile is closed
+
+    # root_hist = create_test_histograms(sample_name=id_sample)
 
     num_bins = root_hist.GetNbinsX()
     hist_axis_range_min = root_hist.GetXaxis().GetXmin()
@@ -35,6 +66,8 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_le
     if plot_matrix:
         plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, (hist_axis_range_min, hist_axis_range_max),
                             absolute_hist)
+
+    root_hist.Scale(1/root_hist.Integral(), 'width')
 
     return matrix_norm, root_hist, (hist_axis_range_min, hist_axis_range_max)
 
@@ -126,14 +159,16 @@ def compute_chi2(template_hist, data_hist, data_cov_matrix):
     # type: (Any, Any, np.ndarray) -> float
 
     num_bins = template_hist.GetNbinsX()
-    template_hist_cont = np.zeros(num_bins, dtype=np.float64)
-    for i in range(num_bins):
-        template_hist_cont[i] = template_hist.GetBinContent(i+1)
-    data_hist_cont = np.zeros(num_bins, dtype=np.float64)
-    for i in range(num_bins):
-        data_hist_cont[i] = data_hist.GetBinContent(i+1)
+    template_hist_cont = np.zeros((num_bins-1), dtype=np.float64)
+    data_hist_cont = np.zeros((num_bins-1), dtype=np.float64)
+    bin_list = list(range(num_bins))
+    bin_list.remove(2)
+    for idx, bin_nbr in enumerate(bin_list):
+        template_hist_cont[idx] = template_hist.GetBinContent(bin_nbr+1)
+        data_hist_cont[idx] = data_hist.GetBinContent(bin_nbr+1)
     d_vec = data_hist_cont - template_hist_cont
 
+    data_cov_matrix = np.delete(np.delete(data_cov_matrix, 2, 0), 2, 1)
     data_cov_matrix_inv = np.linalg.inv(data_cov_matrix)
     chi2 = np.linalg.multi_dot([d_vec, data_cov_matrix_inv, d_vec])
 
@@ -188,21 +223,21 @@ def plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, hist_axis_ra
     hist_norm.Draw('COLZ')
 
     abs = 'abs_' if absolute_hist else ''
-    c.Print(plot_directory+'/corr_matrix_plots/correlation_matrix_norm_{}{:}_{:}_{:}-{:}.png'.format(abs, id_level, id_sample,
-                                                                                                     id_range[0], id_range[1]))
+    c.Print(plot_directory+'/corr_matrix_plots/correlation_matrix_8_norm_{}{:}_{:}_{:}-{:}.png'.format(abs, id_level, id_sample,
+                                                                                                       id_range[0], id_range[1]))
 
 
-def plot_chi2(root_graph, id_level, id_range):
-    # type: (Any, str, tuple) -> None
+def plot_chi2(root_graph, filename):
+    # type: (Any, str) -> None
 
     ROOT.gStyle.SetOptStat(0)  # Do not display stat box
     c = ROOT.TCanvas('c', 'c', 1000, 1000)
-    root_graph.SetTitle("Chi^{2}")
+    root_graph.SetTitle("#chi^{2}")
     root_graph.GetXaxis().SetTitle("Top-Mass (GeV)")
     # root_graph.GetYaxis().SetRangeUser(root_graph.GetMinimum()-1e10, root_graph.GetMaximum()+1e10)
     root_graph.Draw('')
 
-    c.Print(plot_directory+'/chi2_plots/chi2_data_{}_{}-{}.png'.format(id_level, id_range[0], id_range[1]))
+    c.Print(plot_directory+filename)
 
 
 pt_jet_lowest = 400
@@ -213,9 +248,10 @@ pt_jet_ranges = zip(range(pt_jet_lowest, pt_jet_highest, pt_jet_step),
 
 
 if __name__ == '__main__':
-    subfolder = '/cov_matrices'
     filename = 'histogram_files/correlator_hist_trip_8.root'
     sample_names = ['TTbar_169p5', 'TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5', 'TTbar_175p5']
+
+    ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
 
     matrices_norm = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
     root_hist = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
@@ -231,7 +267,7 @@ if __name__ == '__main__':
                  hist_axis_range) = calc_norm_cov_matrix(filename_root_hist=filename,
                                                          hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name,
                                                                                                             pt_range[0], pt_range[1]),
-                                                         plot_matrix=False,
+                                                         plot_matrix=True,
                                                          id_level=level, id_sample=sample_name, id_range=pt_range)
 
         for k, pt_range in enumerate(pt_jet_ranges):
@@ -243,7 +279,7 @@ if __name__ == '__main__':
             fit_func = ROOT.TF1('pol2_fit', 'pol2', 169.5, 175.5)
             fit_result = chi2_graph.Fit(fit_func, 'R')
             fit = chi2_graph.GetFunction('pol2_fit')
-            plot_chi2(root_graph=chi2_graph, id_level=level, id_range=pt_range)
+            plot_chi2(root_graph=chi2_graph, filename='chi2_plots/chi2_data_8_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]))
             obt_top_mass = fit.GetMinimumX()
             print('The calculated mass of the Top-Quark equals to {:.5f} GeV.'.format(obt_top_mass))
             chi2min = fit.GetMinimum()
