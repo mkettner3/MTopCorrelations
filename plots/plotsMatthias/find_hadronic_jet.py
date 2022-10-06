@@ -21,18 +21,17 @@ def find_hadronic_jet(event, level, merge_tolerance=0.8, jet_pt_min=400):
     top_vec, anti_top_vec = TLorentzVector(), TLorentzVector()
     quark_vec, anti_quark_vec, bottom_vec = TLorentzVector(), TLorentzVector(), TLorentzVector()
     for i in range(event.nGenPart):
+        GenPart_properties = (event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_m[i])
         if event.GenPart_pdgId[i] == 6:
-            top_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_m[i])
+            top_vec.SetPtEtaPhiM(*GenPart_properties)
         elif event.GenPart_pdgId[i] == -6:
-            anti_top_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i],
-                                      event.GenPart_m[i])
+            anti_top_vec.SetPtEtaPhiM(*GenPart_properties)
         elif event.GenPart_pdgId[i] in range(1, 7) and abs(event.GenPart_grmompdgId[i]) == 6:
-            quark_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_m[i])
+            quark_vec.SetPtEtaPhiM(*GenPart_properties)
         elif event.GenPart_pdgId[i] in range(-1, -7, -1) and abs(event.GenPart_grmompdgId[i]) == 6:
-            anti_quark_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i],
-                                        event.GenPart_m[i])
+            anti_quark_vec.SetPtEtaPhiM(*GenPart_properties)
         elif event.GenPart_pdgId[i] == 5 and abs(event.GenPart_mompdgId[i]) == 6:
-            bottom_vec.SetPtEtaPhiM(event.GenPart_pt[i], event.GenPart_eta[i], event.GenPart_phi[i], event.GenPart_m[i])
+            bottom_vec.SetPtEtaPhiM(*GenPart_properties)
 
     top_lep, top_had = TLorentzVector(), TLorentzVector()
     for i in range(event.nGenPart):
