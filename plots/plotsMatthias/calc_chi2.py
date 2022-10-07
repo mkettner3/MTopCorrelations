@@ -50,26 +50,32 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_le
 
     # root_hist = create_test_histograms(sample_name=id_sample)
 
-    num_bins = root_hist.GetNbinsX()
-    hist_axis_range_min = root_hist.GetXaxis().GetXmin()
-    hist_axis_range_max = root_hist.GetXaxis().GetXmax()
+    selected_bins = range(15, root_hist.GetNbinsX()-5)
+    hist_selected = ROOT.TH1F("Correlator", "3 #zeta", len(selected_bins), 0.9, 2.7)
+    for new_bin, old_bin in enumerate(selected_bins):
+        hist_selected.SetBinContent(new_bin+1, root_hist.GetBinContent(old_bin+1))
+        hist_selected.SetBinError(new_bin+1, root_hist.GetBinError(old_bin+1))
+
+    num_bins = hist_selected.GetNbinsX()
+    hist_axis_range_min = hist_selected.GetXaxis().GetXmin()
+    hist_axis_range_max = hist_selected.GetXaxis().GetXmax()
     matrix_orig = np.zeros((num_bins, num_bins), dtype=np.float64)
     if absolute_hist:
         for i in range(num_bins):
-            matrix_orig[i, i] = np.sqrt(root_hist.GetBinContent(i+1))
+            matrix_orig[i, i] = np.sqrt(hist_selected.GetBinContent(i+1))
     else:
         for i in range(num_bins):
-            matrix_orig[i, i] = root_hist.GetBinError(i+1) ** 2             # weight is set to Kronecker-Delta
+            matrix_orig[i, i] = hist_selected.GetBinError(i+1) ** 2             # weight is set to Kronecker-Delta
 
-    matrix_norm = normalize_cov_matrix(matrix_orig=matrix_orig, root_hist=root_hist)
+    matrix_norm = normalize_cov_matrix(matrix_orig=matrix_orig, root_hist=hist_selected)
 
     if plot_matrix:
         plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, (hist_axis_range_min, hist_axis_range_max),
                             absolute_hist)
 
-    root_hist.Scale(1/root_hist.Integral(), 'width')
+    hist_selected.Scale(1/hist_selected.Integral(), 'width')
 
-    return matrix_norm, root_hist, (hist_axis_range_min, hist_axis_range_max)
+    return matrix_norm, hist_selected, (hist_axis_range_min, hist_axis_range_max)
 
 
 def normalize_cov_matrix(matrix_orig, root_hist):
