@@ -246,7 +246,8 @@ def plot_chi2(root_graph, filename):
         graphs.Add(deepcopy(root_graph[s]))
     graphs.SetTitle("#chi^{2}")
     graphs.GetXaxis().SetTitle("Top-Mass (GeV)")
-    # graphs.GetYaxis().SetRangeUser(root_graph.GetMinimum()-1e10, root_graph.GetMaximum()+1e10)
+    graphs.SetMaximum(root_graph[0].GetHistogram().GetMaximum()+20)
+    graphs.SetMinimum(root_graph[-1].GetHistogram().GetMinimum()-20)
     graphs.Draw('APL')
 
     c.Print(plot_directory+filename)
