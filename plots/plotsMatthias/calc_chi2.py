@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Script to calculate the chi2 between histograms
+Script to calculate the chi2 between histograms with the option to scale the error value
 """
 
 from typing import Any
@@ -76,7 +76,7 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_le
 
     hist_selected.Scale(1/hist_selected.Integral(), 'width')
 
-    return matrix_norm, hist_selected, (hist_axis_range_min, hist_axis_range_max)
+    return matrix_norm, hist_selected
 
 
 def normalize_cov_matrix(matrix_orig, root_hist):
@@ -278,13 +278,12 @@ if __name__ == '__main__':
             for k, pt_range in enumerate(pt_jet_ranges):
                 for s, scale in enumerate(error_scales):
                     (matrices_norm[g][h][k][s],
-                     root_hist[g][h][k][s],
-                     hist_axis_range) = calc_norm_cov_matrix(filename_root_hist=filename,
-                                                             hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name,
-                                                                                                                pt_range[0], pt_range[1]),
-                                                             plot_matrix=True,
-                                                             id_level=level, id_sample=sample_name, id_range=pt_range,
-                                                             bin_error_scale=scale)
+                     root_hist[g][h][k][s]) = calc_norm_cov_matrix(filename_root_hist=filename,
+                                                                   hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name,
+                                                                                            pt_range[0], pt_range[1]),
+                                                                   plot_matrix=True,
+                                                                   id_level=level, id_sample=sample_name, id_range=pt_range,
+                                                                   bin_error_scale=scale)
 
         for k, pt_range in enumerate(pt_jet_ranges):
             for s in range(len(error_scales)):
