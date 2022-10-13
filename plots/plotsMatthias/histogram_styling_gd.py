@@ -1,5 +1,5 @@
 import ROOT
-import Analysis.Tools.syncer                    # Starts syncing by itself, does not need to be called in script
+# import Analysis.Tools.syncer                    # Starts syncing by itself, does not need to be called in script
 from MTopCorrelations.Tools.user import plot_directory
 from calc_triplet_and_hist import pt_jet_ranges
 
@@ -143,9 +143,11 @@ def style_jet_hist(filename_root, hist_name, filename_graphic, xlim=(380, 730), 
 
 
 if __name__ == '__main__':
-    subfolder = '/generation_d'
-    filename = 'histogram_files/correlator_hist_trip_9.root'
+    subfolder = '/generation_11'
+    filename = 'histogram_files/correlator_hist_trip_11.root'
     sample_names = ['TTbar_169p5', 'TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5', 'TTbar_175p5']
+
+    ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
 
     for level in ['Gen', 'PF']:
         for pt_range in pt_jet_ranges:
@@ -175,7 +177,7 @@ if __name__ == '__main__':
 
             style_varied_hist(filename_root=filename,
                               hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_TTbar_172p5_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
-                              varied_hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_$_{:}_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
+                              varied_hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_$_{:}_TTbar_172p5_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
                               var_factors=['1.02', '0.98'],
                               filename_graphic=subfolder+'/correlator_hist_varied_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
                               ylim=(0, 0.02), verb=False)
