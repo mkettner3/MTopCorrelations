@@ -236,12 +236,15 @@ def plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, hist_axis_ra
                                                                                                       id_range[0], id_range[1]))
 
 
-def plot_chi2(root_graph, filename):
-    # type: (list, str) -> None
+def plot_chi2(root_graph, filename, obt_top_mass):
+    # type: (list, str, float) -> None
 
     ROOT.gStyle.SetOptStat(0)  # Do not display stat box
+    ROOT.gStyle.SetLegendBorderSize(1)  # No border for legend
+    ROOT.gStyle.SetPadTickX(0)
+    ROOT.gStyle.SetPadTickY(0)
     c = ROOT.TCanvas('c', 'c', 1000, 1000)
-    legend = ROOT.TLegend(0.4, 0.78, 0.6, 0.9)
+    legend = ROOT.TLegend(0.32, 0.72, 0.68, 0.9)
 
     graphs = ROOT.TMultiGraph()
     for s in range(len(root_graph)):
@@ -256,6 +259,7 @@ def plot_chi2(root_graph, filename):
     graphs.SetMaximum(root_graph[0].GetHistogram().GetMaximum()+20)
     graphs.SetMinimum(root_graph[-1].GetHistogram().GetMinimum()-20)
     graphs.Draw('AP')
+    legend.AddEntry(ROOT.nullptr, 'Resulting Top-Mass: {:.4f} GeV'.format(obt_top_mass), '')
     legend.Draw()
 
     c.Print(plot_directory+filename)
@@ -340,9 +344,10 @@ if __name__ == '__main__':
             fit_func = ROOT.TF1('pol2_fit', 'pol2', 169.5, 175.5)
             [chi2_graph[s].Fit(fit_func, 'R') for s in range(len(error_scales))]
             fit = [chi2_graph[s].GetFunction('pol2_fit') for s in range(len(error_scales))]
-            plot_chi2(root_graph=chi2_graph, filename='chi2_plots/chi2_new_10_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]))
             obt_top_mass = fit[0].GetMinimumX()
             print('The calculated mass of the Top-Quark equals to {:.5f} GeV.'.format(obt_top_mass))
             chi2min = fit[0].GetMinimum()
             uncertainty = fit[0].GetX(chi2min+1, 169.5, 175.5)
             print(uncertainty)
+            plot_chi2(root_graph=chi2_graph, filename='chi2_plots/chi2_new_10_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
+                      obt_top_mass=obt_top_mass)
