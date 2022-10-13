@@ -51,7 +51,7 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_le
 
     # root_hist = create_test_histograms(sample_name=id_sample)
 
-    root_hist.Rebin(4)
+    root_hist.Rebin(5)
 
     selected_bins = range(int(root_hist.GetNbinsX()/5), root_hist.GetNbinsX())
     hist_selected = ROOT.TH1F("Correlator", "3 #zeta", len(selected_bins), 0.9, 2.7)
@@ -236,15 +236,15 @@ def plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, hist_axis_ra
                                                                                                       id_range[0], id_range[1]))
 
 
-def plot_chi2(root_graph, filename, obt_top_mass):
-    # type: (list, str, float) -> None
+def plot_chi2(root_graph, label, filename, obt_top_mass):
+    # type: (list, list, str, float) -> None
 
     ROOT.gStyle.SetOptStat(0)  # Do not display stat box
     ROOT.gStyle.SetLegendBorderSize(1)  # No border for legend
     ROOT.gStyle.SetPadTickX(0)
     ROOT.gStyle.SetPadTickY(0)
     c = ROOT.TCanvas('c', 'c', 1000, 1000)
-    legend = ROOT.TLegend(0.32, 0.72, 0.68, 0.9)
+    legend = ROOT.TLegend(0.3, 0.74, 0.7, 0.9)
 
     graphs = ROOT.TMultiGraph()
     for s in range(len(root_graph)):
@@ -253,13 +253,13 @@ def plot_chi2(root_graph, filename, obt_top_mass):
         root_graph[s].SetMarkerColor(s+2)
         root_graph[s].GetFunction('pol2_fit').SetLineColor(s+2)
         graphs.Add(deepcopy(root_graph[s]))
-        legend.AddEntry(root_graph[s].GetFunction('pol2_fit'), 'Error factor: {:0}'.format(2**s), 'l')
+        legend.AddEntry(root_graph[s].GetFunction('pol2_fit'), label[s], 'l')
     graphs.SetTitle('#chi^{2}')
     graphs.GetXaxis().SetTitle('Top-Mass (GeV)')
-    graphs.SetMaximum(root_graph[0].GetHistogram().GetMaximum()+20)
-    graphs.SetMinimum(root_graph[-1].GetHistogram().GetMinimum()-20)
+    graphs.SetMaximum(max([root_graph[i].GetHistogram().GetMaximum() for i in range(len(root_graph))])+20)
+    graphs.SetMinimum(min([root_graph[j].GetHistogram().GetMinimum() for j in range(len(root_graph))])-20)
     graphs.Draw('AP')
-    legend.AddEntry(ROOT.nullptr, 'Resulting Top-Mass: {:.4f} GeV'.format(obt_top_mass), '')
+    legend.AddEntry(ROOT.nullptr, 'Resulting Top-Mass: {:.3f} GeV'.format(obt_top_mass), '')
     legend.Draw()
 
     c.Print(plot_directory+filename)
@@ -349,5 +349,6 @@ if __name__ == '__main__':
             chi2min = fit[0].GetMinimum()
             uncertainty = fit[0].GetX(chi2min+1, 169.5, 175.5)
             print(uncertainty)
-            plot_chi2(root_graph=chi2_graph, filename='chi2_plots/chi2_new_10_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
+            plot_chi2(root_graph=chi2_graph, label=['Error factor: {:0}'.format(e) for e in error_scales],
+                      filename='chi2_plots/chi2_new_10_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
                       obt_top_mass=obt_top_mass)
