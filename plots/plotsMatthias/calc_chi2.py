@@ -51,7 +51,9 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_le
 
     # root_hist = create_test_histograms(sample_name=id_sample)
 
-    selected_bins = range(15, root_hist.GetNbinsX()-5)
+    root_hist.Rebin(4)
+
+    selected_bins = range(int(root_hist.GetNbinsX()/5), root_hist.GetNbinsX())
     hist_selected = ROOT.TH1F("Correlator", "3 #zeta", len(selected_bins), 0.9, 2.7)
     for new_bin, old_bin in enumerate(selected_bins):
         hist_selected.SetBinContent(new_bin+1, root_hist.GetBinContent(old_bin+1))
@@ -259,6 +261,41 @@ def plot_chi2(root_graph, filename):
     c.Print(plot_directory+filename)
 
 
+def plot_corr_hist(corr_hists, filename_graphic):
+    ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
+    ROOT.gStyle.SetPadTickX(1)          # Axis ticks on top
+    ROOT.gStyle.SetPadTickY(1)          # Axis ticks right
+    ROOT.gStyle.SetOptStat(0)           # Do not display stat box
+
+    c = ROOT.TCanvas('c', 'c', 600, 600)
+    ROOT.gPad.SetLeftMargin(0.19)
+    ROOT.gPad.SetBottomMargin(0.2)
+
+    if len(corr_hists) == 3:
+        line_colors = [ROOT.kBlue, ROOT.kGreen, ROOT.kRed]
+    elif len(corr_hists) == 5:
+        line_colors = [ROOT.kMagenta, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kYellow]
+    else:
+        raise RuntimeError('Please specify the line colors in plot_corr_hist()!')
+
+    for hist, line_color in zip(corr_hists, line_colors):
+        hist.SetLineColor(line_color)
+        hist.SetTitle('')
+        hist.SetLineWidth(2)
+        hist.SetLineStyle(1)
+    corr_hists[0].GetXaxis().SetRangeUser(0, 3)    # x-axis range (also works for y-axis)
+    corr_hists[0].GetXaxis().SetTitle('3#zeta')
+    corr_hists[0].GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
+    corr_hists[0].GetYaxis().SetTitle('Energy-weighted Triplets')
+    corr_hists[0].GetYaxis().SetNdivisions(505)      # Unterteilung der x-Achse
+
+    corr_hists[0].Draw('HIST')
+    for i in range(1, len(corr_hists)):
+        corr_hists[i].Draw('HIST SAME')
+
+    c.Print(plot_directory+filename_graphic)
+
+
 pt_jet_lowest = 400
 pt_jet_highest = 700
 pt_jet_step = 50
@@ -292,6 +329,8 @@ if __name__ == '__main__':
                                                                    bin_error_scale=scale)
 
         for k, pt_range in enumerate(pt_jet_ranges):
+            plot_corr_hist(corr_hists=[root_hist[g][i][k][0] for i in range(len(sample_names))],
+                           filename_graphic='chi2_plots/chi2_new_10_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]))
             for s in range(len(error_scales)):
                 for h in [0, 1, 3, 4]:
                     chi2[g][k][s].append(compute_chi2(template_hist=root_hist[g][h][k][s], data_hist=root_hist[g][2][k][s],
@@ -301,7 +340,7 @@ if __name__ == '__main__':
             fit_func = ROOT.TF1('pol2_fit', 'pol2', 169.5, 175.5)
             [chi2_graph[s].Fit(fit_func, 'R') for s in range(len(error_scales))]
             fit = [chi2_graph[s].GetFunction('pol2_fit') for s in range(len(error_scales))]
-            plot_chi2(root_graph=chi2_graph, filename='chi2_plots/chi2_data_10_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]))
+            plot_chi2(root_graph=chi2_graph, filename='chi2_plots/chi2_new_10_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]))
             obt_top_mass = fit[0].GetMinimumX()
             print('The calculated mass of the Top-Quark equals to {:.5f} GeV.'.format(obt_top_mass))
             chi2min = fit[0].GetMinimum()
