@@ -239,16 +239,22 @@ def plot_chi2(root_graph, filename):
 
     ROOT.gStyle.SetOptStat(0)  # Do not display stat box
     c = ROOT.TCanvas('c', 'c', 1000, 1000)
+    legend = ROOT.TLegend(0.4, 0.78, 0.6, 0.9)
 
     graphs = ROOT.TMultiGraph()
     for s in range(len(root_graph)):
-        root_graph[s].SetMarkerSize(1.5)
+        root_graph[s].SetMarkerSize(2)
+        root_graph[s].SetMarkerStyle(47)
+        root_graph[s].SetMarkerColor(s+2)
+        root_graph[s].GetFunction('pol2_fit').SetLineColor(s+2)
         graphs.Add(deepcopy(root_graph[s]))
-    graphs.SetTitle("#chi^{2}")
-    graphs.GetXaxis().SetTitle("Top-Mass (GeV)")
+        legend.AddEntry(root_graph[s].GetFunction('pol2_fit'), 'Error factor: {:0}'.format(2**s), 'l')
+    graphs.SetTitle('#chi^{2}')
+    graphs.GetXaxis().SetTitle('Top-Mass (GeV)')
     graphs.SetMaximum(root_graph[0].GetHistogram().GetMaximum()+20)
     graphs.SetMinimum(root_graph[-1].GetHistogram().GetMinimum()-20)
-    graphs.Draw('APL')
+    graphs.Draw('AP')
+    legend.Draw()
 
     c.Print(plot_directory+filename)
 
@@ -295,7 +301,7 @@ if __name__ == '__main__':
             fit_func = ROOT.TF1('pol2_fit', 'pol2', 169.5, 175.5)
             [chi2_graph[s].Fit(fit_func, 'R') for s in range(len(error_scales))]
             fit = [chi2_graph[s].GetFunction('pol2_fit') for s in range(len(error_scales))]
-            plot_chi2(root_graph=chi2_graph, filename='chi2_plots/chi2_data_10_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]))
+            plot_chi2(root_graph=chi2_graph, filename='chi2_plots/chi2_data_10_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]))
             obt_top_mass = fit[0].GetMinimumX()
             print('The calculated mass of the Top-Quark equals to {:.5f} GeV.'.format(obt_top_mass))
             chi2min = fit[0].GetMinimum()
