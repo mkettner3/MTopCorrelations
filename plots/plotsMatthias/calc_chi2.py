@@ -265,13 +265,14 @@ def plot_chi2(root_graph, label, filename, obt_top_mass):
     c.Print(plot_directory+filename)
 
 
-def plot_corr_hist(corr_hists, filename_graphic):
+def plot_corr_hist(corr_hists, filename_graphic, sample_names):
     ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
     ROOT.gStyle.SetPadTickX(1)          # Axis ticks on top
     ROOT.gStyle.SetPadTickY(1)          # Axis ticks right
     ROOT.gStyle.SetOptStat(0)           # Do not display stat box
 
     c = ROOT.TCanvas('c', 'c', 600, 600)
+    legend = ROOT.TLegend(0.75, 0.7, 0.94, 0.89)
     ROOT.gPad.SetLeftMargin(0.19)
     ROOT.gPad.SetBottomMargin(0.2)
 
@@ -282,11 +283,12 @@ def plot_corr_hist(corr_hists, filename_graphic):
     else:
         raise RuntimeError('Please specify the line colors in plot_corr_hist()!')
 
-    for hist, line_color in zip(corr_hists, line_colors):
+    for hist, line_color, sample_name in zip(corr_hists, line_colors, sample_names):
         hist.SetLineColor(line_color)
         hist.SetTitle('')
         hist.SetLineWidth(2)
         hist.SetLineStyle(1)
+        legend.AddEntry(hist, sample_name[-5:], 'l')
     corr_hists[0].GetXaxis().SetRangeUser(0, 3)    # x-axis range (also works for y-axis)
     corr_hists[0].GetXaxis().SetTitle('3#zeta')
     corr_hists[0].GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
@@ -297,6 +299,7 @@ def plot_corr_hist(corr_hists, filename_graphic):
     for i in range(1, len(corr_hists)):
         corr_hists[i].Draw('HIST SAME')
 
+    legend.Draw()
     c.Print(plot_directory+filename_graphic)
 
 
@@ -308,7 +311,7 @@ pt_jet_ranges = zip(range(pt_jet_lowest, pt_jet_highest, pt_jet_step),
 
 
 if __name__ == '__main__':
-    filename = 'histogram_files/correlator_hist_trip_10.root'
+    filename = 'histogram_files/correlator_hist_trip_13.root'
     sample_names = ['TTbar_169p5', 'TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5', 'TTbar_175p5']
     error_scales = [1, 2, 4]
 
@@ -334,7 +337,8 @@ if __name__ == '__main__':
 
         for k, pt_range in enumerate(pt_jet_ranges):
             plot_corr_hist(corr_hists=[root_hist[g][i][k][0] for i in range(len(sample_names))],
-                           filename_graphic='chi2_plots/chi2_new_10_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]))
+                           filename_graphic='chi2_plots/chi2_new_13_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
+                           sample_names=sample_names)
             for s in range(len(error_scales)):
                 for h in [0, 1, 3, 4]:
                     chi2[g][k][s].append(compute_chi2(template_hist=root_hist[g][h][k][s], data_hist=root_hist[g][2][k][s],
@@ -347,8 +351,8 @@ if __name__ == '__main__':
             obt_top_mass = fit[0].GetMinimumX()
             print('The calculated mass of the Top-Quark equals to {:.5f} GeV.'.format(obt_top_mass))
             chi2min = fit[0].GetMinimum()
-            uncertainty = fit[0].GetX(chi2min+1, 169.5, 175.5)
-            print(uncertainty)
+            uncertainty = abs(obt_top_mass - fit[0].GetX(chi2min+1, 169.5, 175.5))
+            print('The uncertainty equals {:.5f.} GeV.'.format(uncertainty))
             plot_chi2(root_graph=chi2_graph, label=['Error factor: {:0}'.format(e) for e in error_scales],
-                      filename='chi2_plots/chi2_new_10_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
+                      filename='chi2_plots/chi2_new_13_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
                       obt_top_mass=obt_top_mass)

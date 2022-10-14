@@ -10,7 +10,7 @@ import ROOT
 
 
 if __name__ == '__main__':
-    filename = 'histogram_files/correlator_hist_trip_11.root'
+    filename = 'histogram_files/correlator_hist_trip_13.root'
     sample_names = ['TTbar_169p5', 'TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5', 'TTbar_175p5']
 
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
@@ -38,7 +38,8 @@ if __name__ == '__main__':
 
         for k, pt_range in enumerate(pt_jet_ranges):
             plot_corr_hist(corr_hists=[root_hist[g][i][k][0] for i in range(len(sample_names))],
-                           filename_graphic='chi2_plots/chi2_pt_varied_11_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]))
+                           filename_graphic='chi2_plots/chi2_pt_varied_13_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
+                           sample_names=sample_names)
             for v in range(3):
                 for h in [0, 1, 3, 4]:
                     chi2[g][k][v].append(compute_chi2(template_hist=root_hist[g][h][k][v], data_hist=root_hist[g][2][k][v],         # Muss v für template_hist 0 gesetzt werden oder nicht?
@@ -51,8 +52,8 @@ if __name__ == '__main__':
             obt_top_mass = fit[0].GetMinimumX()
             print('The calculated mass of the Top-Quark equals to {:.5f} GeV.'.format(obt_top_mass))
             chi2min = fit[0].GetMinimum()
-            uncertainty = fit[0].GetX(chi2min+1, 169.5, 175.5)
-            print(uncertainty)
+            uncertainty = abs(obt_top_mass - fit[0].GetX(chi2min+1, 169.5, 175.5))
+            print('The uncertainty equals {:.5f.} GeV.'.format(uncertainty))
             plot_chi2(root_graph=chi2_graph, label=['p_{T} variance: '+e for e in ['original', '+ 2 %', '- 2 %']],
-                      filename='chi2_plots/chi2_pt_varied_11_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
+                      filename='chi2_plots/chi2_pt_varied_13_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
                       obt_top_mass=obt_top_mass)

@@ -16,6 +16,7 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, yl
         hists[i].SetDirectory(ROOT.nullptr)
     f.Close()
     c = ROOT.TCanvas('c', 'c', 600, 600)
+    legend = ROOT.TLegend(0.75, 0.7, 0.94, 0.89)
     ROOT.gPad.SetLeftMargin(0.19)
     ROOT.gPad.SetBottomMargin(0.2)
 
@@ -26,12 +27,12 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, yl
     else:
         raise RuntimeError('Please specify the line colors in style_corr_hist()!')
 
-    for hist, line_color in zip(hists, line_colors):
-        # hist.Rebin(2)
+    for hist, line_color, sample_name in zip(hists, line_colors, sample_names):
         hist.SetLineColor(line_color)
         hist.SetTitle('')
         hist.SetLineWidth(2)
         hist.SetLineStyle(1)
+        legend.AddEntry(hist, sample_name[-5:], 'l')
         if hist_name[-6:] != 'abscou':
             hist.Scale(1/hist.Integral())
     hists[0].GetXaxis().SetRangeUser(0, 3)    # x-axis range (also works for y-axis)
@@ -45,6 +46,7 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, yl
     for i in range(1, len(hists)):
         hists[i].Draw('HIST SAME')
 
+    legend.Draw()
     c.Print(plot_directory+filename_graphic)
 
     if verb:
@@ -68,6 +70,9 @@ def style_varied_hist(filename_root, hist_name, varied_hist_name, var_factors, f
         hists[i].SetDirectory(ROOT.nullptr)
     f.Close()
     c = ROOT.TCanvas('c', 'c', 600, 600)
+    legend = ROOT.TLegend(0.75, 0.7, 0.94, 0.89)
+    for i, label in enumerate([var_factors[0]+' %', 'original', var_factors[1]+' %']):
+        legend.AddEntry(hists[i], label, 'l')
     ROOT.gPad.SetLeftMargin(0.19)
     ROOT.gPad.SetBottomMargin(0.2)
 
@@ -97,6 +102,7 @@ def style_varied_hist(filename_root, hist_name, varied_hist_name, var_factors, f
     for i in range(1, len(hists)):
         hists[i].Draw('HIST SAME')
 
+    legend.Draw()
     c.Print(plot_directory+filename_graphic)
 
     if verb:
