@@ -115,8 +115,8 @@ def vary_pt(jet_pt, constituents, factor):
     # type: (float, list, float) -> tuple
 
     jet_pt = jet_pt * factor
-    for i in range(len(constituents)):
-        constituents[i].SetPtEtaPhiM(constituents[i].Pt() * factor, constituents[i].Eta(), constituents[i].Phi(), constituents[i].M())
+    # for i in range(len(constituents)):
+    #     constituents[i] = constituents[i] * factor
 
     return jet_pt, constituents
 
@@ -189,7 +189,7 @@ if __name__ == '__main__':
     save_root_hists(hists_top=hists, hists_w=hists_w, hists_jet_pt=hists_jet_pt, hists_jet_mass=hists_jet_mass,
                     hists_varied=hists_varied, pt_variations=(1.02, 0.98), hists_ev_weight=hists_event_weight,
                     sample_names=[sample.name[:11] for sample in samples], pt_jet_ranges=pt_jet_ranges,
-                    filename='histogram_files/correlator_hist_trip_11_pp_{:03}_{:}.root'.format(args.job, args.sample_type))
+                    filename='histogram_files/correlator_hist_trip_13_pp_{:03}_{:}.root'.format(args.job, args.sample_type))
     end = time.time()
 
     print('Executing calc_triplet_and_hist.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))
