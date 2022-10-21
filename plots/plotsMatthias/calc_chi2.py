@@ -78,7 +78,7 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_le
 
     hist_selected.Scale(1/hist_selected.Integral(), 'width')
 
-    return matrix_norm, hist_selected
+    return matrix_norm, hist_selected, (hist_axis_range_min, hist_axis_range_max)
 
 
 def normalize_cov_matrix(matrix_orig, root_hist):
@@ -265,7 +265,7 @@ def plot_chi2(root_graph, label, filename, obt_top_mass):
     c.Print(plot_directory+filename)
 
 
-def plot_corr_hist(corr_hists, filename_graphic, sample_names):
+def plot_corr_hist(corr_hists, hist_range, filename_graphic, sample_names):
     ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
     ROOT.gStyle.SetPadTickX(1)          # Axis ticks on top
     ROOT.gStyle.SetPadTickY(1)          # Axis ticks right
@@ -289,9 +289,10 @@ def plot_corr_hist(corr_hists, filename_graphic, sample_names):
         hist.SetLineWidth(2)
         hist.SetLineStyle(1)
         legend.AddEntry(hist, sample_name[-5:], 'l')
-    corr_hists[0].GetXaxis().SetRangeUser(0, 3)    # x-axis range (also works for y-axis)
+    corr_hists[0].GetXaxis().SetRangeUser(hist_range[0], hist_range[1])
     corr_hists[0].GetXaxis().SetTitle('3#zeta')
     corr_hists[0].GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
+    corr_hists[0].GetYaxis().SetRangeUser(0, max([corr_hists[i].GetMaximum() for i in range(len(corr_hists))])*1.1)
     corr_hists[0].GetYaxis().SetTitle('Energy-weighted Triplets')
     corr_hists[0].GetYaxis().SetNdivisions(505)      # Unterteilung der x-Achse
 
@@ -328,15 +329,16 @@ if __name__ == '__main__':
             for k, pt_range in enumerate(pt_jet_ranges):
                 for s, scale in enumerate(error_scales):
                     (matrices_norm[g][h][k][s],
-                     root_hist[g][h][k][s]) = calc_norm_cov_matrix(filename_root_hist=filename,
-                                                                   hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name,
-                                                                                            pt_range[0], pt_range[1]),
-                                                                   plot_matrix=True,
-                                                                   id_level=level, id_sample=sample_name, id_range=pt_range,
-                                                                   bin_error_scale=scale)
+                     root_hist[g][h][k][s],
+                     hist_range) = calc_norm_cov_matrix(filename_root_hist=filename,
+                                                        hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name,
+                                                                                        pt_range[0], pt_range[1]),
+                                                        plot_matrix=False,
+                                                        id_level=level, id_sample=sample_name, id_range=pt_range,
+                                                        bin_error_scale=scale)
 
         for k, pt_range in enumerate(pt_jet_ranges):
-            plot_corr_hist(corr_hists=[root_hist[g][i][k][0] for i in range(len(sample_names))],
+            plot_corr_hist(corr_hists=[root_hist[g][i][k][0] for i in range(len(sample_names))], hist_range=hist_range,
                            filename_graphic='chi2_plots/chi2_new_13_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
                            sample_names=sample_names)
             for s in range(len(error_scales)):
@@ -352,7 +354,7 @@ if __name__ == '__main__':
             print('The calculated mass of the Top-Quark equals to {:.5f} GeV.'.format(obt_top_mass))
             chi2min = fit[0].GetMinimum()
             uncertainty = abs(obt_top_mass - fit[0].GetX(chi2min+1, 169.5, 175.5))
-            print('The uncertainty equals {:.5f.} GeV.'.format(uncertainty))
+            print('The uncertainty equals {:.5f} GeV.'.format(uncertainty))
             plot_chi2(root_graph=chi2_graph, label=['Error factor: {:0}'.format(e) for e in error_scales],
                       filename='chi2_plots/chi2_new_13_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
                       obt_top_mass=obt_top_mass)

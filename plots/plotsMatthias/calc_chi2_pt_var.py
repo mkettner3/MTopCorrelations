@@ -24,20 +24,22 @@ if __name__ == '__main__':
             print('Working on sample "{}" ...'.format(sample_name))
             for k, pt_range in enumerate(pt_jet_ranges):
                 (matrices_norm[g][h][k][0],
-                 root_hist[g][h][k][0]) = calc_norm_cov_matrix(filename_root_hist=filename,
-                                                               hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name,
-                                                                                                                pt_range[0], pt_range[1]),
-                                                               plot_matrix=False,
-                                                               id_level=level, id_sample=sample_name, id_range=pt_range)
+                 root_hist[g][h][k][0],
+                 hist_range) = calc_norm_cov_matrix(filename_root_hist=filename,
+                                                    hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name,
+                                                                                                    pt_range[0], pt_range[1]),
+                                                    plot_matrix=False,
+                                                    id_level=level, id_sample=sample_name, id_range=pt_range)
                 for v, var_fac in enumerate((1.02, 0.98)):
                     (matrices_norm[g][h][k][v+1],
-                     root_hist[g][h][k][v+1]) = calc_norm_cov_matrix(filename_root_hist=filename,
-                                                                     hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_{:.2f}_{:}_{:}_{:}_{:}'.format(var_fac, level, sample_name, pt_range[0], pt_range[1]),
-                                                                     plot_matrix=False,
-                                                                     id_level=level, id_sample=sample_name, id_range=pt_range)
+                     root_hist[g][h][k][v+1],
+                     hist_range) = calc_norm_cov_matrix(filename_root_hist=filename,
+                                                        hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_{:.2f}_{:}_{:}_{:}_{:}'.format(var_fac, level, sample_name, pt_range[0], pt_range[1]),
+                                                        plot_matrix=False,
+                                                        id_level=level, id_sample=sample_name, id_range=pt_range)
 
         for k, pt_range in enumerate(pt_jet_ranges):
-            plot_corr_hist(corr_hists=[root_hist[g][i][k][0] for i in range(len(sample_names))],
+            plot_corr_hist(corr_hists=[root_hist[g][i][k][0] for i in range(len(sample_names))], hist_range=hist_range,
                            filename_graphic='chi2_plots/chi2_pt_varied_13_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
                            sample_names=sample_names)
             for v in range(3):
@@ -53,7 +55,7 @@ if __name__ == '__main__':
             print('The calculated mass of the Top-Quark equals to {:.5f} GeV.'.format(obt_top_mass))
             chi2min = fit[0].GetMinimum()
             uncertainty = abs(obt_top_mass - fit[0].GetX(chi2min+1, 169.5, 175.5))
-            print('The uncertainty equals {:.5f.} GeV.'.format(uncertainty))
+            print('The uncertainty equals {:.5f} GeV.'.format(uncertainty))
             plot_chi2(root_graph=chi2_graph, label=['p_{T} variance: '+e for e in ['original', '+ 2 %', '- 2 %']],
                       filename='chi2_plots/chi2_pt_varied_13_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
                       obt_top_mass=obt_top_mass)
