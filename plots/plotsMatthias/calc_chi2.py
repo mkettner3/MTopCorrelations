@@ -44,6 +44,31 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_le
                          absolute_hist=False, bin_error_scale=1):
     # type: (str, str, bool, str, str, tuple, bool, float) -> tuple
 
+    histogram = prepare_histogram(filename_root_hist=filename_root_hist, hist_name=hist_name)
+
+    num_bins = histogram.GetNbinsX()
+    hist_axis_range_min = histogram.GetXaxis().GetXmin()
+    hist_axis_range_max = histogram.GetXaxis().GetXmax()
+    matrix_orig = np.zeros((num_bins, num_bins), dtype=np.float64)
+    if absolute_hist:
+        for i in range(num_bins):
+            matrix_orig[i, i] = np.sqrt(histogram.GetBinContent(i+1))
+    else:
+        for i in range(num_bins):
+            matrix_orig[i, i] = (histogram.GetBinError(i+1)*bin_error_scale) ** 2   # weight is set to Kronecker-Delta
+
+    matrix_norm = normalize_cov_matrix(matrix_orig=matrix_orig, root_hist=histogram)
+
+    if plot_matrix:
+        plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, (hist_axis_range_min, hist_axis_range_max),
+                            absolute_hist)
+
+    return matrix_norm, histogram, (hist_axis_range_min, hist_axis_range_max)
+
+
+def prepare_histogram(filename_root_hist, hist_name):
+    # type: (str, str) -> Any
+
     f = ROOT.TFile(filename_root_hist, 'read')
     root_hist = f.Get(hist_name)
     root_hist.SetDirectory(ROOT.nullptr)            # Returns a pointer to root_hist in memory.
@@ -59,26 +84,7 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_le
         hist_selected.SetBinContent(new_bin+1, root_hist.GetBinContent(old_bin+1))
         hist_selected.SetBinError(new_bin+1, root_hist.GetBinError(old_bin+1))
 
-    num_bins = hist_selected.GetNbinsX()
-    hist_axis_range_min = hist_selected.GetXaxis().GetXmin()
-    hist_axis_range_max = hist_selected.GetXaxis().GetXmax()
-    matrix_orig = np.zeros((num_bins, num_bins), dtype=np.float64)
-    if absolute_hist:
-        for i in range(num_bins):
-            matrix_orig[i, i] = np.sqrt(hist_selected.GetBinContent(i+1))
-    else:
-        for i in range(num_bins):
-            matrix_orig[i, i] = (hist_selected.GetBinError(i+1)*bin_error_scale) ** 2   # weight is set to Kronecker-Delta
-
-    matrix_norm = normalize_cov_matrix(matrix_orig=matrix_orig, root_hist=hist_selected)
-
-    if plot_matrix:
-        plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, (hist_axis_range_min, hist_axis_range_max),
-                            absolute_hist)
-
-    hist_selected.Scale(1/hist_selected.Integral(), 'width')
-
-    return matrix_norm, hist_selected, (hist_axis_range_min, hist_axis_range_max)
+    return hist_selected
 
 
 def normalize_cov_matrix(matrix_orig, root_hist):
@@ -167,6 +173,9 @@ def NormalizeMatrix(old_cov, hist_):
 def compute_chi2(template_hist, data_hist, data_cov_matrix):
     # type: (Any, Any, np.ndarray) -> float
 
+    template_hist.Scale(1/template_hist.Integral(), 'width')
+    data_hist.Scale(1/data_hist.Integral(), 'width')
+    
     num_bins = template_hist.GetNbinsX()
     template_hist_cont = np.zeros((num_bins-1), dtype=np.float64)
     data_hist_cont = np.zeros((num_bins-1), dtype=np.float64)
@@ -321,7 +330,6 @@ if __name__ == '__main__':
     matrices_norm = [[[[None for _ in range(len(error_scales))] for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
     root_hist = [[[[None for _ in range(len(error_scales))] for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
     chi2 = [[[[] for _ in range(len(error_scales))] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
-    hist_axis_range = (0, 3)
 
     for g, level in enumerate(['Gen', 'PF']):
         for h, sample_name in enumerate(sample_names):

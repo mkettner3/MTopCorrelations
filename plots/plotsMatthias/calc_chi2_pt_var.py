@@ -44,7 +44,7 @@ if __name__ == '__main__':
                            sample_names=sample_names)
             for v in range(3):
                 for h in [0, 1, 3, 4]:
-                    chi2[g][k][v].append(compute_chi2(template_hist=root_hist[g][h][k][v], data_hist=root_hist[g][2][k][v],         # Muss v für template_hist 0 gesetzt werden oder nicht?
+                    chi2[g][k][v].append(compute_chi2(template_hist=root_hist[g][h][k][0], data_hist=root_hist[g][2][k][0],
                                                       data_cov_matrix=matrices_norm[g][2][k][v]))
 
             chi2_graph = [ROOT.TGraph(4, np.array([169.5, 171.5, 173.5, 175.5]), np.asarray(chi2[g][k][v])) for v in range(3)]
