@@ -5,7 +5,6 @@ Script to calculate the chi2 between histograms with the option to scale the err
 """
 
 from typing import Any
-from array import array
 from copy import deepcopy
 import numpy as np
 import ROOT
@@ -50,19 +49,47 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_le
     num_bins = histogram.GetNbinsX()
     hist_axis_range_min = histogram.GetXaxis().GetXmin()
     hist_axis_range_max = histogram.GetXaxis().GetXmax()
-    matrix_orig = np.zeros((num_bins, num_bins), dtype=np.float64)
-    if absolute_hist:
-        for i in range(num_bins):
-            matrix_orig[i, i] = np.sqrt(histogram.GetBinContent(i+1))
-    else:
-        for i in range(num_bins):
-            matrix_orig[i, i] = (histogram.GetBinError(i+1)*bin_error_scale) ** 2   # weight is set to Kronecker-Delta
+    # matrix_orig = np.zeros((num_bins, num_bins), dtype=np.float64)
+    # if absolute_hist:
+    #     for i in range(num_bins):
+    #         matrix_orig[i, i] = np.sqrt(histogram.GetBinContent(i+1))
+    # else:
+    #     for i in range(num_bins):
+    #         matrix_orig[i, i] = (histogram.GetBinError(i+1)*bin_error_scale) ** 2   # weight is set to Kronecker-Delta
 
-    matrix_norm = normalize_cov_matrix(matrix_orig=matrix_orig, root_hist=histogram)
+    f = ROOT.TFile(filename_root_hist, 'read')
+    matrix_hist = f.Get('covariances')
+    matrix_hist.SetDirectory(ROOT.nullptr)  # Returns a pointer to root_hist in memory.
+    f.Close()
+
+    x_bins = matrix_hist.GetNbinsX()
+    y_bins = matrix_hist.GetNbinsY()
+    matrix_orig = np.zeros((x_bins, y_bins))
+
+    for y_bin in range(y_bins):
+        for x_bin in range(x_bins):
+            matrix_orig[x_bin, y_bin] = matrix_hist.GetBinContent(x_bin+1, y_bin+1)
+
+    f = ROOT.TFile(filename_root_hist, 'read')
+    matrix_hist1 = f.Get('covariances_norm')
+    matrix_hist1.SetDirectory(ROOT.nullptr)  # Returns a pointer to root_hist in memory.
+    f.Close()
+
+    x_bins = matrix_hist1.GetNbinsX()
+    y_bins = matrix_hist1.GetNbinsY()
+    matrix_norm = np.zeros((x_bins, y_bins))
+
+    for y_bin in range(y_bins):
+        for x_bin in range(x_bins):
+            matrix_norm[x_bin, y_bin] = matrix_hist1.GetBinContent(x_bin + 1, y_bin + 1)
 
     if plot_matrix:
         plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, (hist_axis_range_min, hist_axis_range_max),
                             absolute_hist)
+
+    store_matrix_in_root(matrices_norm=[[[matrix_norm]]], matrices_orig=[[[matrix_orig]]],
+                         sample_names=[''], pt_jet_ranges=[(1, 2)], filename='histogram_files/comparison.root',
+                         hist_axis_range=(hist_axis_range_min, hist_axis_range_max))
 
     return matrix_norm, histogram, (hist_axis_range_min, hist_axis_range_max)
 
@@ -75,9 +102,17 @@ def prepare_histogram(filename_root_hist, hist_name):
     root_hist.SetDirectory(ROOT.nullptr)            # Returns a pointer to root_hist in memory.
     f.Close()                                       # f.Get only returns a handle, which gets lost when TFile is closed
 
-    hist_new = root_hist.Rebin(2, 'hist_new', array('d', [0.9, 2.03, 2.7]))
+    # root_hist = create_test_histograms(sample_name=id_sample)
 
-    return hist_new
+    # root_hist.Rebin(5)
+
+    # selected_bins = range(int(root_hist.GetNbinsX()/5), root_hist.GetNbinsX())
+    # hist_selected = ROOT.TH1F("Correlator", "3 #zeta", len(selected_bins), 0.9, 2.7)
+    # for new_bin, old_bin in enumerate(selected_bins):
+    #     hist_selected.SetBinContent(new_bin+1, root_hist.GetBinContent(old_bin+1))
+    #     hist_selected.SetBinError(new_bin+1, root_hist.GetBinError(old_bin+1))
+
+    return root_hist
 
 
 def normalize_cov_matrix(matrix_orig, root_hist):
@@ -166,8 +201,8 @@ def NormalizeMatrix(old_cov, hist_):
 def compute_chi2(template_hist, data_hist, data_cov_matrix):
     # type: (Any, Any, np.ndarray) -> float
 
-    template_hist.Scale(1/template_hist.Integral(), 'width')
-    data_hist.Scale(1/data_hist.Integral(), 'width')
+    # template_hist.Scale(1/template_hist.Integral(), 'width')
+    # data_hist.Scale(1/data_hist.Integral(), 'width')
     
     num_bins = template_hist.GetNbinsX()
     template_hist_cont = np.zeros((num_bins-1), dtype=np.float64)
@@ -192,7 +227,7 @@ def store_matrix_in_root(matrices_norm, matrices_orig, sample_names, pt_jet_rang
     f = ROOT.TFile(filename, 'RECREATE')
     f.cd()
 
-    for g, level in enumerate(['Gen', 'PF']):
+    for g, level in enumerate(['Gen']):
         for h, sample_name in enumerate(sample_names):
             for k, pt_jet_range in enumerate(pt_jet_ranges):
                 hist_norm = ROOT.TH2F("Covariance Matrix", "Normalized Covariance Matrix",
@@ -314,40 +349,42 @@ pt_jet_ranges = zip(range(pt_jet_lowest, pt_jet_highest, pt_jet_step),
 
 
 if __name__ == '__main__':
-    filename = 'histogram_files/correlator_hist_trip_15.root'
+    filename = 'histogram_files/InputOutputTest.root'
     sample_names = ['TTbar_169p5', 'TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5', 'TTbar_175p5']
-    error_scales = [1, 2, 4]
+    error_scales = [1]
 
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
 
     matrices_norm = [[[[None for _ in range(len(error_scales))] for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
-    root_hist = [[[[None for _ in range(len(error_scales))] for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
+    root_hist = [[[[None for _ in range(len(error_scales))] for _ in range(len(pt_jet_ranges))] for _ in range(6)] for _ in range(2)]
     chi2 = [[[[] for _ in range(len(error_scales))] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
 
-    for g, level in enumerate(['Gen', 'PF']):
-        for h, sample_name in enumerate(sample_names):
+    for g, level in enumerate(['Gen']):
+        for h, sample_name in enumerate(['']):
             print('Working on sample "{}" ...'.format(sample_name))
-            for k, pt_range in enumerate(pt_jet_ranges):
-                for s, scale in enumerate(error_scales):
+            for k, pt_range in enumerate([(1, 2)]):
+                for s, scale in enumerate([1]):
                     (matrices_norm[g][h][k][s],
                      root_hist[g][h][k][s],
                      hist_range) = calc_norm_cov_matrix(filename_root_hist=filename,
-                                                        hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name,
-                                                                                        pt_range[0], pt_range[1]),
+                                                        hist_name='data',
                                                         plot_matrix=False,
                                                         id_level=level, id_sample=sample_name, id_range=pt_range,
                                                         bin_error_scale=scale)
 
-        for k, pt_range in enumerate(pt_jet_ranges):
-            plot_corr_hist(corr_hists=[root_hist[g][i][k][0] for i in range(len(sample_names))], hist_range=hist_range,
-                           filename_graphic='chi2_plots/chi2_new_15_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
-                           sample_names=sample_names)
-            for s in range(len(error_scales)):
-                for h in [0, 1, 3, 4]:
-                    chi2[g][k][s].append(compute_chi2(template_hist=root_hist[g][h][k][s], data_hist=root_hist[g][2][k][s],
-                                                      data_cov_matrix=matrices_norm[g][2][k][s]))
+        for k, pt_range in enumerate([('', '')]):
+            # plot_corr_hist(corr_hists=[root_hist[g][i][k][0] for i in range(len(sample_names))], hist_range=hist_range,
+            #                filename_graphic='chi2_plots/chi2_new_13_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
+            #                sample_names=sample_names)
+            for s in range(len([1])):
+                root_hist[0][0][0][0] = prepare_histogram(filename_root_hist=filename, hist_name='data_norm')
+                for h, value in zip([1, 2, 3, 4, 5], ['1955', '1715', '1725', '1735', '1755']):
+                    print('Compute Chi2 for '+value+' GeV...')
+                    root_hist[0][h][0][0] = prepare_histogram(filename_root_hist=filename, hist_name='mtop'+value+'_norm')
+                    chi2[g][k][s].append(compute_chi2(template_hist=root_hist[0][h][0][0], data_hist=root_hist[0][0][0][0],
+                                                      data_cov_matrix=matrices_norm[0][0][0][0]))
 
-            chi2_graph = [ROOT.TGraph(4, np.array([169.5, 171.5, 173.5, 175.5]), np.asarray(chi2[g][k][s])) for s in range(len(error_scales))]
+            chi2_graph = [ROOT.TGraph(5, np.array([169.5, 171.5, 172.5, 173.5, 175.5]), np.asarray(chi2[g][k][s])) for s in range(len(error_scales))]
             fit_func = ROOT.TF1('pol2_fit', 'pol2', 168, 177)
             [chi2_graph[s].Fit(fit_func, 'R') for s in range(len(error_scales))]
             fit = [chi2_graph[s].GetFunction('pol2_fit') for s in range(len(error_scales))]
@@ -357,5 +394,5 @@ if __name__ == '__main__':
             uncertainty = abs(obt_top_mass - fit[0].GetX(chi2min+1, 168, 177))
             print('The uncertainty equals {:.5f} GeV.'.format(uncertainty))
             plot_chi2(root_graph=chi2_graph, label=['Error factor: {:0}'.format(e) for e in error_scales],
-                      filename='chi2_plots/chi2_new_15_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
+                      filename='chi2_plots/chi2_comparison_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
                       obt_top_mass=obt_top_mass)
