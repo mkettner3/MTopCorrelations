@@ -28,6 +28,7 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, yl
         raise RuntimeError('Please specify the line colors in style_corr_hist()!')
 
     for hist, line_color, sample_name in zip(hists, line_colors, sample_names):
+        hist.Rebin(20)
         hist.SetLineColor(line_color)
         hist.SetTitle('')
         hist.SetLineWidth(2)
@@ -84,7 +85,7 @@ def style_varied_hist(filename_root, hist_name, varied_hist_name, var_factors, f
         raise RuntimeError('Please specify the line colors in style_corr_hist()!')
 
     for hist, line_color in zip(hists.values(), line_colors):
-        # hist.Rebin(2)
+        hist.Rebin(20)
         hist.SetLineColor(line_color)
         hist.SetTitle('')
         hist.SetLineWidth(2)
@@ -125,7 +126,7 @@ def style_jet_hist(filename_root, hist_name, filename_graphic, xlim=(380, 730), 
     ROOT.gPad.SetLeftMargin(0.19)
     ROOT.gPad.SetBottomMargin(0.2)
 
-    # hist.Rebin(2)
+    hist.Rebin(20)
     hist.SetLineColor(ROOT.kRed)
     hist.SetTitle('')
     hist.SetLineWidth(2)
@@ -149,8 +150,8 @@ def style_jet_hist(filename_root, hist_name, filename_graphic, xlim=(380, 730), 
 
 
 if __name__ == '__main__':
-    subfolder = '/generation_11'
-    filename = 'histogram_files/correlator_hist_trip_11.root'
+    subfolder = '/generation_15'
+    filename = 'histogram_files/correlator_hist_trip_15.root'
     sample_names = ['TTbar_169p5', 'TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5', 'TTbar_175p5']
 
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
