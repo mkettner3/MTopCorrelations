@@ -26,7 +26,7 @@ def create_test_histograms(sample_name):
     else:
         raise ValueError('The variable "sample_name" has an unexpected value!')
 
-    root_hist = ROOT.TH1F("Correlator", "3 #zeta", 5, 0, 3)
+    root_hist = ROOT.TH1D("Correlator", "3 #zeta", 5, 0, 3)
     root_hist.SetBinContent(1, bin_con[0])
     root_hist.SetBinContent(2, bin_con[1])
     root_hist.SetBinContent(3, bin_con[2])
@@ -195,10 +195,10 @@ def store_matrix_in_root(matrices_norm, matrices_orig, sample_names, pt_jet_rang
     for g, level in enumerate(['Gen', 'PF']):
         for h, sample_name in enumerate(sample_names):
             for k, pt_jet_range in enumerate(pt_jet_ranges):
-                hist_norm = ROOT.TH2F("Covariance Matrix", "Normalized Covariance Matrix",
+                hist_norm = ROOT.TH2D("Covariance Matrix", "Normalized Covariance Matrix",
                                       matrices_norm[g][h][k].shape[0], hist_axis_range[0], hist_axis_range[1],
                                       matrices_norm[g][h][k].shape[1], hist_axis_range[0], hist_axis_range[1])
-                hist_orig = ROOT.TH2F("Covariance Matrix", "Original Covariance Matrix",
+                hist_orig = ROOT.TH2D("Covariance Matrix", "Original Covariance Matrix",
                                       matrices_orig[g][h][k].shape[0], hist_axis_range[0], hist_axis_range[1],
                                       matrices_orig[g][h][k].shape[1], hist_axis_range[0], hist_axis_range[1])
                 for i in range(matrices_norm[g][h][k].shape[0]):
@@ -219,7 +219,7 @@ def store_matrix_in_root(matrices_norm, matrices_orig, sample_names, pt_jet_rang
 def plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, hist_axis_range, absolute_hist):
     # type: (np.ndarray, str, str, tuple, tuple, bool) -> None
 
-    hist_norm = ROOT.TH2F("Covariance Matrix", "Normalized Covariance Matrix",
+    hist_norm = ROOT.TH2D("Covariance Matrix", "Normalized Covariance Matrix",
                           matrix_norm.shape[0], hist_axis_range[0], hist_axis_range[1],
                           matrix_norm.shape[1], hist_axis_range[0], hist_axis_range[1])
     for i in range(matrix_norm.shape[0]):
@@ -314,7 +314,7 @@ pt_jet_ranges = zip(range(pt_jet_lowest, pt_jet_highest, pt_jet_step),
 
 
 if __name__ == '__main__':
-    filename = 'histogram_files/correlator_hist_trip_15.root'
+    filename = 'histogram_files/correlator_hist_trip_16.root'
     sample_names = ['TTbar_169p5', 'TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5', 'TTbar_175p5']
     error_scales = [1, 2, 4]
 
@@ -340,7 +340,7 @@ if __name__ == '__main__':
 
         for k, pt_range in enumerate(pt_jet_ranges):
             plot_corr_hist(corr_hists=[root_hist[g][i][k][0] for i in range(len(sample_names))], hist_range=hist_range,
-                           filename_graphic='chi2_plots/chi2_new_15_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
+                           filename_graphic='chi2_plots/chi2_new_16_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
                            sample_names=sample_names)
             for s in range(len(error_scales)):
                 for h in [0, 1, 3, 4]:
@@ -357,5 +357,5 @@ if __name__ == '__main__':
             uncertainty = abs(obt_top_mass - fit[0].GetX(chi2min+1, 168, 177))
             print('The uncertainty equals {:.5f} GeV.'.format(uncertainty))
             plot_chi2(root_graph=chi2_graph, label=['Error factor: {:0}'.format(e) for e in error_scales],
-                      filename='chi2_plots/chi2_new_15_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
+                      filename='chi2_plots/chi2_new_16_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
                       obt_top_mass=obt_top_mass)
