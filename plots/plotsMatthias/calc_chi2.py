@@ -64,6 +64,8 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_le
         plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, (hist_axis_range_min, hist_axis_range_max),
                             absolute_hist)
 
+    histogram.Scale(1/histogram.Integral(), 'width')
+
     return matrix_norm, histogram, (hist_axis_range_min, hist_axis_range_max)
 
 
@@ -75,7 +77,7 @@ def prepare_histogram(filename_root_hist, hist_name):
     root_hist.SetDirectory(ROOT.nullptr)            # Returns a pointer to root_hist in memory.
     f.Close()                                       # f.Get only returns a handle, which gets lost when TFile is closed
 
-    hist_new = root_hist.Rebin(2, 'hist_new', array('d', [0.9, 2.03, 2.7]))
+    hist_new = root_hist.Rebin(5, 'hist_new', array('d', [0.9, 1, 1.5, 1.87, 2.2, 2.8]))   # optimal binning for 450-500 GeV
 
     return hist_new
 
@@ -166,20 +168,17 @@ def NormalizeMatrix(old_cov, hist_):
 def compute_chi2(template_hist, data_hist, data_cov_matrix):
     # type: (Any, Any, np.ndarray) -> float
 
-    template_hist.Scale(1/template_hist.Integral(), 'width')
-    data_hist.Scale(1/data_hist.Integral(), 'width')
-    
     num_bins = template_hist.GetNbinsX()
     template_hist_cont = np.zeros((num_bins-1), dtype=np.float64)
     data_hist_cont = np.zeros((num_bins-1), dtype=np.float64)
     bin_list = list(range(num_bins))
-    bin_list.remove(2)
+    bin_list.remove(0)
     for idx, bin_nbr in enumerate(bin_list):
         template_hist_cont[idx] = template_hist.GetBinContent(bin_nbr+1)
         data_hist_cont[idx] = data_hist.GetBinContent(bin_nbr+1)
     d_vec = data_hist_cont - template_hist_cont
 
-    data_cov_matrix = np.delete(np.delete(data_cov_matrix, 2, 0), 2, 1)
+    data_cov_matrix = np.delete(np.delete(data_cov_matrix, 0, 0), 0, 1)
     data_cov_matrix_inv = np.linalg.inv(data_cov_matrix)
     chi2 = np.linalg.multi_dot([d_vec, data_cov_matrix_inv, d_vec])
 
