@@ -75,11 +75,11 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
                         count += 1
 
                         for v, var_fac in enumerate(pt_variations):
-                            hadronic_jet_pt_varied, jet_constituents = vary_pt(jet_pt=hadronic_jet_pt,
-                                                                               constituents=jet_constituents,
-                                                                               factor=var_fac)
+                            hadronic_jet_pt_varied, jet_constituents_varied = vary_pt(jet_pt=hadronic_jet_pt,
+                                                                                      constituents=jet_constituents,
+                                                                                      factor=var_fac)
 
-                            triplets, _ = construct_triplets(hadronic_jet_pt_varied, jet_constituents,
+                            triplets, _ = construct_triplets(hadronic_jet_pt_varied, jet_constituents_varied,
                                                              max_delta_zeta, delta_legs, shortest_side)
 
                             for k, jet_range in enumerate(pt_jet_ranges):
