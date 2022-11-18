@@ -32,12 +32,12 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
         "nPFJetAK8_cons/I",
         VectorTreeVariable.fromString("PFJetAK8_cons[pt/F,eta/F,phi/F,mass/F,pdgId/I,jetIndex/I]", nMax=1000)]
 
-    hists = [[[[ROOT.TH1D("Correlator", "3 #zeta", nbins, hist_range[0], hist_range[1]) for _ in range(2)] for _ in range(len(pt_jet_ranges))] for _ in range(len(samples))] for _ in range(2)]
-    hists_w = [[[[ROOT.TH1D("Correlator", "3 #zeta", nbins, hist_range[0], hist_range[1]) for _ in range(2)] for _ in range(len(pt_jet_ranges))] for _ in range(len(samples))] for _ in range(2)]
-    hists_varied = [[[[ROOT.TH1D("Correlator", "3 #zeta", nbins, hist_range[0], hist_range[1]) for _ in range(2)] for _ in range(len(pt_jet_ranges))] for _ in range(len(samples))] for _ in range(2)]
-    hists_jet_pt = [ROOT.TH1D("Hadronic Top-Jet-p_{t}", "Jet-p_{t}", nbins, 380, 730) for _ in range(2)]
-    hists_jet_mass = [ROOT.TH1D("Hadronic Top-Jet-mass", "Jet-mass", nbins, 75, 300) for _ in range(2)]
-    hists_event_weight = [[ROOT.TH1D("Event weights", "event-weight", nbins, -1, 1) for _ in range(len(samples))] for _ in range(2)]
+    hists = [[[[ROOT.TH1D("Correlator Top ({:}, {:}, {:}, {:})".format(i, j, k, l), "3 #zeta", nbins, hist_range[0], hist_range[1]) for l in range(2)] for k in range(len(pt_jet_ranges))] for j in range(len(samples))] for i in range(2)]
+    hists_w = [[[[ROOT.TH1D("Correlator W ({:}, {:}, {:}, {:})".format(i, j, k, l), "3 #zeta", nbins, hist_range[0], hist_range[1]) for l in range(2)] for k in range(len(pt_jet_ranges))] for j in range(len(samples))] for i in range(2)]
+    hists_varied = [[[[ROOT.TH1D("Correlator varied ({:}, {:}, {:}, {:})".format(i, j, k, l), "3 #zeta", nbins, hist_range[0], hist_range[1]) for l in range(len(pt_variations))] for k in range(len(pt_jet_ranges))] for j in range(len(samples))] for i in range(2)]
+    hists_jet_pt = [ROOT.TH1D("Hadronic Top-Jet-p_{t} ("+str(i)+")", "Jet-p_{t}", nbins, 380, 730) for i in range(2)]
+    hists_jet_mass = [ROOT.TH1D("Hadronic Top-Jet-mass ("+str(i)+")", "Jet-mass", nbins, 75, 300) for i in range(2)]
+    hists_event_weight = [[ROOT.TH1D("Event weights ({:}, {:})".format(i, j), "event-weight", nbins, -1, 1) for j in range(len(samples))] for i in range(2)]
 
     for g, level in enumerate(['Gen', 'PF']):
         for h, sample in enumerate(samples):
@@ -186,9 +186,9 @@ if __name__ == '__main__':
      hists_varied,
      hists_event_weight) = calc_triplets_and_hist(samples=samples, pt_jet_ranges=pt_jet_ranges,
                                                   max_delta_zeta=0.13, delta_legs=float('nan'), shortest_side=0.05,
-                                                  pt_variations=(1.02, 0.98))
+                                                  pt_variations=(1.1, 1.05, 1.02, 0.98, 0.95, 0.9))
     save_root_hists(hists_top=hists, hists_w=hists_w, hists_jet_pt=hists_jet_pt, hists_jet_mass=hists_jet_mass,
-                    hists_varied=hists_varied, pt_variations=(1.02, 0.98), hists_ev_weight=hists_event_weight,
+                    hists_varied=hists_varied, pt_variations=(1.1, 1.05, 1.02, 0.98, 0.95, 0.9), hists_ev_weight=hists_event_weight,
                     sample_names=[sample.name[:11] for sample in samples], pt_jet_ranges=pt_jet_ranges,
                     filename='histogram_files/correlator_hist_trip_20_pp_{:03}_{:}.root'.format(args.job, args.sample_type))
     end = time.time()
