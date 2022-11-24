@@ -39,7 +39,7 @@ def calc_triplets_and_hist(sample, rew_samples, pt_jet_ranges, max_delta_zeta=fl
     hists_varied = [[[[ROOT.TH1D("Correlator varied ({:}, {:}, {:}, {:})".format(i, j, k, l), "3 #zeta", nbins, hist_range[0], hist_range[1]) for l in range(len(pt_variations))] for k in range(len(pt_jet_ranges))] for j in range(len(rew_samples))] for i in range(2)]
     hists_jet_pt = [[ROOT.TH1D("Hadronic Top-Jet-p_{t} ("+str(i)+", "+str(j)+")", "Jet-p_{t}", nbins, 380, 730) for j in range(len(rew_samples))] for i in range(2)]
     hists_jet_mass = [[ROOT.TH1D("Hadronic Top-Jet-mass ({:}, {:})".format(i, j), "Jet-mass", nbins, 75, 300) for j in range(len(rew_samples))] for i in range(2)]
-    hists_top_mass = [[ROOT.TH1D("Hadronic Top-mass ({:}, {:})".format(i, j), "Jet-mass", nbins, 152.5, 192.5) for j in range(len(rew_samples))] for i in range(2)]
+    hists_top_mass = [[ROOT.TH1D("Hadronic Top-mass ({:}, {:})".format(i, j), "Jet-mass", nbins, 167.5, 177.5) for j in range(len(rew_samples))] for i in range(2)]
     hists_event_weight = [ROOT.TH1D("Event weights ({:})".format(i), "event-weight", nbins, -1, 1) for i in range(2)]
 
     for g, level in enumerate(['Gen', 'PF']):
@@ -186,7 +186,7 @@ def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_jet_mass, hists_top_
 sample = UL2018.TTbar_3
 number_events_ttbar = 139438020309
 
-rew_samples = [171.5, None, 173.5]   # Breit-Wigner reweighted samples
+rew_samples = [171.5, 172., None, 173., 173.5]   # Breit-Wigner reweighted samples
 
 
 if __name__ == '__main__':
