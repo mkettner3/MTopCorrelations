@@ -64,9 +64,10 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_le
         plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, (hist_axis_range_min, hist_axis_range_max),
                             absolute_hist)
 
-    histogram.Scale(1/histogram.Integral(), 'width')
+    histogram_norm = histogram.Clone()
+    histogram_norm.Scale(1/histogram_norm.Integral(), 'width')
 
-    return matrix_norm, histogram, (hist_axis_range_min, hist_axis_range_max)
+    return matrix_norm, histogram, histogram_norm, (hist_axis_range_min, hist_axis_range_max)
 
 
 def prepare_histogram(filename_root_hist, hist_name):
@@ -77,7 +78,7 @@ def prepare_histogram(filename_root_hist, hist_name):
     root_hist.SetDirectory(ROOT.nullptr)            # Returns a pointer to root_hist in memory.
     f.Close()                                       # f.Get only returns a handle, which gets lost when TFile is closed
 
-    hist_new = root_hist.Rebin(5, 'hist_new', array('d', [0.9, 1, 1.5, 1.87, 2.2, 2.8]))   # optimal binning for 450-500 GeV
+    hist_new = root_hist.Rebin(5, 'hist_new', array('d', [0.9, 1, 1.5, 1.88, 2.2, 2.8]))   # optimal binning for 450-500 GeV
 
     return hist_new
 
@@ -233,12 +234,12 @@ def plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, hist_axis_ra
     hist_norm.Draw('COLZ')
 
     abs = 'abs_' if absolute_hist else ''
-    c.Print(plot_directory+'corr_matrix_plots/correlation_matrix_8_norm_{}{:}_{:}_{:}-{:}.png'.format(abs, id_level, id_sample,
-                                                                                                      id_range[0], id_range[1]))
+    c.Print(plot_directory+'corr_matrix_plots/correlation_matrix_20_norm_{}{:}_{:}_{:}-{:}.png'.format(abs, id_level, id_sample,
+                                                                                                       id_range[0], id_range[1]))
 
 
-def plot_chi2(root_graph, label, filename, obt_top_mass):
-    # type: (list, list, str, float) -> None
+def plot_chi2(root_graph, label, filename, obt_top_mass, uncertainty):
+    # type: (list, list, str, float, float) -> None
 
     ROOT.gStyle.SetOptStat(0)  # Do not display stat box
     ROOT.gStyle.SetLegendBorderSize(1)  # No border for legend
@@ -261,6 +262,7 @@ def plot_chi2(root_graph, label, filename, obt_top_mass):
     graphs.SetMinimum(min([root_graph[j].GetHistogram().GetMinimum() for j in range(len(root_graph))])-20)
     graphs.Draw('AP')
     legend.AddEntry(ROOT.nullptr, 'Resulting Top-Mass: {:.3f} GeV'.format(obt_top_mass), '')
+    legend.AddEntry(ROOT.nullptr, 'Uncertainty: {:.3f} GeV'.format(uncertainty), '')
     legend.Draw()
 
     c.Print(plot_directory+filename)
@@ -313,7 +315,7 @@ pt_jet_ranges = zip(range(pt_jet_lowest, pt_jet_highest, pt_jet_step),
 
 
 if __name__ == '__main__':
-    filename = 'histogram_files/correlator_hist_trip_16.root'
+    filename = 'histogram_files/correlator_hist_trip_20.root'
     sample_names = ['TTbar_169p5', 'TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5', 'TTbar_175p5']
     error_scales = [1, 2, 4]
 
@@ -321,6 +323,7 @@ if __name__ == '__main__':
 
     matrices_norm = [[[[None for _ in range(len(error_scales))] for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
     root_hist = [[[[None for _ in range(len(error_scales))] for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
+    root_hist_norm = [[[[None for _ in range(len(error_scales))] for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
     chi2 = [[[[] for _ in range(len(error_scales))] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
 
     for g, level in enumerate(['Gen', 'PF']):
@@ -330,6 +333,7 @@ if __name__ == '__main__':
                 for s, scale in enumerate(error_scales):
                     (matrices_norm[g][h][k][s],
                      root_hist[g][h][k][s],
+                     root_hist_norm[g][h][k][s],
                      hist_range) = calc_norm_cov_matrix(filename_root_hist=filename,
                                                         hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name,
                                                                                         pt_range[0], pt_range[1]),
@@ -338,12 +342,12 @@ if __name__ == '__main__':
                                                         bin_error_scale=scale)
 
         for k, pt_range in enumerate(pt_jet_ranges):
-            plot_corr_hist(corr_hists=[root_hist[g][i][k][0] for i in range(len(sample_names))], hist_range=hist_range,
-                           filename_graphic='chi2_plots/chi2_new_16_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
+            plot_corr_hist(corr_hists=[root_hist_norm[g][i][k][0] for i in range(len(sample_names))], hist_range=hist_range,
+                           filename_graphic='chi2_plots/chi2_new_20_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
                            sample_names=sample_names)
             for s in range(len(error_scales)):
                 for h in [0, 1, 3, 4]:
-                    chi2[g][k][s].append(compute_chi2(template_hist=root_hist[g][h][k][s], data_hist=root_hist[g][2][k][s],
+                    chi2[g][k][s].append(compute_chi2(template_hist=root_hist_norm[g][h][k][s], data_hist=root_hist_norm[g][2][k][s],
                                                       data_cov_matrix=matrices_norm[g][2][k][s]))
 
             chi2_graph = [ROOT.TGraph(4, np.array([169.5, 171.5, 173.5, 175.5]), np.asarray(chi2[g][k][s])) for s in range(len(error_scales))]
@@ -356,5 +360,5 @@ if __name__ == '__main__':
             uncertainty = abs(obt_top_mass - fit[0].GetX(chi2min+1, 168, 177))
             print('The uncertainty equals {:.5f} GeV.'.format(uncertainty))
             plot_chi2(root_graph=chi2_graph, label=['Error factor: {:0}'.format(e) for e in error_scales],
-                      filename='chi2_plots/chi2_new_16_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
-                      obt_top_mass=obt_top_mass)
+                      filename='chi2_plots/chi2_new_20_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
+                      obt_top_mass=obt_top_mass, uncertainty=uncertainty)
