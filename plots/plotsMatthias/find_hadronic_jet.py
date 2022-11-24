@@ -63,4 +63,4 @@ def find_hadronic_jet(event, level, merge_tolerance=0.8, jet_pt_min=400):
             delta_aq < merge_tolerance and delta_b < merge_tolerance and hadronic_jet_pt > jet_pt_min):
         hadronic_jet_idx, hadronic_jet_pt, hadronic_jet_mass = None, None, None
 
-    return hadronic_jet_idx, hadronic_jet_pt, hadronic_jet_mass
+    return hadronic_jet_idx, hadronic_jet_pt, hadronic_jet_mass, top_had.M()

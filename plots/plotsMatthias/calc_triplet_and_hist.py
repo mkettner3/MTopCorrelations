@@ -46,9 +46,9 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
             while r.run():                                                              # Event-Loop
                 event_weight = 60 * 831.762 * 3*0.108 * (1-3*0.108)*2 * 1000 / number_events[h] * r.event.Generator_weight
 
-                hadronic_jet_idx, hadronic_jet_pt, hadronic_jet_mass = find_hadronic_jet(r.event, level=level,
-                                                                                         merge_tolerance=0.8,
-                                                                                         jet_pt_min=400)
+                hadronic_jet_idx, hadronic_jet_pt, hadronic_jet_mass, _ = find_hadronic_jet(r.event, level=level,
+                                                                                            merge_tolerance=0.8,
+                                                                                            jet_pt_min=400)
 
                 if hadronic_jet_idx is not None:
                     jet_constituents = get_jet_constituents(event=r.event, level=level,
