@@ -124,7 +124,7 @@ def vary_pt(jet_pt, constituents, factor):
 
 def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_jet_mass, hists_varied, pt_variations, hists_ev_weight,
                     sample_names, pt_jet_ranges, filename):
-    # type: (list, list, list, list, list, tuple, list, list, list, str) -> None
+    # type: (list, list, list, list, list, list, list, list, list, str) -> None
 
     r_file = ROOT.TFile(filename, 'RECREATE')
     r_file.cd()
@@ -173,11 +173,13 @@ if __name__ == '__main__':
     argParser.add_argument('--nJobs', action='store', nargs='?', type=int, default=1)
     argParser.add_argument('--job', action='store', type=int, default=0)
     argParser.add_argument('--sample_type', action='store', type=str, default='TTbar')  # Can either be 'TTbar' or 'QCD'
+    argParser.add_argument('--pt_variations', action='store', type=str, default='1.1, 1.05, 1.02, 0.98, 0.95, 0.9')
     args = argParser.parse_args()
 
     mc = mc_ttbar if args.sample_type != 'QCD' else mc_qcd
     number_events = number_events_ttbar if args.sample_type != 'QCD' else number_events_qcd
     samples = [sample.split(n=args.nJobs, nSub=args.job) for sample in mc]
+    pt_variations = [float(e.strip()) for e in args.pt_variations.split(',')]
 
     start = time.time()
     count = 0
@@ -186,9 +188,9 @@ if __name__ == '__main__':
      hists_varied,
      hists_event_weight) = calc_triplets_and_hist(samples=samples, pt_jet_ranges=pt_jet_ranges,
                                                   max_delta_zeta=0.13, delta_legs=float('nan'), shortest_side=0.05,
-                                                  pt_variations=(1.1, 1.05, 1.02, 0.98, 0.95, 0.9))
+                                                  pt_variations=pt_variations)
     save_root_hists(hists_top=hists, hists_w=hists_w, hists_jet_pt=hists_jet_pt, hists_jet_mass=hists_jet_mass,
-                    hists_varied=hists_varied, pt_variations=(1.1, 1.05, 1.02, 0.98, 0.95, 0.9), hists_ev_weight=hists_event_weight,
+                    hists_varied=hists_varied, pt_variations=pt_variations, hists_ev_weight=hists_event_weight,
                     sample_names=[sample.name[:11] for sample in samples], pt_jet_ranges=pt_jet_ranges,
                     filename='histogram_files/correlator_hist_trip_20_pp_{:03}_{:}.root'.format(args.job, args.sample_type))
     end = time.time()
