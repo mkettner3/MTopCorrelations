@@ -186,7 +186,7 @@ def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_jet_mass, hists_top_
 sample = UL2018.TTbar_3
 number_events_ttbar = 139438020309
 
-rew_samples = [171.5, 172., None, 173., 173.5]   # Breit-Wigner reweighted samples
+rew_samples = [171.5, 171.75, 172., 172.25, None, 172.75, 173., 173.25, 173.5]   # Breit-Wigner reweighted samples
 
 
 if __name__ == '__main__':
@@ -210,7 +210,7 @@ if __name__ == '__main__':
     save_root_hists(hists_top=hists, hists_w=hists_w, hists_jet_pt=hists_jet_pt, hists_jet_mass=hists_jet_mass,
                     hists_top_mass=hists_top_mass, hists_varied=hists_varied, pt_variations=pt_variations,
                     hists_ev_weight=hists_event_weight, rew_values=rew_samples, pt_jet_ranges=pt_jet_ranges,
-                    filename='histogram_files/correlator_hist_trip_21_pp_{:03}.root'.format(args.job))
+                    filename='histogram_files/correlator_hist_trip_22_pp_{:03}.root'.format(args.job))
     end = time.time()
 
     print('Executing calc_triplet_and_hist.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))
