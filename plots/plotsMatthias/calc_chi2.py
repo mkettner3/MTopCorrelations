@@ -78,7 +78,7 @@ def prepare_histogram(filename_root_hist, hist_name):
     root_hist.SetDirectory(ROOT.nullptr)            # Returns a pointer to root_hist in memory.
     f.Close()                                       # f.Get only returns a handle, which gets lost when TFile is closed
 
-    hist_new = root_hist.Rebin(5, 'hist_new', array('d', [0.9, 1, 1.5, 1.88, 2.2, 2.8]))   # optimal binning for 450-500 GeV
+    hist_new = root_hist.Rebin(7, 'hist_new', array('d', [0.9, 1.2, 1.55, 1.72, 1.87, 1.9, 2.4, 2.8]))   # optimal binning for 450-500 GeV
 
     return hist_new
 
@@ -315,8 +315,8 @@ pt_jet_ranges = zip(range(pt_jet_lowest, pt_jet_highest, pt_jet_step),
 
 
 if __name__ == '__main__':
-    filename = 'histogram_files/correlator_hist_trip_20.root'
-    sample_names = ['TTbar_169p5', 'TTbar_171p5', 'TTbar_172p5', 'TTbar_173p5', 'TTbar_175p5']
+    filename = 'histogram_files/correlator_hist_trip_21.root'
+    sample_names = ['171.5', '172.0', 'None', '173.0', '173.5']
     error_scales = [1, 2, 4]
 
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
@@ -343,14 +343,14 @@ if __name__ == '__main__':
 
         for k, pt_range in enumerate(pt_jet_ranges):
             plot_corr_hist(corr_hists=[root_hist_norm[g][i][k][0] for i in range(len(sample_names))], hist_range=hist_range,
-                           filename_graphic='chi2_plots/chi2_new_20_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
+                           filename_graphic='chi2_plots/chi2_21_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
                            sample_names=sample_names)
             for s in range(len(error_scales)):
-                for h in [0, 1, 3, 4]:
+                for h in [0, 1, 2, 3, 4]:
                     chi2[g][k][s].append(compute_chi2(template_hist=root_hist_norm[g][h][k][s], data_hist=root_hist_norm[g][2][k][s],
-                                                      data_cov_matrix=matrices_norm[g][2][k][s]))
+                                                      data_cov_matrix=matrices_norm[g][2][k][s]))           # Number 2 has to be changed for Breit-Wigner-Method !!!
 
-            chi2_graph = [ROOT.TGraph(4, np.array([169.5, 171.5, 173.5, 175.5]), np.asarray(chi2[g][k][s])) for s in range(len(error_scales))]
+            chi2_graph = [ROOT.TGraph(5, np.array([171.5, 172.0, 172.5, 173.0, 173.5]), np.asarray(chi2[g][k][s])) for s in range(len(error_scales))]
             fit_func = ROOT.TF1('pol2_fit', 'pol2', 168, 177)
             [chi2_graph[s].Fit(fit_func, 'R') for s in range(len(error_scales))]
             fit = [chi2_graph[s].GetFunction('pol2_fit') for s in range(len(error_scales))]
@@ -360,5 +360,5 @@ if __name__ == '__main__':
             uncertainty = abs(obt_top_mass - fit[0].GetX(chi2min+1, 168, 177))
             print('The uncertainty equals {:.5f} GeV.'.format(uncertainty))
             plot_chi2(root_graph=chi2_graph, label=['Error factor: {:0}'.format(e) for e in error_scales],
-                      filename='chi2_plots/chi2_new_20_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
+                      filename='chi2_plots/chi2_21/chi2_21_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
                       obt_top_mass=obt_top_mass, uncertainty=uncertainty)
