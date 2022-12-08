@@ -69,17 +69,16 @@ def calc_triplets_and_hist(samples, pt_jet_ranges, max_delta_zeta=float('nan'), 
                                     hists_w[g][h][k][1].Fill(three_zeta, event_weight)
                                 break
 
-                        hists_jet_pt[g].Fill(hadronic_jet_pt, event_weight)
-                        hists_jet_mass[g].Fill(hadronic_jet_mass, event_weight)
+                        if h == 2:
+                            hists_jet_pt[g].Fill(hadronic_jet_pt, event_weight)
+                            hists_jet_mass[g].Fill(hadronic_jet_mass, event_weight)
                         hists_event_weight[g][h].Fill(event_weight)
                         count += 1
 
                         for v, var_fac in enumerate(pt_variations):
-                            hadronic_jet_pt_varied, jet_constituents_varied = vary_pt(jet_pt=hadronic_jet_pt,
-                                                                                      constituents=jet_constituents,
-                                                                                      factor=var_fac)
+                            hadronic_jet_pt_varied = hadronic_jet_pt * var_fac
 
-                            triplets, _ = construct_triplets(hadronic_jet_pt_varied, jet_constituents_varied,
+                            triplets, _ = construct_triplets(hadronic_jet_pt_varied, jet_constituents,
                                                              max_delta_zeta, delta_legs, shortest_side)
 
                             for k, jet_range in enumerate(pt_jet_ranges):
@@ -110,16 +109,6 @@ def construct_triplets(hadronic_jet_pt, jet_constituents, max_delta_zeta, delta_
                                          delta_legs=delta_legs_calc, shortest_side=shortest_side)
 
     return triplets, triplets_w
-
-
-def vary_pt(jet_pt, constituents, factor):
-    # type: (float, list, float) -> tuple
-
-    jet_pt = jet_pt * factor
-    # for i in range(len(constituents)):
-    #     constituents[i] = constituents[i] * factor
-
-    return jet_pt, constituents
 
 
 def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_jet_mass, hists_varied, pt_variations, hists_ev_weight,
