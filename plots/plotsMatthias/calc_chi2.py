@@ -275,7 +275,7 @@ def plot_corr_hist(corr_hists, hist_range, filename_graphic, sample_names):
     ROOT.gStyle.SetOptStat(0)           # Do not display stat box
 
     c = ROOT.TCanvas('c', 'c', 600, 600)
-    legend = ROOT.TLegend(0.75, 0.7, 0.94, 0.89)
+    legend = ROOT.TLegend(0.75, 0.6, 0.94, 0.89)
     ROOT.gPad.SetLeftMargin(0.19)
     ROOT.gPad.SetBottomMargin(0.2)
 
@@ -283,6 +283,8 @@ def plot_corr_hist(corr_hists, hist_range, filename_graphic, sample_names):
         line_colors = [ROOT.kBlue, ROOT.kGreen, ROOT.kRed]
     elif len(corr_hists) == 5:
         line_colors = [ROOT.kMagenta, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kYellow]
+    elif len(corr_hists) == 9:
+        line_colors = list(range(1, 10))
     else:
         raise RuntimeError('Please specify the line colors in plot_corr_hist()!')
 
@@ -315,8 +317,8 @@ pt_jet_ranges = zip(range(pt_jet_lowest, pt_jet_highest, pt_jet_step),
 
 
 if __name__ == '__main__':
-    filename = 'histogram_files/correlator_hist_trip_21.root'
-    sample_names = ['171.5', '172.0', 'None', '173.0', '173.5']
+    filename = 'histogram_files/correlator_hist_trip_22.root'
+    sample_names = ['171.5', '171.75', '172.0', '172.25', 'None', '172.75', '173.0', '173.25', '173.5']
     error_scales = [1, 2, 4]
 
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
@@ -343,22 +345,22 @@ if __name__ == '__main__':
 
         for k, pt_range in enumerate(pt_jet_ranges):
             plot_corr_hist(corr_hists=[root_hist_norm[g][i][k][0] for i in range(len(sample_names))], hist_range=hist_range,
-                           filename_graphic='chi2_plots/chi2_21_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
+                           filename_graphic='chi2_plots/chi2_22_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
                            sample_names=sample_names)
             for s in range(len(error_scales)):
-                for h in [0, 1, 2, 3, 4]:
-                    chi2[g][k][s].append(compute_chi2(template_hist=root_hist_norm[g][h][k][s], data_hist=root_hist_norm[g][2][k][s],
-                                                      data_cov_matrix=matrices_norm[g][2][k][s]))           # Number 2 has to be changed for Breit-Wigner-Method !!!
+                for h in range(9):
+                    chi2[g][k][s].append(compute_chi2(template_hist=root_hist_norm[g][h][k][s], data_hist=root_hist_norm[g][4][k][s],
+                                                      data_cov_matrix=matrices_norm[g][4][k][s]))           # Number 2 has to be changed for Breit-Wigner-Method !!!
 
-            chi2_graph = [ROOT.TGraph(5, np.array([171.5, 172.0, 172.5, 173.0, 173.5]), np.asarray(chi2[g][k][s])) for s in range(len(error_scales))]
-            fit_func = ROOT.TF1('pol2_fit', 'pol2', 168, 177)
+            chi2_graph = [ROOT.TGraph(9, np.array([171.5, 171.75, 172.0, 172.25, 172.5, 172.75, 173.0, 173.25, 173.5]), np.asarray(chi2[g][k][s])) for s in range(len(error_scales))]
+            fit_func = ROOT.TF1('pol2_fit', 'pol2', 170, 175)
             [chi2_graph[s].Fit(fit_func, 'R') for s in range(len(error_scales))]
             fit = [chi2_graph[s].GetFunction('pol2_fit') for s in range(len(error_scales))]
             obt_top_mass = fit[0].GetMinimumX()
             print('The calculated mass of the Top-Quark equals to {:.5f} GeV.'.format(obt_top_mass))
             chi2min = fit[0].GetMinimum()
-            uncertainty = abs(obt_top_mass - fit[0].GetX(chi2min+1, 168, 177))
+            uncertainty = abs(obt_top_mass - fit[0].GetX(chi2min+1, 170, 175))
             print('The uncertainty equals {:.5f} GeV.'.format(uncertainty))
             plot_chi2(root_graph=chi2_graph, label=['Error factor: {:0}'.format(e) for e in error_scales],
-                      filename='chi2_plots/chi2_21/chi2_21_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
+                      filename='chi2_plots/chi2_22/chi2_22_{}_{}-{}.pdf'.format(level, pt_range[0], pt_range[1]),
                       obt_top_mass=obt_top_mass, uncertainty=uncertainty)

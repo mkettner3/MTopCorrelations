@@ -16,7 +16,7 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, yl
         hists[i].SetDirectory(ROOT.nullptr)
     f.Close()
     c = ROOT.TCanvas('c', 'c', 600, 600)
-    legend = ROOT.TLegend(0.75, 0.7, 0.94, 0.89)
+    legend = ROOT.TLegend(0.75, 0.6, 0.94, 0.89)
     ROOT.gPad.SetLeftMargin(0.19)
     ROOT.gPad.SetBottomMargin(0.2)
 
@@ -24,10 +24,14 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, yl
         line_colors = [ROOT.kBlue, ROOT.kGreen, ROOT.kRed]
     elif len(hists) == 5:
         line_colors = [ROOT.kMagenta, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kYellow]
+    elif len(hists) == 9:
+        line_colors = list(range(1, 10))
     else:
         raise RuntimeError('Please specify the line colors in style_corr_hist()!')
 
     for hist, line_color, sample_name in zip(hists, line_colors, sample_names):
+        if sample_name == 'None':
+            sample_name = '172.5'
         hist.Rebin(20)
         hist.SetLineColor(line_color)
         hist.SetTitle('')
@@ -87,6 +91,8 @@ def style_varied_hist(filename_root, hist_name, varied_hist_name, var_factors, f
         line_colors = [ROOT.kMagenta, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kYellow]
     elif len(hists) == 7:
         line_colors = [ROOT.kMagenta, ROOT.kViolet, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kOrange, ROOT.kYellow]
+    elif len(hists) == 9:
+        line_colors = list(range(1, 10))
     else:
         raise RuntimeError('Please specify the line colors in style_corr_hist()!')
 
@@ -139,11 +145,13 @@ def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xli
         line_colors = [ROOT.kMagenta, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kYellow]
     elif len(hists) == 7:
         line_colors = [ROOT.kMagenta, ROOT.kViolet, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kOrange, ROOT.kYellow]
+    elif len(hists) == 9:
+        line_colors = list(range(1, 10))
     else:
         raise RuntimeError('Please specify the line colors in style_corr_hist()!')
 
     for hist, line_color, sample_name in zip(hists, line_colors, sample_names):
-        hist.Rebin(5)
+        hist.Rebin(2)
         hist.SetLineColor(line_color)
         hist.SetTitle('')
         hist.SetLineWidth(2)
@@ -168,9 +176,9 @@ def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xli
 
 
 if __name__ == '__main__':
-    subfolder = '/generation_21'
-    filename = 'histogram_files/correlator_hist_trip_21.root'
-    sample_names = ['171.5', 'None', '173.5']
+    subfolder = '/generation_22'
+    filename = 'histogram_files/correlator_hist_trip_22.root'
+    sample_names = ['171.5', '171.75', '172.0', '172.25', 'None', '172.75', '173.0', '173.25', '173.5']
 
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
 
@@ -211,16 +219,16 @@ if __name__ == '__main__':
                        hist_name='/Others/'+level+'-Level/hadronic_top_jet_pt_hist_{:}_$'.format(level),
                        sample_names=sample_names,
                        filename_graphic=subfolder+'/hadronic_top_jet_pt_hist_{:}.png'.format(level),
-                       xlim=(380, 730), ylim=(0, 500), mea_type='p_{T}', verb=False)
+                       xlim=(380, 730), ylim=(0, 200), mea_type='p_{T}', verb=False)
 
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_jet_mass_hist_{:}_$'.format(level),
                        sample_names=sample_names,
                        filename_graphic=subfolder+'/hadronic_top_jet_mass_hist_{:}.png'.format(level),
-                       xlim=(100, 250), ylim=(0, 2000), mea_type='mass', verb=False)
+                       xlim=(150, 200), ylim=(0, 800), mea_type='mass', verb=False)
 
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_mass_hist_{:}_$'.format(level),
                        sample_names=sample_names,
                        filename_graphic=subfolder+'/hadronic_top_mass_hist_{:}.png'.format(level),
-                       xlim=(167.5, 177.5), ylim=(0, 4000), mea_type='mass', verb=False)
+                       xlim=(167.5, 177.5), ylim=(0, 600), mea_type='mass', verb=False)
