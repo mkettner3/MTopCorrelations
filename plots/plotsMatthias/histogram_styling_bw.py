@@ -176,8 +176,8 @@ def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xli
 
 
 if __name__ == '__main__':
-    subfolder = '/generation_22'
-    filename = 'histogram_files/correlator_hist_trip_22.root'
+    subfolder = '/generation_24'
+    filename = 'histogram_files/correlator_hist_trip_24.root'
     sample_names = ['171.5', '171.75', '172.0', '172.25', 'None', '172.75', '173.0', '173.25', '173.5']
 
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
@@ -210,9 +210,23 @@ if __name__ == '__main__':
 
             style_varied_hist(filename_root=filename,
                               hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
-                              varied_hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_$_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
+                              varied_hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_jet_$_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
                               var_factors=['1.02', '0.98'],
-                              filename_graphic=subfolder+'/correlator_hist_varied_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
+                              filename_graphic=subfolder+'/correlator_hist_varied_jet_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
+                              ylim=(0, 0.02), verb=False)
+
+            style_varied_hist(filename_root=filename,
+                              hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
+                              varied_hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_cons_pt_$_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
+                              var_factors=['1.02', '0.98'],
+                              filename_graphic=subfolder+'/correlator_hist_varied_cons_pt_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
+                              ylim=(0, 0.02), verb=False)
+
+            style_varied_hist(filename_root=filename,
+                              hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
+                              varied_hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_cons_eta_phi_$_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
+                              var_factors=['1.02', '0.98'],
+                              filename_graphic=subfolder+'/correlator_hist_varied_cons_eta_phi_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
                               ylim=(0, 0.02), verb=False)
 
         style_jet_hist(filename_root=filename,

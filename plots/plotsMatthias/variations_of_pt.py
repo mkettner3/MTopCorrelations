@@ -45,7 +45,7 @@ def plot_chi2(root_graph, label, filename, obt_top_masses, uncertainties):
 
 
 if __name__ == '__main__':
-    filename = 'histogram_files/correlator_hist_trip_22.root'
+    filename = 'histogram_files/correlator_hist_trip_24.root'
     sample_names = ['171.5', '171.75', '172.0', '172.25', 'None', '172.75', '173.0', '173.25', '173.5']
 
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
@@ -76,7 +76,7 @@ if __name__ == '__main__':
         for k, pt_jet_range in enumerate(pt_jet_ranges):
             for v, var_fac in enumerate((1.02, 0.98)):
                 hists_varied[g][k][v] = prepare_histogram(filename_root_hist=filename,
-                                                          hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_{:.2f}_{:}_{:}_{:}_{:}'.format(var_fac, level, 'None', pt_jet_range[0], pt_jet_range[1]))
+                                                          hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_cons_eta_phi_{:.2f}_{:}_{:}_{:}_{:}'.format(var_fac, level, 'None', pt_jet_range[0], pt_jet_range[1]))
                 hists_varied_norm[g][k][v] = hists_varied[g][k][v].Clone()
                 hists_varied_norm[g][k][v].Scale(1 / hists_varied_norm[g][k][v].Integral(), 'width')
 
@@ -98,7 +98,7 @@ if __name__ == '__main__':
             matrices_norm_down[g][k] = normalize_cov_matrix(matrix_orig=matrix_orig_down, root_hist=root_hist[g][4][k]) + matrices_norm[g][4][k]
 
             plot_corr_hist(corr_hists=[root_hist_norm[g][4][k], hists_varied_norm[g][k][0], hists_varied_norm[g][k][1]], hist_range=hist_range,
-                           filename_graphic='chi2_plots/chi2_pt_varied_22_hist/corr_hist_{}_{}-{}.png'.format(level, pt_jet_range[0], pt_jet_range[1]),
+                           filename_graphic='chi2_plots/chi2_pt_varied_24_hist/corr_hist_{}_{}-{}.png'.format(level, pt_jet_range[0], pt_jet_range[1]),
                            sample_names=['p_{T} variance: '+e for e in ['original', '+ 2 %', '- 2 %']])
 
             for h in range(9):
@@ -126,5 +126,5 @@ if __name__ == '__main__':
             print('Uncertainty Down: {:.5f} GeV.'.format(uncertainty_down))
 
             plot_chi2(root_graph=chi2_graph, label=['p_{T} variance: '+e for e in ['original', '+ 2 %', '- 2 %']],
-                      filename='chi2_plots/chi2_pt_varied_22/chi2_pt_varied_22_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]),
+                      filename='chi2_plots/chi2_pt_varied_24/chi2_pt_varied_24_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]),
                       obt_top_masses=obt_top_masses[1:], uncertainties=[uncertainty_up, uncertainty_down])
