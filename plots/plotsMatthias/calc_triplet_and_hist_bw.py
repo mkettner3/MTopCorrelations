@@ -98,6 +98,7 @@ def calc_triplets_and_hist(sample, rew_samples, pt_jet_ranges, max_delta_zeta=fl
                                         hists_varied_jet[g][h][k][v].Fill(three_zeta, weight*event_weight*bw_weight)
                                     break
 
+                    """
                     for v, var_fac in enumerate(pt_variations):
                         jet_constituents_pt_varied = [constituent * var_fac for constituent in jet_constituents]
 
@@ -112,6 +113,7 @@ def calc_triplets_and_hist(sample, rew_samples, pt_jet_ranges, max_delta_zeta=fl
                                     for three_zeta, weight in zip(triplets[0], triplets[1]):
                                         hists_varied_cons_pt[g][h][k][v].Fill(three_zeta, weight*event_weight*bw_weight)
                                     break
+                    """
 
                     for v, var_fac in enumerate(pt_variations):
                         jet_constituents_eta_phi_varied = deepcopy(jet_constituents)
@@ -221,7 +223,7 @@ if __name__ == '__main__':
     argParser = argparse.ArgumentParser(description='Argument parser')    # So #SPLIT100 can be used in the bash script.
     argParser.add_argument('--nJobs', action='store', nargs='?', type=int, default=1)
     argParser.add_argument('--job', action='store', type=int, default=0)
-    argParser.add_argument('--pt_variations', action='store', type=str, default='1.02, 0.98')
+    argParser.add_argument('--pt_variations', action='store', type=str, default='1.1, 1.05, 1.02, 1.01, 0.99, 0.98, 0.95, 0.9')
     args = argParser.parse_args()
 
     sample = sample.split(n=args.nJobs, nSub=args.job)
@@ -240,7 +242,7 @@ if __name__ == '__main__':
                     hists_varied_cons_pt=hists_varied_cons_pt, hists_varied_cons_eta_phi=hists_varied_cons_eta_phi,
                     pt_variations=pt_variations,
                     hists_ev_weight=hists_event_weight, rew_values=rew_samples, pt_jet_ranges=pt_jet_ranges,
-                    filename='histogram_files/correlator_hist_trip_24_pp_{:03}.root'.format(args.job))
+                    filename='histogram_files/correlator_hist_trip_25_pp_{:03}.root'.format(args.job))
     end = time.time()
 
     print('Executing calc_triplet_and_hist.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))

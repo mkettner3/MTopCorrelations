@@ -4,6 +4,8 @@
 Function to produce triplets.
 """
 
+import random
+
 
 def make_triplets_and_cut(jet_pt, particle_vectors, n=2, max_delta_zeta=None, delta_legs=None, shortest_side=None):
     # type: (float, list, int, float, float, float) -> tuple
@@ -23,9 +25,17 @@ def make_triplets_and_cut(jet_pt, particle_vectors, n=2, max_delta_zeta=None, de
 
     three_zeta_top, w_top = [], []
     three_zeta_w, w_w = [], []
+    particles_lost_in_tracker = []
 
     for i in range(len(particle_vectors)):
+        if i in particles_lost_in_tracker:
+            continue
         for j in range(i+1, len(particle_vectors)):
+            if particle_vectors[i].DeltaR(particle_vectors[j]) < 0.01 and random.randrange(2) == 0 or \
+               particle_vectors[i].DeltaR(particle_vectors[j]) < 0.05 and random.randrange(5) == 0 or \
+               particle_vectors[i].DeltaR(particle_vectors[j]) < 0.1 and random.randrange(10) == 0:
+                particles_lost_in_tracker.append(j)
+                continue
             for k in range(j+1, len(particle_vectors)):
                 zeta_value = [particle_vectors[i].DeltaR(particle_vectors[j]),
                               particle_vectors[i].DeltaR(particle_vectors[k]),
