@@ -18,6 +18,13 @@ from RootTools.core.TreeVariable import VectorTreeVariable
 import argparse
 
 
+def cons_pt_var_func(var_fac, cons_pt):
+    if cons_pt <= 10:
+        return var_fac
+    else:
+        return 0.0375*var_fac*cons_pt + 0.625*var_fac
+
+
 def calc_triplets_and_hist(sample, rew_samples, pt_jet_ranges, max_delta_zeta=float('nan'), delta_legs=float('nan'),
                            shortest_side=0.1, nbins=900, hist_range=(0, 3), pt_variations=None):
     global count, number_events_ttbar
@@ -98,9 +105,8 @@ def calc_triplets_and_hist(sample, rew_samples, pt_jet_ranges, max_delta_zeta=fl
                                         hists_varied_jet[g][h][k][v].Fill(three_zeta, weight*event_weight*bw_weight)
                                     break
 
-                    """
                     for v, var_fac in enumerate(pt_variations):
-                        jet_constituents_pt_varied = [constituent * var_fac for constituent in jet_constituents]
+                        jet_constituents_pt_varied = [constituent * cons_pt_var_func(var_fac, constituent.Pt()) for constituent in jet_constituents]
 
                         triplets, _ = construct_triplets(hadronic_jet_pt, jet_constituents_pt_varied,
                                                          max_delta_zeta, delta_legs, shortest_side)
@@ -113,7 +119,6 @@ def calc_triplets_and_hist(sample, rew_samples, pt_jet_ranges, max_delta_zeta=fl
                                     for three_zeta, weight in zip(triplets[0], triplets[1]):
                                         hists_varied_cons_pt[g][h][k][v].Fill(three_zeta, weight*event_weight*bw_weight)
                                     break
-                    """
 
                     for v, var_fac in enumerate(pt_variations):
                         jet_constituents_eta_phi_varied = deepcopy(jet_constituents)
