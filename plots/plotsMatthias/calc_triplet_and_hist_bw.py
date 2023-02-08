@@ -10,7 +10,7 @@ from copy import deepcopy
 import numpy as np
 import MTopCorrelations.samples.nanoTuples_UL2018_nanoAOD as UL2018
 from calc_triplet_and_hist import pt_jet_ranges
-from triplet_maker import make_triplets_and_cut
+from triplet_maker import make_triplets_and_cut, make_triplets_and_cut_sim_eff
 from find_hadronic_jet import find_hadronic_jet
 from jet_constituents import get_jet_constituents
 import ROOT
@@ -129,7 +129,8 @@ def calc_triplets_and_hist(sample, rew_samples, pt_jet_ranges, max_delta_zeta=fl
                                                                             jet_constituents[m].M())
 
                         triplets, _ = construct_triplets(hadronic_jet_pt, jet_constituents_eta_phi_varied,
-                                                         max_delta_zeta, delta_legs, shortest_side)
+                                                         max_delta_zeta, delta_legs, shortest_side,
+                                                         efficiency_simulation=True)
 
                         for h, mtop_bw in enumerate(rew_samples):
                             bw_weight = calc_bw_factor(event_top_mass=m_top_had, new_top_mass=mtop_bw)
@@ -143,8 +144,8 @@ def calc_triplets_and_hist(sample, rew_samples, pt_jet_ranges, max_delta_zeta=fl
     return hists, hists_w, hists_jet_pt, hists_jet_mass, hists_top_mass, hists_varied_jet, hists_varied_cons_pt, hists_varied_cons_eta_phi, hists_event_weight
 
 
-def construct_triplets(hadronic_jet_pt, jet_constituents, max_delta_zeta, delta_legs, shortest_side):
-    # type: (float, list, float, float, float) -> tuple
+def construct_triplets(hadronic_jet_pt, jet_constituents, max_delta_zeta, delta_legs, shortest_side, efficiency_simulation=False):
+    # type: (float, list, float, float, float, bool) -> tuple
 
     if isnan(max_delta_zeta):
         max_delta_zeta_calc = 3.5 / 3. * (170. / hadronic_jet_pt) ** 2
@@ -156,10 +157,15 @@ def construct_triplets(hadronic_jet_pt, jet_constituents, max_delta_zeta, delta_
     else:
         delta_legs_calc = delta_legs
 
+    if not efficiency_simulation:
+        triplet_function = make_triplets_and_cut
+    else:
+        triplet_function = make_triplets_and_cut_sim_eff
+
     (triplets,
-     triplets_w) = make_triplets_and_cut(jet_pt=hadronic_jet_pt, particle_vectors=jet_constituents,
-                                         max_delta_zeta=max_delta_zeta_calc,
-                                         delta_legs=delta_legs_calc, shortest_side=shortest_side)
+     triplets_w) = triplet_function(jet_pt=hadronic_jet_pt, particle_vectors=jet_constituents,
+                                    max_delta_zeta=max_delta_zeta_calc,
+                                    delta_legs=delta_legs_calc, shortest_side=shortest_side)
 
     return triplets, triplets_w
 

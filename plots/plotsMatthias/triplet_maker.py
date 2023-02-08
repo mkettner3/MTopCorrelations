@@ -10,7 +10,46 @@ import random
 def make_triplets_and_cut(jet_pt, particle_vectors, n=2, max_delta_zeta=None, delta_legs=None, shortest_side=None):
     # type: (float, list, int, float, float, float) -> tuple
     """
-    Method to produce triplets from the particle vectors.
+    Method to produce triplets from the particle vectors and select the triplets which satisfy the constraints.
+
+    :param jet_pt: float; The Pt of the jet from the top quark.
+    :param particle_vectors: list of ROOT.TLorentzVector(); The lorentz-vectors of the particles inside the
+        mentioned jet of one event.
+    :param n: integer; Order of energy weighting. Default is quadratic order (n=2).
+    :param max_delta_zeta: floating; The maximum value for delta zeta of the equilateral triangle.
+    :param delta_legs: floating; The maximum value for the delta between the two legs of the isosceles triangle.
+    :param shortest_side: floating; The maximum value for the shortest side of the isosceles triangle.
+
+    :return: tuple of two lists; The first list contains the values for three_zeta and the second contains the weights.
+    """
+
+    three_zeta_top, w_top = [], []
+    three_zeta_w, w_w = [], []
+
+    for i in range(len(particle_vectors)):
+        for j in range(i+1, len(particle_vectors)):
+            for k in range(j+1, len(particle_vectors)):
+                zeta_value = [particle_vectors[i].DeltaR(particle_vectors[j]),
+                              particle_vectors[i].DeltaR(particle_vectors[k]),
+                              particle_vectors[j].DeltaR(particle_vectors[k])]
+                zeta_value.sort()
+
+                if (zeta_value[2]-zeta_value[0]) < max_delta_zeta:
+                    three_zeta_top.append(sum(zeta_value))
+                    w_top.append((particle_vectors[i].Pt() * particle_vectors[j].Pt() * particle_vectors[k].Pt())**n / ((jet_pt**3)**n))
+
+                if (zeta_value[2]-zeta_value[1]) < delta_legs and zeta_value[0] < shortest_side:
+                    three_zeta_w.append(sum(zeta_value))
+                    w_w.append((particle_vectors[i].Pt() * particle_vectors[j].Pt() * particle_vectors[k].Pt())**n / ((jet_pt**3)**n))
+
+    return (three_zeta_top, w_top), (three_zeta_w, w_w)
+
+
+def make_triplets_and_cut_sim_eff(jet_pt, particle_vectors, n=2, max_delta_zeta=None, delta_legs=None, shortest_side=None):
+    # type: (float, list, int, float, float, float) -> tuple
+    """
+    Method to produce triplets from the particle vectors and select the triplets which satisfy the constraints.
+    The tracker efficiency is simulated by losing particles at a certain propability.
 
     :param jet_pt: float; The Pt of the jet from the top quark.
     :param particle_vectors: list of ROOT.TLorentzVector(); The lorentz-vectors of the particles inside the
