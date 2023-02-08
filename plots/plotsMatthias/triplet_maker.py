@@ -45,8 +45,9 @@ def make_triplets_and_cut(jet_pt, particle_vectors, n=2, max_delta_zeta=None, de
     return (three_zeta_top, w_top), (three_zeta_w, w_w)
 
 
-def make_triplets_and_cut_sim_eff(jet_pt, particle_vectors, n=2, max_delta_zeta=None, delta_legs=None, shortest_side=None):
-    # type: (float, list, int, float, float, float) -> tuple
+def make_triplets_and_cut_sim_eff(jet_pt, particle_vectors, n=2, max_delta_zeta=None, delta_legs=None,
+                                  shortest_side=None, tracker_efficiency_deltaR=0.01, tracker_efficiency_loss_rate=2):
+    # type: (float, list, int, float, float, float, float, int) -> tuple
     """
     Method to produce triplets from the particle vectors and select the triplets which satisfy the constraints.
     The tracker efficiency is simulated by losing particles at a certain propability.
@@ -58,6 +59,9 @@ def make_triplets_and_cut_sim_eff(jet_pt, particle_vectors, n=2, max_delta_zeta=
     :param max_delta_zeta: floating; The maximum value for delta zeta of the equilateral triangle.
     :param delta_legs: floating; The maximum value for the delta between the two legs of the isosceles triangle.
     :param shortest_side: floating; The maximum value for the shortest side of the isosceles triangle.
+    :param tracker_efficiency_deltaR: floating; The minimum deltaR at which the tracker can detect particles flawlessly.
+    :param tracker_efficiency_loss_rate: integer; If deltaR is below the tracker_efficiency_deltaR, in average every
+        ___ particle is dropped.
 
     :return: tuple of two lists; The first list contains the values for three_zeta and the second contains the weights.
     """
@@ -70,9 +74,7 @@ def make_triplets_and_cut_sim_eff(jet_pt, particle_vectors, n=2, max_delta_zeta=
         if i in particles_lost_in_tracker:
             continue
         for j in range(i+1, len(particle_vectors)):
-            if particle_vectors[i].DeltaR(particle_vectors[j]) < 0.01 and random.randrange(2) == 0 or \
-               particle_vectors[i].DeltaR(particle_vectors[j]) < 0.05 and random.randrange(5) == 0 or \
-               particle_vectors[i].DeltaR(particle_vectors[j]) < 0.1 and random.randrange(10) == 0:
+            if particle_vectors[i].DeltaR(particle_vectors[j]) < tracker_efficiency_deltaR and random.randrange(tracker_efficiency_loss_rate) == 0:
                 particles_lost_in_tracker.append(j)
                 continue
             for k in range(j+1, len(particle_vectors)):
