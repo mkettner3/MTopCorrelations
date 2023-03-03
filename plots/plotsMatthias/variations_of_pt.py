@@ -12,6 +12,32 @@ import numpy as np
 import ROOT
 
 
+def plot_hist(filename_root, histogram_name, hist_range, filename_graphic):
+    f = ROOT.TFile(filename_root, 'read')
+    histogram = f.Get(histogram_name)
+    histogram.SetDirectory(ROOT.nullptr)            # Returns a pointer to root_hist in memory.
+    f.Close()                                       # f.Get only returns a handle, which gets lost when TFile is closed
+
+    ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
+    ROOT.gStyle.SetPadTickX(1)          # Axis ticks on top
+    ROOT.gStyle.SetPadTickY(1)          # Axis ticks right
+    ROOT.gStyle.SetOptStat(0)           # Do not display stat box
+
+    c = ROOT.TCanvas('c', 'c', 600, 600)
+    ROOT.gPad.SetLeftMargin(0.19)
+    ROOT.gPad.SetBottomMargin(0.2)
+
+    histogram.Rebin(20)
+    histogram.GetXaxis().SetRangeUser(hist_range[0], hist_range[1])
+    histogram.GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
+    histogram.GetYaxis().SetRangeUser(0, histogram.GetMaximum()*1.1)
+    histogram.GetYaxis().SetNdivisions(505)      # Unterteilung der x-Achse
+    histogram.SetTitle('Constituent p_{T}')
+
+    histogram.Draw('HIST')
+    c.Print(plot_directory+filename_graphic)
+
+
 def plot_chi2(root_graph, label, filename, obt_top_masses, uncertainties):
     # type: (list, list, str, list, list) -> None
 
@@ -67,10 +93,12 @@ def plot_uncertainties(uncertainties, filename):
     c.Print(plot_directory+filename)
 
 
-def main(appendix):
+def main(variation_type):
     for g, level in enumerate(['Gen', 'PF']):
         for h, sample_name in enumerate(sample_names):
             print('Working on sample "{}" ...'.format(sample_name))
+            plot_hist(filename_root=filename, histogram_name='/Others/'+level+'-Level/hadronic_top_constituents_pt_hist_{:}_{:}'.format(level, sample_name),
+                      hist_range=[2, 25], filename_graphic='chi2_plots/chi2_pt_varied_27_hist/constituent_pt_{}_{}.png'.format(level, sample_name))
             for k, pt_range in enumerate(pt_jet_ranges):
                 (matrices_norm[g][h][k],
                  root_hist[g][h][k],
@@ -83,7 +111,7 @@ def main(appendix):
         for k, pt_jet_range in enumerate(pt_jet_ranges):
             for v, var_fac in enumerate([1.1, 1.05, 1.02, 1.01, 0.99, 0.98, 0.95, 0.9]):
                 hists_varied[g][k][v] = prepare_histogram(filename_root_hist=filename,
-                                                          hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_'+variation_type+'_{:.2f}_{:}_{:}_{:}_{:}'.format(var_fac, level, 'None', pt_jet_range[0], pt_jet_range[1])+appendix)
+                                                          hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_'+variation_type+'_{:.2f}_{:}_None_{:}_{:}'.format(var_fac, level, pt_jet_range[0], pt_jet_range[1]))
                 hists_varied_norm[g][k][v] = hists_varied[g][k][v].Clone()
                 hists_varied_norm[g][k][v].Scale(1 / hists_varied_norm[g][k][v].Integral(), 'width')
 
@@ -100,9 +128,9 @@ def main(appendix):
                 matrices_varied_norm[g][k][v] = normalize_cov_matrix(matrix_orig=matrix_varied_orig[v], root_hist=root_hist[g][4][k]) + matrices_norm[g][4][k]
 
                 if variation_type == 'varied_jet':
-                    plot_corr_hist(corr_hists=[root_hist_norm[g][4][k], hists_varied_norm[g][k][2], hists_varied_norm[g][k][5]], hist_range=hist_range,
-                                   filename_graphic='chi2_plots/chi2_pt_varied_26_hist/corr_hist_{}_{}-{}.png'.format(level, pt_jet_range[0], pt_jet_range[1]),
-                                   sample_names=['p_{T} variance: '+e for e in ['original', '+ 2 %', '- 2 %']])
+                    plot_corr_hist(corr_hists=[root_hist_norm[g][4][k], hists_varied_norm[g][k][1], hists_varied_norm[g][k][2], hists_varied_norm[g][k][5], hists_varied_norm[g][k][6]], hist_range=hist_range,
+                                   filename_graphic='chi2_plots/chi2_pt_varied_27_hist/corr_hist_{}_{}-{}.png'.format(level, pt_jet_range[0], pt_jet_range[1]),
+                                   sample_names=['p_{T} variance: '+e for e in ['original', '+ 5 %', '+ 2 %', '- 2 %', '- 5 %']])
 
             chi2[g][k][0] = [compute_chi2(template_hist=root_hist_norm[g][h][k], data_hist=root_hist_norm[g][4][k], data_cov_matrix=matrices_norm[g][4][k]) for h in range(9)]
             for v in range(8):
@@ -124,15 +152,75 @@ def main(appendix):
             print('Uncertainty Down: {:.5f} GeV.'.format(uncertainties[5]))
 
             plot_chi2(root_graph=chi2_graph, label=['Variance: '+e for e in ['original', '+ 10 %', '+ 5 %', '+ 2 %', '+ 1 %', '- 1 %', '- 2 %', '- 5 %', '- 10 %']],
-                      filename='chi2_plots/chi2_variations_26/chi2_'+variation_type+'_26_{}_{}-{}'.format(level, pt_jet_range[0], pt_jet_range[1])+appendix+'.pdf',
+                      filename='chi2_plots/chi2_variations_27/chi2_'+variation_type+'_27_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]),
                       obt_top_masses=[obt_top_masses[3], obt_top_masses[6]], uncertainties=[uncertainties[2], uncertainties[5]])
 
             plot_uncertainties(uncertainties=uncertainties,
-                               filename='chi2_plots/chi2_variations_26/chi2_'+variation_type+'_26_uncertainties_{}_{}-{}'.format(level, pt_jet_range[0], pt_jet_range[1])+appendix+'.pdf')
+                               filename='chi2_plots/chi2_variations_27/chi2_'+variation_type+'_27_uncertainties_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]))
+
+
+def main_tracker_efficiency():
+    for g, level in enumerate(['Gen', 'PF']):
+        uncertainties = [np.zeros((3, 3)) for _ in range(len(pt_jet_ranges))]
+        for m, eff_deltaR in enumerate([0.01, 0.05, 0.1]):
+            for n, eff_probability in enumerate([2, 5, 10]):
+                for h, sample_name in enumerate(sample_names):
+                    print('Working on sample "{}" ...'.format(sample_name))
+                    for k, pt_range in enumerate(pt_jet_ranges):
+                        (matrices_norm[g][h][k],
+                         root_hist[g][h][k],
+                         root_hist_norm[g][h][k],
+                         hist_range) = calc_norm_cov_matrix(filename_root_hist=filename,
+                                                            hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name, pt_range[0], pt_range[1]),
+                                                            plot_matrix=False, id_level=level, id_sample=sample_name, id_range=pt_range)
+
+                for k, pt_jet_range in enumerate(pt_jet_ranges):
+                    hists_varied[g][k][0] = prepare_histogram(filename_root_hist=filename,
+                                                              hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_cons_eta_phi_{:}_None_{:}_{:}_{:}_{:}'.format(level,
+                                                                                                                                                                                  pt_jet_range[0],
+                                                                                                                                                                                  pt_jet_range[1],
+                                                                                                                                                                                  eff_deltaR, eff_probability))
+
+                num_bins = root_hist[g][0][0].GetNbinsX()
+                for k, pt_jet_range in enumerate(pt_jet_ranges):
+                    sigma[g][k][0] = [hists_varied[g][k][0].GetBinContent(i+1) - root_hist[g][4][k].GetBinContent(i+1) for i in range(num_bins)]
+
+                    matrix_varied_orig = np.zeros((num_bins, num_bins), dtype=np.float64)
+                    for i in range(num_bins):
+                        for j in range(num_bins):
+                            matrix_varied_orig[i, j] = sigma[g][k][0][i] * sigma[g][k][0][j]
+
+                    matrices_varied_norm[g][k][0] = normalize_cov_matrix(matrix_orig=matrix_varied_orig, root_hist=root_hist[g][4][k]) + matrices_norm[g][4][k]
+
+                    chi2[g][k][0] = [compute_chi2(template_hist=root_hist_norm[g][h][k], data_hist=root_hist_norm[g][4][k], data_cov_matrix=matrices_varied_norm[g][k][0]) for h in range(9)]
+
+                    chi2_graph = ROOT.TGraph(9, np.array([171.5, 171.75, 172.0, 172.25, 172.5, 172.75, 173.0, 173.25, 173.5]), np.asarray(chi2[g][k][0]))
+                    fit_func = ROOT.TF1('pol2_fit', 'pol2', 170, 175)
+                    chi2_graph.Fit(fit_func, 'RQ')
+                    fit = chi2_graph.GetFunction('pol2_fit')
+                    obt_top_mass = fit.GetMinimumX()
+                    print('The calculated mass of the Top-Quark equals to {:.5f} GeV.'.format(obt_top_mass))
+                    chi2min = fit.GetMinimum()
+                    uncertainty_stat = abs(obt_top_mass - fit.GetX(chi2min+1, 170, 175))
+                    print('The uncertainty equals {:.5f} GeV.'.format(uncertainty_stat))
+                    uncertainties[k][m, n] = uncertainty_stat
+
+        uncertainties_root = [ROOT.TH2D("Uncertainties", "Statistical Uncertainties", 3, 0, 3, 3, 0, 3) for _ in range(len(pt_jet_ranges))]
+        for k, pt_jet_range in enumerate(pt_jet_ranges):
+            for m in range(3):
+                for n in range(3):
+                    uncertainties_root[k].SetBinContent(m+1, n+1, uncertainties[k][m, n])
+
+            ROOT.gStyle.SetOptStat(0)  # Do not display stat box
+            c = ROOT.TCanvas('c', 'c', 1000, 1000)
+            ROOT.gPad.SetRightMargin(0.2)
+            uncertainties_root[k].SetTitle('Statistical Uncertainties')
+            uncertainties_root[k].Draw('COLZ')
+            c.Print(plot_directory+'chi2_plots/chi2_variations_27/chi2_tracker_efficiency_27_uncertainties_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]))
 
 
 if __name__ == '__main__':
-    filename = 'histogram_files/correlator_hist_trip_26.root'
+    filename = 'histogram_files/correlator_hist_trip_27.root'
     sample_names = ['171.5', '171.75', '172.0', '172.25', 'None', '172.75', '173.0', '173.25', '173.5']
 
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
@@ -146,12 +234,19 @@ if __name__ == '__main__':
     matrices_varied_norm = [[[None for _ in range(8)] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
     chi2 = [[[None for _ in range(9)] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
 
-    for variation_type in ['varied_jet', 'varied_cons_pt', 'varied_cons_eta_phi']:
-        if variation_type == 'varied_cons_eta_phi':
-            for m, eff_deltaR in enumerate([0.01, 0.05, 0.1]):
-                for n, eff_probability in enumerate([2, 5, 10]):
-                    appendix = '_{:}_{:}'.format(eff_deltaR, eff_probability)
-                    main(appendix)
-        else:
-            appendix = ''
-            main(appendix)
+    for variation_type in ['varied_jet', 'varied_cons_pt']:
+        main(variation_type)
+    main_tracker_efficiency()
+
+    for g, level in enumerate(['Gen', 'PF']):
+        f = ROOT.TFile(filename, 'read')
+        histogram = f.Get('/Others/'+level+'-Level/number_of_events_{:}'.format(level))
+        histogram.SetDirectory(ROOT.nullptr)
+        f.Close()
+        print('Number of events ('+level+'): {:.0f}'.format(histogram.GetBinContent(1)))
+
+        f = ROOT.TFile(filename, 'read')
+        histogram = f.Get('/Others/'+level+'-Level/weighted_number_of_events_{:}'.format(level))
+        histogram.SetDirectory(ROOT.nullptr)
+        f.Close()
+        print('Number of events weighted by event weight ('+level+'): {:.2f}'.format(histogram.GetBinContent(1)))
