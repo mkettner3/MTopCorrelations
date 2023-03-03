@@ -67,21 +67,7 @@ def plot_uncertainties(uncertainties, filename):
     c.Print(plot_directory+filename)
 
 
-if __name__ == '__main__':
-    filename = 'histogram_files/correlator_hist_trip_26.root'
-    sample_names = ['171.5', '171.75', '172.0', '172.25', 'None', '172.75', '173.0', '173.25', '173.5']
-
-    ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
-
-    matrices_norm = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
-    root_hist = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
-    root_hist_norm = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
-    hists_varied = [[[None for _ in range(8)] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
-    hists_varied_norm = [[[None for _ in range(8)] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
-    sigma = [[[None for _ in range(8)] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
-    matrices_varied_norm = [[[None for _ in range(8)] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
-    chi2 = [[[None for _ in range(9)] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
-
+def main(appendix):
     for g, level in enumerate(['Gen', 'PF']):
         for h, sample_name in enumerate(sample_names):
             print('Working on sample "{}" ...'.format(sample_name))
@@ -97,7 +83,7 @@ if __name__ == '__main__':
         for k, pt_jet_range in enumerate(pt_jet_ranges):
             for v, var_fac in enumerate([1.1, 1.05, 1.02, 1.01, 0.99, 0.98, 0.95, 0.9]):
                 hists_varied[g][k][v] = prepare_histogram(filename_root_hist=filename,
-                                                          hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_jet_{:.2f}_{:}_{:}_{:}_{:}'.format(var_fac, level, 'None', pt_jet_range[0], pt_jet_range[1]))
+                                                          hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_'+variation_type+'_{:.2f}_{:}_{:}_{:}_{:}'.format(var_fac, level, 'None', pt_jet_range[0], pt_jet_range[1])+appendix)
                 hists_varied_norm[g][k][v] = hists_varied[g][k][v].Clone()
                 hists_varied_norm[g][k][v].Scale(1 / hists_varied_norm[g][k][v].Integral(), 'width')
 
@@ -113,9 +99,10 @@ if __name__ == '__main__':
 
                 matrices_varied_norm[g][k][v] = normalize_cov_matrix(matrix_orig=matrix_varied_orig[v], root_hist=root_hist[g][4][k]) + matrices_norm[g][4][k]
 
-                plot_corr_hist(corr_hists=[root_hist_norm[g][4][k], hists_varied_norm[g][k][2], hists_varied_norm[g][k][5]], hist_range=hist_range,
-                               filename_graphic='chi2_plots/chi2_pt_varied_26_hist/corr_hist_{}_{}-{}.png'.format(level, pt_jet_range[0], pt_jet_range[1]),
-                               sample_names=['p_{T} variance: '+e for e in ['original', '+ 2 %', '- 2 %']])
+                if variation_type == 'varied_jet':
+                    plot_corr_hist(corr_hists=[root_hist_norm[g][4][k], hists_varied_norm[g][k][2], hists_varied_norm[g][k][5]], hist_range=hist_range,
+                                   filename_graphic='chi2_plots/chi2_pt_varied_26_hist/corr_hist_{}_{}-{}.png'.format(level, pt_jet_range[0], pt_jet_range[1]),
+                                   sample_names=['p_{T} variance: '+e for e in ['original', '+ 2 %', '- 2 %']])
 
             chi2[g][k][0] = [compute_chi2(template_hist=root_hist_norm[g][h][k], data_hist=root_hist_norm[g][4][k], data_cov_matrix=matrices_norm[g][4][k]) for h in range(9)]
             for v in range(8):
@@ -123,7 +110,7 @@ if __name__ == '__main__':
 
             chi2_graph = [ROOT.TGraph(9, np.array([171.5, 171.75, 172.0, 172.25, 172.5, 172.75, 173.0, 173.25, 173.5]), np.asarray(chi2[g][k][v])) for v in range(9)]
             fit_func = ROOT.TF1('pol2_fit', 'pol2', 170, 175)
-            [chi2_graph[v].Fit(fit_func, 'R') for v in range(9)]
+            [chi2_graph[v].Fit(fit_func, 'RQ') for v in range(9)]
             fit = [chi2_graph[v].GetFunction('pol2_fit') for v in range(9)]
             obt_top_masses = [fit[v].GetMinimumX() for v in range(9)]
             print('The calculated mass of the Top-Quark equals to {:.5f} GeV.'.format(obt_top_masses[0]))
@@ -136,9 +123,35 @@ if __name__ == '__main__':
             print('Uncertainty Up: {:.5f} GeV.'.format(uncertainties[2]))
             print('Uncertainty Down: {:.5f} GeV.'.format(uncertainties[5]))
 
-            plot_chi2(root_graph=[chi2_graph[i] for i in range(9)], label=['p_{T} variance: '+e for e in ['original', '+ 10 %', '+ 5 %', '+ 2 %', '+ 1 %', '- 1 %', '- 2 %', '- 5 %', '- 10 %']],
-                      filename='chi2_plots/chi2_pt_varied_26/chi2_pt_varied_26_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]),
+            plot_chi2(root_graph=chi2_graph, label=['Variance: '+e for e in ['original', '+ 10 %', '+ 5 %', '+ 2 %', '+ 1 %', '- 1 %', '- 2 %', '- 5 %', '- 10 %']],
+                      filename='chi2_plots/chi2_variations_26/chi2_'+variation_type+'_26_{}_{}-{}'.format(level, pt_jet_range[0], pt_jet_range[1])+appendix+'.pdf',
                       obt_top_masses=[obt_top_masses[3], obt_top_masses[6]], uncertainties=[uncertainties[2], uncertainties[5]])
 
             plot_uncertainties(uncertainties=uncertainties,
-                               filename='chi2_plots/chi2_pt_varied_26/chi2_pt_varied_26_uncertainties_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]))
+                               filename='chi2_plots/chi2_variations_26/chi2_'+variation_type+'_26_uncertainties_{}_{}-{}'.format(level, pt_jet_range[0], pt_jet_range[1])+appendix+'.pdf')
+
+
+if __name__ == '__main__':
+    filename = 'histogram_files/correlator_hist_trip_26.root'
+    sample_names = ['171.5', '171.75', '172.0', '172.25', 'None', '172.75', '173.0', '173.25', '173.5']
+
+    ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
+
+    matrices_norm = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
+    root_hist = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
+    root_hist_norm = [[[None for _ in range(len(pt_jet_ranges))] for _ in range(len(sample_names))] for _ in range(2)]
+    hists_varied = [[[None for _ in range(8)] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
+    hists_varied_norm = [[[None for _ in range(8)] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
+    sigma = [[[None for _ in range(8)] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
+    matrices_varied_norm = [[[None for _ in range(8)] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
+    chi2 = [[[None for _ in range(9)] for _ in range(len(pt_jet_ranges))] for _ in range(2)]
+
+    for variation_type in ['varied_jet', 'varied_cons_pt', 'varied_cons_eta_phi']:
+        if variation_type == 'varied_cons_eta_phi':
+            for m, eff_deltaR in enumerate([0.01, 0.05, 0.1]):
+                for n, eff_probability in enumerate([2, 5, 10]):
+                    appendix = '_{:}_{:}'.format(eff_deltaR, eff_probability)
+                    main(appendix)
+        else:
+            appendix = ''
+            main(appendix)
