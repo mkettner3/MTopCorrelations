@@ -50,9 +50,9 @@ def calc_triplets_and_hist(sample, rew_samples, pt_jet_ranges, max_delta_zeta=fl
     hists_cons_pt = [[ROOT.TH1D("Hadronic Top-Constituents-p_{T} ("+str(i)+", "+str(j)+")", "Constituent-p_{t}", nbins, 0, 30) for j in range(len(rew_samples))] for i in range(2)]
     hists_jet_mass = [[ROOT.TH1D("Hadronic Top-Jet-mass ({:}, {:})".format(i, j), "Jet-mass", nbins, 75, 300) for j in range(len(rew_samples))] for i in range(2)]
     hists_top_mass = [[ROOT.TH1D("Hadronic Top-mass ({:}, {:})".format(i, j), "Jet-mass", nbins, 167.5, 177.5) for j in range(len(rew_samples))] for i in range(2)]
-    hists_event_weight = [ROOT.TH1D("Event weights ({:})".format(i), "event-weight", nbins, -1, 1) for i in range(2)]
-    hists_number_events = [ROOT.TH1I("Number of events ({:})".format(i), "Number of events", 1, 0, 1) for i in range(2)]
-    hists_weighted_events = [ROOT.TH1D("Weighted number of events ({:})".format(i), "Weighted number of events", 1, 0, 1) for i in range(2)]
+    hists_event_weight = [[ROOT.TH1D("Event weights ({:}, {:})".format(i, k), "event-weight", nbins, -1, 1) for k in range(len(pt_jet_ranges))] for i in range(2)]
+    hists_number_events = [[ROOT.TH1I("Number of events ({:}, {:})".format(i, k), "Number of events", 1, 0, 1) for k in range(len(pt_jet_ranges))] for i in range(2)]
+    hists_weighted_events = [[ROOT.TH1D("Weighted number of events ({:}, {:})".format(i, k), "Weighted number of events", 1, 0, 1) for k in range(len(pt_jet_ranges))] for i in range(2)]
 
     for g, level in enumerate(['Gen', 'PF']):
         r = sample.treeReader(variables=read_variables, selectionString="Sum$({:}JetAK8_pt>400)>=1".format(level))
@@ -91,9 +91,11 @@ def calc_triplets_and_hist(sample, rew_samples, pt_jet_ranges, max_delta_zeta=fl
                             hists_cons_pt[g][h].Fill(cons.Pt())
                         hists_jet_mass[g][h].Fill(hadronic_jet_mass, event_weight*bw_weight)
                         hists_top_mass[g][h].Fill(m_top_had, event_weight*bw_weight)
-                    hists_event_weight[g].Fill(event_weight)
-                    hists_number_events[g].Fill(0.5)
-                    hists_weighted_events[g].Fill(0.5, event_weight)
+                    for k, jet_range in enumerate(pt_jet_ranges):
+                        if jet_range[0] <= hadronic_jet_pt < jet_range[1]:
+                            hists_event_weight[g][k].Fill(event_weight)
+                            hists_number_events[g][k].Fill(0.5)
+                            hists_weighted_events[g][k].Fill(0.5, event_weight)
                     count += 1
 
                     for v, var_fac in enumerate(pt_variations):
@@ -106,7 +108,7 @@ def calc_triplets_and_hist(sample, rew_samples, pt_jet_ranges, max_delta_zeta=fl
                             bw_weight = calc_bw_factor(event_top_mass=m_top_had, new_top_mass=mtop_bw)
 
                             for k, jet_range in enumerate(pt_jet_ranges):
-                                if jet_range[0] <= hadronic_jet_pt < jet_range[1]:
+                                if jet_range[0] <= hadronic_jet_pt_varied < jet_range[1]:
                                     for three_zeta, weight in zip(triplets[0], triplets[1]):
                                         hists_varied_jet[g][h][k][v].Fill(three_zeta, weight*event_weight*bw_weight)
                                     break
@@ -126,7 +128,7 @@ def calc_triplets_and_hist(sample, rew_samples, pt_jet_ranges, max_delta_zeta=fl
                                         hists_varied_cons_pt[g][h][k][v].Fill(three_zeta, weight*event_weight*bw_weight)
                                     break
 
-                    for m, eff_deltaR in enumerate([0.01, 0.05, 0.1]):
+                    for m, eff_deltaR in enumerate([0.01, 0.05, 0.1, 0.4]):
                         for n, eff_probability in enumerate([2, 5, 10]):
                             triplets, _ = construct_triplets(hadronic_jet_pt, jet_constituents,
                                                              max_delta_zeta, delta_legs, shortest_side,
@@ -267,7 +269,7 @@ if __name__ == '__main__':
                     pt_variations=pt_variations,
                     hists_ev_weight=hists_event_weight, hists_number_events=hists_number_events,
                     hists_weighted_events=hists_weighted_events, rew_values=rew_samples, pt_jet_ranges=pt_jet_ranges,
-                    filename='histogram_files/correlator_hist_trip_27_pp_{:03}.root'.format(args.job))
+                    filename='histogram_files/correlator_hist_trip_28_pp_{:03}.root'.format(args.job))
     end = time.time()
 
     print('Executing calc_triplet_and_hist.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))
