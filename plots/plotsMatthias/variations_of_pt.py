@@ -130,9 +130,9 @@ def main(variation_type):
                 matrices_varied_norm[g][k][v] = normalize_cov_matrix(matrix_orig=matrix_varied_orig[v], root_hist=root_hist[g][4][k]) + matrices_norm[g][4][k]
 
                 if variation_type == 'varied_jet':
-                    plot_corr_hist(corr_hists=[root_hist_norm[g][4][k], hists_varied_norm[g][k][1], hists_varied_norm[g][k][2], hists_varied_norm[g][k][5], hists_varied_norm[g][k][6]], hist_range=hist_range,
+                    plot_corr_hist(corr_hists=[root_hist_norm[g][4][k]]+[hists_varied_norm[g][k][v] for v in range(8)], hist_range=hist_range,
                                    filename_graphic='chi2_plots/chi2_pt_varied_27_hist/corr_hist_{}_{}-{}.png'.format(level, pt_jet_range[0], pt_jet_range[1]),
-                                   sample_names=['p_{T} variance: '+e for e in ['original', '+ 5 %', '+ 2 %', '- 2 %', '- 5 %']])
+                                   sample_names=['original', '+ 10 %', '+ 5 %', '+ 2 %', '+ 1 %', '- 1 %', '- 2 %', '- 5 %', '- 10 %'], title='p_{T} variances')
 
             chi2[g][k][0] = [compute_chi2(template_hist=root_hist_norm[g][h][k], data_hist=root_hist_norm[g][4][k], data_cov_matrix=matrices_norm[g][4][k]) for h in range(9)]
             for v in range(8):

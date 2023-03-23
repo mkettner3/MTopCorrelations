@@ -268,14 +268,14 @@ def plot_chi2(root_graph, label, filename, obt_top_mass, uncertainty):
     c.Print(plot_directory+filename)
 
 
-def plot_corr_hist(corr_hists, hist_range, filename_graphic, sample_names):
+def plot_corr_hist(corr_hists, hist_range, filename_graphic, sample_names, title=None):
     ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
     ROOT.gStyle.SetPadTickX(1)          # Axis ticks on top
     ROOT.gStyle.SetPadTickY(1)          # Axis ticks right
     ROOT.gStyle.SetOptStat(0)           # Do not display stat box
 
     c = ROOT.TCanvas('c', 'c', 600, 600)
-    legend = ROOT.TLegend(0.75, 0.6, 0.94, 0.89)
+    legend = ROOT.TLegend(0.75, 0.6, 0.90, 0.89)
     ROOT.gPad.SetLeftMargin(0.19)
     ROOT.gPad.SetBottomMargin(0.2)
 
@@ -293,7 +293,9 @@ def plot_corr_hist(corr_hists, hist_range, filename_graphic, sample_names):
         hist.SetTitle('')
         hist.SetLineWidth(2)
         hist.SetLineStyle(1)
-        legend.AddEntry(hist, sample_name[-5:], 'l')
+        legend.AddEntry(hist, sample_name, 'l')
+    if isinstance(title, str):
+        corr_hists[0].SetTitle(title)
     corr_hists[0].GetXaxis().SetRangeUser(hist_range[0], hist_range[1])
     corr_hists[0].GetXaxis().SetTitle('3#zeta')
     corr_hists[0].GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
