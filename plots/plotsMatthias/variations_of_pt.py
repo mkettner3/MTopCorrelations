@@ -12,7 +12,7 @@ import numpy as np
 import ROOT
 
 
-def plot_hist(filename_root, histogram_name, hist_range, filename_graphic):
+def plot_constituent_hist(filename_root, histogram_name, hist_range, filename_graphic):
     f = ROOT.TFile(filename_root, 'read')
     histogram = f.Get(histogram_name)
     histogram.SetDirectory(ROOT.nullptr)            # Returns a pointer to root_hist in memory.
@@ -30,6 +30,7 @@ def plot_hist(filename_root, histogram_name, hist_range, filename_graphic):
     histogram.Rebin(20)
     histogram.GetXaxis().SetRangeUser(hist_range[0], hist_range[1])
     histogram.GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
+    histogram.GetXaxis().SetTitle('p_{T} (GeV)')
     histogram.GetYaxis().SetRangeUser(0, histogram.GetMaximum()*1.1)
     histogram.GetYaxis().SetNdivisions(505)      # Unterteilung der x-Achse
     histogram.SetTitle('Constituent p_{T}')
@@ -61,10 +62,11 @@ def plot_chi2(root_graph, label, filename, obt_top_masses, uncertainties):
     graphs.SetMaximum(max([root_graph[i].GetHistogram().GetMaximum() for i in range(len(root_graph))])+20)
     graphs.SetMinimum(min([root_graph[j].GetHistogram().GetMinimum() for j in range(len(root_graph))])-20)
     graphs.Draw('AP')
-    legend.AddEntry(ROOT.nullptr, 'Resulting Top-Mass (+2%): {:.3f} GeV'.format(obt_top_masses[0]), '')
-    legend.AddEntry(ROOT.nullptr, 'Uncertainty (+2%): {:.3f} GeV'.format(uncertainties[0]), '')
-    legend.AddEntry(ROOT.nullptr, 'Resulting Top-Mass (-2%): {:.3f} GeV'.format(obt_top_masses[1]), '')
-    legend.AddEntry(ROOT.nullptr, 'Uncertainty (-2%): {:.3f} GeV'.format(uncertainties[1]), '')
+    if obt_top_masses is not None or uncertainties is not None:
+        legend.AddEntry(ROOT.nullptr, 'Resulting Top-Mass (+2%): {:.3f} GeV'.format(obt_top_masses[0]), '')
+        legend.AddEntry(ROOT.nullptr, 'Uncertainty (+2%): {:.3f} GeV'.format(uncertainties[0]), '')
+        legend.AddEntry(ROOT.nullptr, 'Resulting Top-Mass (-2%): {:.3f} GeV'.format(obt_top_masses[1]), '')
+        legend.AddEntry(ROOT.nullptr, 'Uncertainty (-2%): {:.3f} GeV'.format(uncertainties[1]), '')
     legend.Draw()
 
     c.Print(plot_directory+filename)
@@ -97,8 +99,8 @@ def main(variation_type):
     for g, level in enumerate(['Gen', 'PF']):
         for h, sample_name in enumerate(sample_names):
             print('Working on sample "{}" ...'.format(sample_name))
-            plot_hist(filename_root=filename, histogram_name='/Others/'+level+'-Level/hadronic_top_constituents_pt_hist_{:}_{:}'.format(level, sample_name),
-                      hist_range=[2, 25], filename_graphic='chi2_plots/chi2_pt_varied_27_hist/constituent_pt_{}_{}.png'.format(level, sample_name))
+            plot_constituent_hist(filename_root=filename, histogram_name='/Others/'+level+'-Level/hadronic_top_constituents_pt_hist_{:}_{:}'.format(level, sample_name),
+                                  hist_range=[2, 25], filename_graphic='chi2_plots/chi2_pt_varied_27_hist/constituent_pt_{}_{}.png'.format(level, sample_name))
             for k, pt_range in enumerate(pt_jet_ranges):
                 (matrices_norm[g][h][k],
                  root_hist[g][h][k],
@@ -162,6 +164,7 @@ def main(variation_type):
 def main_tracker_efficiency():
     for g, level in enumerate(['Gen', 'PF']):
         uncertainties = [np.zeros((3, 3)) for _ in range(len(pt_jet_ranges))]
+        chi2_graph_plot = [[[] for _ in range(3)] for _ in range(3)]
         for m, eff_deltaR in enumerate([0.01, 0.05, 0.1]):
             for n, eff_probability in enumerate([2, 5, 10]):
                 for h, sample_name in enumerate(sample_names):
@@ -192,20 +195,23 @@ def main_tracker_efficiency():
 
                     matrices_varied_norm[g][k][0] = normalize_cov_matrix(matrix_orig=matrix_varied_orig, root_hist=root_hist[g][4][k]) + matrices_norm[g][4][k]
 
-                    chi2[g][k][0] = [compute_chi2(template_hist=root_hist_norm[g][h][k], data_hist=root_hist_norm[g][4][k], data_cov_matrix=matrices_varied_norm[g][k][0]) for h in range(9)]
+                    chi2[g][k][0] = [compute_chi2(template_hist=root_hist_norm[g][h][k], data_hist=root_hist_norm[g][4][k], data_cov_matrix=matrices_norm[g][4][k]) for h in range(9)]
+                    chi2[g][k][1] = [compute_chi2(template_hist=root_hist_norm[g][h][k], data_hist=root_hist_norm[g][4][k], data_cov_matrix=matrices_varied_norm[g][k][0]) for h in range(9)]
 
-                    chi2_graph = ROOT.TGraph(9, np.array([171.5, 171.75, 172.0, 172.25, 172.5, 172.75, 173.0, 173.25, 173.5]), np.asarray(chi2[g][k][0]))
+                    chi2_graph = [ROOT.TGraph(9, np.array([171.5, 171.75, 172.0, 172.25, 172.5, 172.75, 173.0, 173.25, 173.5]), np.asarray(chi2[g][k][t])) for t in range(2)]
+                    chi2_graph_plot[m][n].append(chi2_graph[1])
                     fit_func = ROOT.TF1('pol2_fit', 'pol2', 170, 175)
-                    chi2_graph.Fit(fit_func, 'RQ')
-                    fit = chi2_graph.GetFunction('pol2_fit')
-                    obt_top_mass = fit.GetMinimumX()
-                    print('The calculated mass of the Top-Quark equals to {:.5f} GeV.'.format(obt_top_mass))
-                    chi2min = fit.GetMinimum()
-                    uncertainty_stat = abs(obt_top_mass - fit.GetX(chi2min+1, 170, 175))
-                    print('The uncertainty equals {:.5f} GeV.'.format(uncertainty_stat))
-                    uncertainties[k][m, n] = uncertainty_stat
+                    [chi2_graph[t].Fit(fit_func, 'RQ') for t in range(2)]
+                    fit = [chi2_graph[t].GetFunction('pol2_fit') for t in range(2)]
+                    obt_top_masses = [fit[t].GetMinimumX() for t in range(2)]
+                    chi2min = [fit[t].GetMinimum() for t in range(2)]
+                    uncertainty_stat = abs(obt_top_masses[0] - fit[0].GetX(chi2min[0]+1, 170, 175))
+                    uncertainty_tot = abs(obt_top_masses[1] - fit[1].GetX(chi2min[1]+1, 170, 175))
+                    print('The total uncertainty equals {:.5f} GeV.'.format(uncertainty_tot))
 
-        uncertainties_root = [ROOT.TH2D("Uncertainties", "Statistical Uncertainties", 3, 0, 3, 3, 0, 3) for _ in range(len(pt_jet_ranges))]
+                    uncertainties[k][m, n] = np.sqrt(uncertainty_tot**2 - uncertainty_stat**2)
+
+        uncertainties_root = [ROOT.TH2D("Uncertainties", "Systematic Uncertainties", 3, 0, 3, 3, 0, 3) for _ in range(len(pt_jet_ranges))]
         for k, pt_jet_range in enumerate(pt_jet_ranges):
             for m in range(3):
                 for n in range(3):
@@ -214,9 +220,24 @@ def main_tracker_efficiency():
             ROOT.gStyle.SetOptStat(0)  # Do not display stat box
             c = ROOT.TCanvas('c', 'c', 1000, 1000)
             ROOT.gPad.SetRightMargin(0.2)
-            uncertainties_root[k].SetTitle('Statistical Uncertainties')
+            uncertainties_root[k].SetTitle('Systematic uncertainties for tracker efficiency')
+            uncertainties_root[k].GetXaxis().SetTitle('Detection limit of #DeltaR')
+            uncertainties_root[k].GetXaxis().SetBinLabel(1, '0.01')
+            uncertainties_root[k].GetXaxis().SetBinLabel(2, '0.05')
+            uncertainties_root[k].GetXaxis().SetBinLabel(3, '0.1')
+            uncertainties_root[k].GetYaxis().SetTitle('Probability of lost events')
+            uncertainties_root[k].GetYaxis().SetBinLabel(1, '50%')
+            uncertainties_root[k].GetYaxis().SetBinLabel(2, '20%')
+            uncertainties_root[k].GetYaxis().SetBinLabel(3, '10%')
             uncertainties_root[k].Draw('COLZ')
             c.Print(plot_directory+'chi2_plots/chi2_variations_27/chi2_tracker_efficiency_27_uncertainties_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]))
+
+            plot_chi2(root_graph=[chi2_graph_plot[m][1][k] for m in range(3)], label=['#DeltaR: ' + e for e in ['0.01', '0.05', '0.1']],
+                      filename='chi2_plots/chi2_variations_27/chi2_tracker_efficiency_deltaR_27_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]),
+                      obt_top_masses=None, uncertainties=None)
+            plot_chi2(root_graph=[chi2_graph_plot[1][n][k] for n in range(3)], label=['Probability: ' + e for e in ['50%', '20%', '10%']],
+                      filename='chi2_plots/chi2_variations_27/chi2_tracker_efficiency_probability_27_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]),
+                      obt_top_masses=None, uncertainties=None)
 
 
 if __name__ == '__main__':
