@@ -45,7 +45,7 @@ def calc_triplets_and_hist(sample, rew_samples, pt_jet_ranges, max_delta_zeta=fl
     hists_w = [[[[ROOT.TH1D("Correlator W ({:}, {:}, {:}, {:})".format(i, j, k, l), "3 #zeta", nbins, hist_range[0], hist_range[1]) for l in range(2)] for k in range(len(pt_jet_ranges))] for j in range(len(rew_samples))] for i in range(2)]
     hists_varied_jet = [[[[ROOT.TH1D("Correlator varied jet ({:}, {:}, {:}, {:})".format(i, j, k, l), "3 #zeta", nbins, hist_range[0], hist_range[1]) for l in range(len(pt_variations))] for k in range(len(pt_jet_ranges))] for j in range(len(rew_samples))] for i in range(2)]
     hists_varied_cons_pt = [[[[ROOT.TH1D("Correlator varied cons pt ({:}, {:}, {:}, {:})".format(i, j, k, l), "3 #zeta", nbins, hist_range[0], hist_range[1]) for l in range(len(pt_variations))] for k in range(len(pt_jet_ranges))] for j in range(len(rew_samples))] for i in range(2)]
-    hists_varied_cons_eta_phi = [[[[[ROOT.TH1D("Correlator varied cons eta phi ({:}, {:}, {:}, {:}, {:})".format(i, j, k, m, n), "3 #zeta", nbins, hist_range[0], hist_range[1]) for n in range(3)] for m in range(3)] for k in range(len(pt_jet_ranges))] for j in range(len(rew_samples))] for i in range(2)]
+    hists_varied_cons_eta_phi = [[[[[ROOT.TH1D("Correlator varied cons eta phi ({:}, {:}, {:}, {:}, {:})".format(i, j, k, m, n), "3 #zeta", nbins, hist_range[0], hist_range[1]) for n in range(3)] for m in range(4)] for k in range(len(pt_jet_ranges))] for j in range(len(rew_samples))] for i in range(2)]
     hists_jet_pt = [[ROOT.TH1D("Hadronic Top-Jet-p_{T} ("+str(i)+", "+str(j)+")", "Jet-p_{t}", nbins, 380, 730) for j in range(len(rew_samples))] for i in range(2)]
     hists_cons_pt = [[ROOT.TH1D("Hadronic Top-Constituents-p_{T} ("+str(i)+", "+str(j)+")", "Constituent-p_{t}", nbins, 0, 30) for j in range(len(rew_samples))] for i in range(2)]
     hists_jet_mass = [[ROOT.TH1D("Hadronic Top-Jet-mass ({:}, {:})".format(i, j), "Jet-mass", nbins, 75, 300) for j in range(len(rew_samples))] for i in range(2)]
@@ -222,7 +222,7 @@ def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_cons_pt, hists_jet_m
                     r_file.cd('/Top-Quark/'+level+'-Level/weighted')
                     hists_varied_jet[g][h][k][v].Write('correlator_hist_varied_jet_{:.2f}_{:}_{:}_{:}_{:}'.format(var_fac, level, mtop_bw, pt_jet_range[0], pt_jet_range[1]))
                     hists_varied_cons_pt[g][h][k][v].Write('correlator_hist_varied_cons_pt_{:.2f}_{:}_{:}_{:}_{:}'.format(var_fac, level, mtop_bw, pt_jet_range[0], pt_jet_range[1]))
-                for m, eff_deltaR in enumerate([0.01, 0.05, 0.1]):
+                for m, eff_deltaR in enumerate([0.01, 0.05, 0.1, 0.4]):
                     for n, eff_probability in enumerate([2, 5, 10]):
                         hists_varied_cons_eta_phi[g][h][k][m][n].Write('correlator_hist_varied_cons_eta_phi_{:}_{:}_{:}_{:}_{:}_{:}'.format(level, mtop_bw, pt_jet_range[0], pt_jet_range[1], eff_deltaR, eff_probability))
         r_file.cd('/Others/'+level+'-Level')
@@ -231,9 +231,10 @@ def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_cons_pt, hists_jet_m
             hists_cons_pt[g][h].Write('hadronic_top_constituents_pt_hist_{:}_{:}'.format(level, mtop_bw))
             hists_jet_mass[g][h].Write('hadronic_top_jet_mass_hist_{:}_{:}'.format(level, mtop_bw))
             hists_top_mass[g][h].Write('hadronic_top_mass_hist_{:}_{:}'.format(level, mtop_bw))
-        hists_ev_weight[g].Write('event_weights_{:}'.format(level))
-        hists_number_events[g].Write('number_of_events_{:}'.format(level))
-        hists_weighted_events[g].Write('weighted_number_of_events_{:}'.format(level))
+        for k, pt_jet_range in enumerate(pt_jet_ranges):
+            hists_ev_weight[g][k].Write('event_weights_{:}_{:}_{:}'.format(level, pt_jet_range[0], pt_jet_range[1]))
+            hists_number_events[g][k].Write('number_of_events_{:}_{:}_{:}'.format(level, pt_jet_range[0], pt_jet_range[1]))
+            hists_weighted_events[g][k].Write('weighted_number_of_events_{:}_{:}_{:}'.format(level, pt_jet_range[0], pt_jet_range[1]))
 
     r_file.Close()
 

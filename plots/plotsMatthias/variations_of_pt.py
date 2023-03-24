@@ -100,7 +100,7 @@ def main(variation_type):
         for h, sample_name in enumerate(sample_names):
             print('Working on sample "{}" ...'.format(sample_name))
             plot_constituent_hist(filename_root=filename, histogram_name='/Others/'+level+'-Level/hadronic_top_constituents_pt_hist_{:}_{:}'.format(level, sample_name),
-                                  hist_range=[2, 25], filename_graphic='chi2_plots/chi2_pt_varied_27_hist/constituent_pt_{}_{}.png'.format(level, sample_name))
+                                  hist_range=[2, 25], filename_graphic='chi2_plots/chi2_pt_varied_28_hist/constituent_pt_{}_{}.png'.format(level, sample_name))
             for k, pt_range in enumerate(pt_jet_ranges):
                 (matrices_norm[g][h][k],
                  root_hist[g][h][k],
@@ -131,7 +131,7 @@ def main(variation_type):
 
                 if variation_type == 'varied_jet':
                     plot_corr_hist(corr_hists=[root_hist_norm[g][4][k]]+[hists_varied_norm[g][k][v] for v in range(8)], hist_range=hist_range,
-                                   filename_graphic='chi2_plots/chi2_pt_varied_27_hist/corr_hist_{}_{}-{}.png'.format(level, pt_jet_range[0], pt_jet_range[1]),
+                                   filename_graphic='chi2_plots/chi2_pt_varied_28_hist/corr_hist_{}_{}-{}.png'.format(level, pt_jet_range[0], pt_jet_range[1]),
                                    sample_names=['original', '+ 10 %', '+ 5 %', '+ 2 %', '+ 1 %', '- 1 %', '- 2 %', '- 5 %', '- 10 %'], title='p_{T} variances')
 
             chi2[g][k][0] = [compute_chi2(template_hist=root_hist_norm[g][h][k], data_hist=root_hist_norm[g][4][k], data_cov_matrix=matrices_norm[g][4][k]) for h in range(9)]
@@ -154,18 +154,18 @@ def main(variation_type):
             print('Uncertainty Down: {:.5f} GeV.'.format(uncertainties[5]))
 
             plot_chi2(root_graph=chi2_graph, label=['Variance: '+e for e in ['original', '+ 10 %', '+ 5 %', '+ 2 %', '+ 1 %', '- 1 %', '- 2 %', '- 5 %', '- 10 %']],
-                      filename='chi2_plots/chi2_variations_27/chi2_'+variation_type+'_27_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]),
+                      filename='chi2_plots/chi2_variations_28/chi2_'+variation_type+'_28_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]),
                       obt_top_masses=[obt_top_masses[3], obt_top_masses[6]], uncertainties=[uncertainties[2], uncertainties[5]])
 
             plot_uncertainties(uncertainties=uncertainties,
-                               filename='chi2_plots/chi2_variations_27/chi2_'+variation_type+'_27_uncertainties_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]))
+                               filename='chi2_plots/chi2_variations_28/chi2_'+variation_type+'_28_uncertainties_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]))
 
 
 def main_tracker_efficiency():
     for g, level in enumerate(['Gen', 'PF']):
-        uncertainties = [np.zeros((3, 3)) for _ in range(len(pt_jet_ranges))]
-        chi2_graph_plot = [[[] for _ in range(3)] for _ in range(3)]
-        for m, eff_deltaR in enumerate([0.01, 0.05, 0.1]):
+        uncertainties = [np.zeros((4, 3)) for _ in range(len(pt_jet_ranges))]
+        chi2_graph_plot = [[[] for _ in range(3)] for _ in range(4)]
+        for m, eff_deltaR in enumerate([0.01, 0.05, 0.1, 0.4]):
             for n, eff_probability in enumerate([2, 5, 10]):
                 for h, sample_name in enumerate(sample_names):
                     print('Working on sample "{}" ...'.format(sample_name))
@@ -211,9 +211,9 @@ def main_tracker_efficiency():
 
                     uncertainties[k][m, n] = np.sqrt(uncertainty_tot**2 - uncertainty_stat**2)
 
-        uncertainties_root = [ROOT.TH2D("Uncertainties", "Systematic Uncertainties", 3, 0, 3, 3, 0, 3) for _ in range(len(pt_jet_ranges))]
+        uncertainties_root = [ROOT.TH2D("Uncertainties", "Systematic Uncertainties", 4, 0, 4, 3, 0, 3) for _ in range(len(pt_jet_ranges))]
         for k, pt_jet_range in enumerate(pt_jet_ranges):
-            for m in range(3):
+            for m in range(4):
                 for n in range(3):
                     uncertainties_root[k].SetBinContent(m+1, n+1, uncertainties[k][m, n])
 
@@ -225,23 +225,24 @@ def main_tracker_efficiency():
             uncertainties_root[k].GetXaxis().SetBinLabel(1, '0.01')
             uncertainties_root[k].GetXaxis().SetBinLabel(2, '0.05')
             uncertainties_root[k].GetXaxis().SetBinLabel(3, '0.1')
+            uncertainties_root[k].GetXaxis().SetBinLabel(4, '0.4')
             uncertainties_root[k].GetYaxis().SetTitle('Probability of lost events')
             uncertainties_root[k].GetYaxis().SetBinLabel(1, '50%')
             uncertainties_root[k].GetYaxis().SetBinLabel(2, '20%')
             uncertainties_root[k].GetYaxis().SetBinLabel(3, '10%')
             uncertainties_root[k].Draw('COLZ')
-            c.Print(plot_directory+'chi2_plots/chi2_variations_27/chi2_tracker_efficiency_27_uncertainties_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]))
+            c.Print(plot_directory+'chi2_plots/chi2_variations_28/chi2_tracker_efficiency_28_uncertainties_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]))
 
             plot_chi2(root_graph=[chi2_graph_plot[m][1][k] for m in range(3)], label=['#DeltaR: ' + e for e in ['0.01', '0.05', '0.1']],
-                      filename='chi2_plots/chi2_variations_27/chi2_tracker_efficiency_deltaR_27_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]),
+                      filename='chi2_plots/chi2_variations_28/chi2_tracker_efficiency_deltaR_28_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]),
                       obt_top_masses=None, uncertainties=None)
             plot_chi2(root_graph=[chi2_graph_plot[1][n][k] for n in range(3)], label=['Probability: ' + e for e in ['50%', '20%', '10%']],
-                      filename='chi2_plots/chi2_variations_27/chi2_tracker_efficiency_probability_27_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]),
+                      filename='chi2_plots/chi2_variations_28/chi2_tracker_efficiency_probability_28_{}_{}-{}.pdf'.format(level, pt_jet_range[0], pt_jet_range[1]),
                       obt_top_masses=None, uncertainties=None)
 
 
 if __name__ == '__main__':
-    filename = 'histogram_files/correlator_hist_trip_27.root'
+    filename = 'histogram_files/correlator_hist_trip_28.root'
     sample_names = ['171.5', '171.75', '172.0', '172.25', 'None', '172.75', '173.0', '173.25', '173.5']
 
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
@@ -261,13 +262,13 @@ if __name__ == '__main__':
 
     for g, level in enumerate(['Gen', 'PF']):
         f = ROOT.TFile(filename, 'read')
-        histogram = f.Get('/Others/'+level+'-Level/number_of_events_{:}'.format(level))
+        histogram = f.Get('/Others/'+level+'-Level/number_of_events_{:}_{:}_{:}'.format(level, 450, 500))
         histogram.SetDirectory(ROOT.nullptr)
         f.Close()
         print('Number of events ('+level+'): {:.0f}'.format(histogram.GetBinContent(1)))
 
         f = ROOT.TFile(filename, 'read')
-        histogram = f.Get('/Others/'+level+'-Level/weighted_number_of_events_{:}'.format(level))
+        histogram = f.Get('/Others/'+level+'-Level/weighted_number_of_events_{:}_{:}_{:}'.format(level, 450, 500))
         histogram.SetDirectory(ROOT.nullptr)
         f.Close()
         print('Number of events weighted by event weight ('+level+'): {:.2f}'.format(histogram.GetBinContent(1)))
