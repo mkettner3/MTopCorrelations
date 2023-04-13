@@ -5,7 +5,6 @@ Script to calculate the chi2 between histograms with the option to scale the err
 """
 
 from typing import Any
-from array import array
 from copy import deepcopy
 import numpy as np
 import ROOT
@@ -61,8 +60,8 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_le
     matrix_norm = normalize_cov_matrix(matrix_orig=matrix_orig, root_hist=histogram)
 
     if plot_matrix:
-        plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, (hist_axis_range_min, hist_axis_range_max),
-                            absolute_hist)
+        plot_matrix_in_root(matrix_norm, 'corr_matrix_plots/correlation_matrix_20_norm_{:}_{:}_{:}-{:}.png'.format(id_level, id_sample, id_range[0], id_range[1]),
+                            (hist_axis_range_min, hist_axis_range_max))
 
     histogram_norm = histogram.Clone()
     histogram_norm.Scale(1/histogram_norm.Integral(), 'width')
@@ -70,15 +69,15 @@ def calc_norm_cov_matrix(filename_root_hist, hist_name, plot_matrix=False, id_le
     return matrix_norm, histogram, histogram_norm, (hist_axis_range_min, hist_axis_range_max)
 
 
-def prepare_histogram(filename_root_hist, hist_name):
-    # type: (str, str) -> Any
+def prepare_histogram(filename_root_hist, hist_name, hist_binning):
+    # type: (str, str, np.ndarray) -> Any
 
     f = ROOT.TFile(filename_root_hist, 'read')
     root_hist = f.Get(hist_name)
     root_hist.SetDirectory(ROOT.nullptr)            # Returns a pointer to root_hist in memory.
     f.Close()                                       # f.Get only returns a handle, which gets lost when TFile is closed
 
-    hist_new = root_hist.Rebin(7, 'hist_new', array('d', [0.9, 1.2, 1.55, 1.72, 1.87, 1.9, 2.4, 2.8]))   # optimal binning for 450-500 GeV
+    hist_new = root_hist.Rebin(len(hist_binning)-1, 'hist_new', np.array(hist_binning))   # optimal binning for 450-500 GeV
 
     return hist_new
 
@@ -216,26 +215,58 @@ def store_matrix_in_root(matrices_norm, matrices_orig, sample_names, pt_jet_rang
     f.Close()
 
 
-def plot_matrix_in_root(matrix_norm, id_level, id_sample, id_range, hist_axis_range, absolute_hist):
-    # type: (np.ndarray, str, str, tuple, tuple, bool) -> None
+def plot_matrix_in_root(matrix, filename_graphic, hist_axis_range, title='Normalized Covariance Matrix'):
+    # type: (np.ndarray, str, Union[tuple, np.ndarray], str) -> None
 
-    hist_norm = ROOT.TH2D("Covariance Matrix", "Normalized Covariance Matrix",
-                          matrix_norm.shape[0], hist_axis_range[0], hist_axis_range[1],
-                          matrix_norm.shape[1], hist_axis_range[0], hist_axis_range[1])
-    for i in range(matrix_norm.shape[0]):
-        for j in range(matrix_norm.shape[1]):
-            hist_norm.SetBinContent(i, j, matrix_norm[i, j])
+    if isinstance(hist_axis_range, np.ndarray):
+        hist = ROOT.TH2D("Covariance Matrix", "Normalized Covariance Matrix",
+                         matrix.shape[0], hist_axis_range, matrix.shape[1], hist_axis_range)
+    else:
+        hist = ROOT.TH2D("Covariance Matrix", "Normalized Covariance Matrix",
+                         matrix.shape[0], hist_axis_range[0], hist_axis_range[1],
+                         matrix.shape[1], hist_axis_range[0], hist_axis_range[1])
+    for i in range(matrix.shape[0]):
+        for j in range(matrix.shape[1]):
+            hist.SetBinContent(i+1, j+1, matrix[i, j])
 
     ROOT.gStyle.SetOptStat(0)  # Do not display stat box
     c = ROOT.TCanvas('c', 'c', 1000, 1000)
-    c.SetLogz()
+    # c.SetLogz()
     ROOT.gPad.SetRightMargin(0.2)
-    hist_norm.SetTitle('Normalized Covariance Matrix')
-    hist_norm.Draw('COLZ')
+    hist.SetTitle(title)
+    hist.Draw('COLZ')
 
-    abs = 'abs_' if absolute_hist else ''
-    c.Print(plot_directory+'corr_matrix_plots/correlation_matrix_20_norm_{}{:}_{:}_{:}-{:}.png'.format(abs, id_level, id_sample,
-                                                                                                       id_range[0], id_range[1]))
+    c.Print(plot_directory+filename_graphic)
+
+
+def plot_vector_in_root(vector, filename_graphic, hist_axis_range, title='Unnamed histogram'):
+    if isinstance(hist_axis_range, np.ndarray):
+        hist = ROOT.TH1D("Vector", "Array_plot", len(vector), hist_axis_range)
+    else:
+        hist = ROOT.TH1D("Vector", "Array_plot", len(vector), hist_axis_range[0], hist_axis_range[1])
+    for i in range(len(vector)):
+        hist.SetBinContent(i+1, vector[i])
+
+    ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
+    ROOT.gStyle.SetPadTickX(1)          # Axis ticks on top
+    ROOT.gStyle.SetPadTickY(1)          # Axis ticks right
+    ROOT.gStyle.SetOptStat(0)           # Do not display stat box
+
+    c = ROOT.TCanvas('c', 'c', 600, 600)
+    ROOT.gPad.SetLeftMargin(0.19)
+    ROOT.gPad.SetBottomMargin(0.2)
+
+    hist.SetTitle(title)
+    hist.SetLineWidth(2)
+    hist.SetLineStyle(1)
+    hist.GetXaxis().SetTitle('3#zeta')
+    hist.GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
+    hist.GetYaxis().SetRangeUser(hist.GetMinimum()*1.1, hist.GetMaximum()*1.1)
+    hist.GetYaxis().SetNdivisions(505)      # Unterteilung der x-Achse
+
+    hist.Draw('HIST')
+
+    c.Print(plot_directory+filename_graphic)
 
 
 def plot_chi2(root_graph, label, filename, obt_top_mass, uncertainty):
@@ -268,7 +299,7 @@ def plot_chi2(root_graph, label, filename, obt_top_mass, uncertainty):
     c.Print(plot_directory+filename)
 
 
-def plot_corr_hist(corr_hists, hist_range, filename_graphic, sample_names, title=None):
+def plot_corr_hist(corr_hists, filename_graphic, sample_names, title=None, hist_range=None):
     ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
     ROOT.gStyle.SetPadTickX(1)          # Axis ticks on top
     ROOT.gStyle.SetPadTickY(1)          # Axis ticks right
@@ -296,7 +327,8 @@ def plot_corr_hist(corr_hists, hist_range, filename_graphic, sample_names, title
         legend.AddEntry(hist, sample_name, 'l')
     if isinstance(title, str):
         corr_hists[0].SetTitle(title)
-    corr_hists[0].GetXaxis().SetRangeUser(hist_range[0], hist_range[1])
+    if hist_range is not None:
+        corr_hists[0].GetXaxis().SetRangeUser(hist_range[0], hist_range[1])
     corr_hists[0].GetXaxis().SetTitle('3#zeta')
     corr_hists[0].GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
     corr_hists[0].GetYaxis().SetRangeUser(0, max([corr_hists[i].GetMaximum() for i in range(len(corr_hists))])*1.1)
