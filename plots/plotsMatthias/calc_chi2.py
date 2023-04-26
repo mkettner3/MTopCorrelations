@@ -5,7 +5,6 @@ Script to calculate the chi2 between histograms with the option to scale the err
 """
 
 from typing import Any
-from copy import deepcopy
 import numpy as np
 import ROOT
 from MTopCorrelations.Tools.user import plot_directory
@@ -178,11 +177,11 @@ def compute_chi2(template_hist, data_hist, data_cov_matrix):
         data_hist_cont[idx] = data_hist.GetBinContent(bin_nbr+1)
     d_vec = data_hist_cont - template_hist_cont
 
-    data_cov_matrix = np.delete(np.delete(data_cov_matrix, 0, 0), 0, 1)
+    data_cov_matrix = data_cov_matrix[1:data_cov_matrix.shape[0], 1:data_cov_matrix.shape[1]]
     data_cov_matrix_inv = np.linalg.inv(data_cov_matrix)
-    chi2 = np.linalg.multi_dot([d_vec, data_cov_matrix_inv, d_vec])
+    chi2_value = np.linalg.multi_dot([d_vec, data_cov_matrix_inv, d_vec])
 
-    return chi2
+    return chi2_value
 
 
 def store_matrix_in_root(matrices_norm, matrices_orig, sample_names, pt_jet_ranges, filename, hist_axis_range):
@@ -252,7 +251,7 @@ def plot_vector_in_root(vector, filename_graphic, hist_axis_range, title='Unname
     ROOT.gStyle.SetPadTickY(1)          # Axis ticks right
     ROOT.gStyle.SetOptStat(0)           # Do not display stat box
 
-    c = ROOT.TCanvas('c', 'c', 600, 600)
+    c = ROOT.TCanvas('c', 'c', 1000, 1000)
     ROOT.gPad.SetLeftMargin(0.19)
     ROOT.gPad.SetBottomMargin(0.2)
 
@@ -279,19 +278,19 @@ def plot_chi2(root_graph, label, filename, obt_top_mass, uncertainty):
     c = ROOT.TCanvas('c', 'c', 1000, 1000)
     legend = ROOT.TLegend(0.3, 0.74, 0.7, 0.9)
 
-    graphs = ROOT.TMultiGraph()
     for s in range(len(root_graph)):
         root_graph[s].SetMarkerSize(2)
         root_graph[s].SetMarkerStyle(47)
-        root_graph[s].SetMarkerColor(s+2)
-        root_graph[s].GetFunction('pol2_fit').SetLineColor(s+2)
-        graphs.Add(deepcopy(root_graph[s]))
+        root_graph[s].SetMarkerColor(s+1)
+        root_graph[s].GetFunction('pol2_fit').SetLineColor(s+1)
         legend.AddEntry(root_graph[s].GetFunction('pol2_fit'), label[s], 'l')
-    graphs.SetTitle('#chi^{2}')
-    graphs.GetXaxis().SetTitle('Top-Mass (GeV)')
-    graphs.SetMaximum(max([root_graph[i].GetHistogram().GetMaximum() for i in range(len(root_graph))])+20)
-    graphs.SetMinimum(min([root_graph[j].GetHistogram().GetMinimum() for j in range(len(root_graph))])-20)
-    graphs.Draw('AP')
+    root_graph[0].SetTitle('#chi^{2}')
+    root_graph[0].GetXaxis().SetTitle('Top-Mass (GeV)')
+    root_graph[0].SetMaximum(max([root_graph[i].GetHistogram().GetMaximum() for i in range(len(root_graph))])+20)
+    root_graph[0].SetMinimum(min([root_graph[j].GetHistogram().GetMinimum() for j in range(len(root_graph))])-20)
+    root_graph[0].Draw('AP')
+    for g in root_graph:
+        g.Draw('P SAME')
     legend.AddEntry(ROOT.nullptr, 'Resulting Top-Mass: {:.3f} GeV'.format(obt_top_mass), '')
     legend.AddEntry(ROOT.nullptr, 'Uncertainty: {:.3f} GeV'.format(uncertainty), '')
     legend.Draw()
@@ -305,7 +304,7 @@ def plot_corr_hist(corr_hists, filename_graphic, sample_names, title=None, hist_
     ROOT.gStyle.SetPadTickY(1)          # Axis ticks right
     ROOT.gStyle.SetOptStat(0)           # Do not display stat box
 
-    c = ROOT.TCanvas('c', 'c', 600, 600)
+    c = ROOT.TCanvas('c', 'c', 1000, 1000)
     legend = ROOT.TLegend(0.75, 0.6, 0.90, 0.89)
     ROOT.gPad.SetLeftMargin(0.19)
     ROOT.gPad.SetBottomMargin(0.2)
@@ -314,10 +313,8 @@ def plot_corr_hist(corr_hists, filename_graphic, sample_names, title=None, hist_
         line_colors = [ROOT.kBlue, ROOT.kGreen, ROOT.kRed]
     elif len(corr_hists) == 5:
         line_colors = [ROOT.kMagenta, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kYellow]
-    elif len(corr_hists) == 9:
-        line_colors = list(range(1, 10))
     else:
-        raise RuntimeError('Please specify the line colors in plot_corr_hist()!')
+        line_colors = list(range(1, len(corr_hists)+1))
 
     for hist, line_color, sample_name in zip(corr_hists, line_colors, sample_names):
         hist.SetLineColor(line_color)

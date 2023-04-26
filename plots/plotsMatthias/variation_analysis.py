@@ -7,7 +7,6 @@ Script to determine the systematic error caused by variations of pT of a jet and
 from calc_chi2 import pt_jet_ranges, prepare_histogram, normalize_cov_matrix, compute_chi2,\
     plot_corr_hist, plot_matrix_in_root, plot_vector_in_root, NormalizeMatrix
 from MTopCorrelations.Tools.user import plot_directory
-from copy import deepcopy
 import numpy as np
 import ROOT
 
@@ -49,19 +48,19 @@ def plot_chi2(root_graph, label, filename, obt_top_masses, uncertainties):
     c = ROOT.TCanvas('c', 'c', 1000, 1000)
     legend = ROOT.TLegend(0.2, 0.6, 0.8, 0.9)
 
-    graphs = ROOT.TMultiGraph()
     for s in range(len(root_graph)):
         root_graph[s].SetMarkerSize(2)
-        root_graph[s].SetMarkerStyle(47)
-        root_graph[s].SetMarkerColor(s+2)
-        root_graph[s].GetFunction('pol2_fit').SetLineColor(s+2)
-        graphs.Add(deepcopy(root_graph[s]))
+        root_graph[s].SetMarkerStyle(20)
+        root_graph[s].SetMarkerColor(s+1)
+        root_graph[s].GetFunction('pol2_fit').SetLineColor(s+1)
         legend.AddEntry(root_graph[s].GetFunction('pol2_fit'), label[s], 'l')
-    graphs.SetTitle('#chi^{2}')
-    graphs.GetXaxis().SetTitle('Top-Mass (GeV)')
-    graphs.SetMaximum(max([root_graph[i].GetHistogram().GetMaximum() for i in range(len(root_graph))])+20)
-    graphs.SetMinimum(min([root_graph[j].GetHistogram().GetMinimum() for j in range(len(root_graph))])-20)
-    graphs.Draw('AP')
+    root_graph[0].SetTitle('#chi^{2}')
+    root_graph[0].GetXaxis().SetTitle('Top-Mass (GeV)')
+    root_graph[0].GetYaxis().SetRangeUser(min([root_graph[i].GetHistogram().GetMinimum() for i in range(len(root_graph))])-2,
+                                          max([root_graph[i].GetHistogram().GetMaximum() for i in range(len(root_graph))])*1.2)
+    root_graph[0].Draw('AP')
+    for g in root_graph:
+        g.Draw('P SAME')
     if obt_top_masses is not None or uncertainties is not None:
         legend.AddEntry(ROOT.nullptr, 'Resulting Top-Mass (+2%): {:.3f} GeV'.format(obt_top_masses[0]), '')
         legend.AddEntry(ROOT.nullptr, 'Uncertainty (+2%): {:.3f} GeV'.format(uncertainties[0]), '')
@@ -95,6 +94,44 @@ def plot_uncertainties(uncertainties, filename):
     c.Print(plot_directory+filename)
 
 
+def apply_linear_bin_fit(corr_hists, factors, type_name):
+    nbins = corr_hists[0].GetNbinsX()
+    for i in range(1, nbins+1):
+        content = []
+        error = []
+        xerror = []
+        for j, factor in enumerate(factors):
+            content.append(corr_hists[j].GetBinContent(i))
+            error.append(corr_hists[j].GetBinError(i))
+            xerror.append(0)
+        graph = ROOT.TGraphErrors(len(factors), np.array(factors), np.array(content), np.array(xerror), np.array(error))
+
+        ROOT.gStyle.SetLegendBorderSize(0)
+        ROOT.gStyle.SetPadTickX(1)
+        ROOT.gStyle.SetPadTickY(1)
+        ROOT.gStyle.SetOptStat(0)
+        c = ROOT.TCanvas("c", "c", 600, 600)
+        ROOT.gPad.SetLeftMargin(0.19)
+        ROOT.gPad.SetBottomMargin(0.12)
+        graph.SetTitle(" ")
+        graph.GetXaxis().SetTitle("f")
+        graph.GetYaxis().SetTitle("bin content")
+        graph.SetLineColor(1)
+        graph.SetMarkerColor(1)
+        graph.SetMarkerStyle(20)
+        graph.Draw("AP")
+        line_func = ROOT.TF1('pol1_fit', 'pol1')
+        graph.Fit(line_func)
+        fit = graph.GetFunction('pol1_fit')
+        fit.SetLineColor(ROOT.kRed)
+        fit.Draw("SAME")
+        c.Print(plot_directory+'chi2_plots/chi2_pt_varied_28_hist/linear_fit_{}_bin_{}.pdf'.format(type_name, i))
+
+        for j, factor in enumerate(factors):
+            corr_hists[j].SetBinContent(i, fit.Eval(factor))
+            corr_hists[j].SetBinError(i, error[j])
+
+
 def main(level, pt_range):
     corr_hist_templates = [prepare_histogram(filename_root_hist=filename,
                                              hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name, pt_range[0], pt_range[1]),
@@ -117,12 +154,14 @@ def main(level, pt_range):
     plot_corr_hist(corr_hists=corr_hist_templates,
                    filename_graphic='chi2_plots/chi2_pt_varied_28_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
                    sample_names=sample_names, title='Correlator Histograms (BW-reweighted)', hist_range=None)
-    plot_corr_hist(corr_hists=[corr_hist_data]+[corr_hist_varied_jet[v] for v in range(len(var_factors))],
+    apply_linear_bin_fit(corr_hists=corr_hist_templates, factors=[float(sample_name) for sample_name in sample_names], type_name='mass_samples')
+    plot_corr_hist(corr_hists=[corr_hist_data]+corr_hist_varied_jet,
                    filename_graphic='chi2_plots/chi2_pt_varied_28_hist/corr_hist_varied_jet_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
-                   sample_names=['original']+var_factor_names, title='Jet-p_{T} Variances',  hist_range=None)
-    plot_corr_hist(corr_hists=[corr_hist_data]+[corr_hist_varied_cons[v] for v in range(len(var_factors))],
+                   sample_names=['original']+var_factor_names, title='Jet-p_{T} Variances', hist_range=None)
+    apply_linear_bin_fit(corr_hists=corr_hist_varied_jet, factors=var_factors, type_name='varied_jet')
+    plot_corr_hist(corr_hists=[corr_hist_data]+corr_hist_varied_cons,
                    filename_graphic='chi2_plots/chi2_pt_varied_28_hist/corr_hist_varied_cons_pt_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
-                   sample_names=['original']+var_factor_names, title='Constituent-p_{T} Variances',  hist_range=None)
+                   sample_names=['original']+var_factor_names, title='Constituent-p_{T} Variances', hist_range=None)
 
     num_bins = corr_hist_data.GetNbinsX()
     matrix_stat_orig = np.zeros((num_bins, num_bins), dtype=np.float64)
@@ -337,10 +376,11 @@ if __name__ == '__main__':
     sample_names_stored = sample_names[:]
     sample_names_stored[sample_names_stored.index('172.5')] = 'None'
 
-    var_factors = [1.1, 1.05, 1.02, 1.01, 0.99, 0.98, 0.95, 0.9]
-    var_factor_names = ['+ 10 %', '+ 5 %', '+ 2 %', '+ 1 %', '- 1 %', '- 2 %', '- 5 %', '- 10 %']
+    var_factors = [1.05, 1.02, 1.01, 0.99, 0.98, 0.95]
+    var_factor_names = ['+ 5 %', '+ 2 %', '+ 1 %', '- 1 %', '- 2 %', '- 5 %']
 
-    hist_binning = np.array([0.9, 1.2, 1.55, 1.72, 1.87, 1.9, 2.4, 2.8])
+    # hist_binning = np.array([0.9, 1.2, 1.55, 1.72, 1.87, 1.9, 2.4, 2.8])
+    hist_binning = np.array([0.0, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 3.0])
 
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
 
