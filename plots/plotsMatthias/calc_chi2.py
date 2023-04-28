@@ -321,7 +321,7 @@ def plot_corr_hist(corr_hists, filename_graphic, sample_names, title=None, hist_
         hist.SetTitle('')
         hist.SetLineWidth(2)
         hist.SetLineStyle(1)
-        legend.AddEntry(hist, sample_name, 'l')
+        legend.AddEntry(hist, str(sample_name), 'l')
     if isinstance(title, str):
         corr_hists[0].SetTitle(title)
     if hist_range is not None:
