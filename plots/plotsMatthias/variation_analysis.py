@@ -71,8 +71,8 @@ def plot_chi2(root_graph, label, filename, obt_top_masses, uncertainties):
     c.Print(plot_directory+filename)
 
 
-def plot_uncertainties(uncertainties, filename):
-    # type: (list, str) -> None
+def plot_uncertainties(uncertainties, var_factors, filename):
+    # type: (list, list, str) -> None
 
     ROOT.gStyle.SetOptStat(0)  # Do not display stat box
     ROOT.gStyle.SetLegendBorderSize(1)  # No border for legend
@@ -94,17 +94,22 @@ def plot_uncertainties(uncertainties, filename):
     c.Print(plot_directory+filename)
 
 
-def apply_linear_bin_fit(corr_hists, factors, type_name):
+def apply_linear_bin_fit(corr_hists, orig_factors, new_factors, type_name, additional_hists=None, additional_factors=None):
+    if len(corr_hists) != len(orig_factors):
+        raise ValueError('The lists "corr_hists" and "factors" must have the same number of elements!')
+
     nbins = corr_hists[0].GetNbinsX()
+    fitted_corr_hists = [corr_hists[0].Clone() for _ in range(len(new_factors))]
+
     for i in range(1, nbins+1):
         content = []
         error = []
         xerror = []
-        for j, factor in enumerate(factors):
+        for j in range(len(orig_factors)):
             content.append(corr_hists[j].GetBinContent(i))
             error.append(corr_hists[j].GetBinError(i))
             xerror.append(0)
-        graph = ROOT.TGraphErrors(len(factors), np.array(factors), np.array(content), np.array(xerror), np.array(error))
+        graph = ROOT.TGraphErrors(len(orig_factors), np.array(orig_factors), np.array(content), np.array(xerror), np.array(error))
 
         ROOT.gStyle.SetLegendBorderSize(0)
         ROOT.gStyle.SetPadTickX(1)
@@ -125,11 +130,21 @@ def apply_linear_bin_fit(corr_hists, factors, type_name):
         fit = graph.GetFunction('pol1_fit')
         fit.SetLineColor(ROOT.kRed)
         fit.Draw("SAME")
+
+        if additional_hists is not None and additional_factors is not None:
+            graph_additional_data = ROOT.TGraphErrors(len(additional_factors),
+                                                      np.array(additional_factors), np.array([additional_hists[j].GetBinContent(i) for j in range(len(additional_factors))]),
+                                                      np.zeros(len(additional_factors)), np.array([additional_hists[j].GetBinError(i) for j in range(len(additional_factors))]))
+            graph_additional_data.Draw("SAME")
+            print('Additional data for fit for {} was plotted...'.format(type_name))
+
         c.Print(plot_directory+'chi2_plots/chi2_pt_varied_29_hist/linear_fit_{}_bin_{}.pdf'.format(type_name, i))
 
-        for j, factor in enumerate(factors):
-            corr_hists[j].SetBinContent(i, fit.Eval(factor))
-            corr_hists[j].SetBinError(i, error[j])
+        for j, new_factor in enumerate(new_factors):
+            fitted_corr_hists[j].SetBinContent(i, fit.Eval(new_factor))
+            fitted_corr_hists[j].SetBinError(i, error[int(len(error)/2)])
+
+    return fitted_corr_hists
 
 
 def main(level, pt_range):
@@ -147,13 +162,19 @@ def main(level, pt_range):
                                               hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_jet_{:.2f}_{:}_None_{:}_{:}'.format(var_fac, level,
                                                                                                                                                         pt_range[0],
                                                                                                                                                         pt_range[1]),
-                                              hist_binning=hist_binning) for var_fac in var_factors]
+                                              hist_binning=hist_binning) for var_fac in jet_pt_variations]
 
     corr_hist_varied_cons = [prepare_histogram(filename_root_hist=filename,
                                                hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_cons_pt_{:.2f}_{:}_None_{:}_{:}'.format(var_fac, level,
                                                                                                                                                              pt_range[0],
                                                                                                                                                              pt_range[1]),
-                                               hist_binning=hist_binning) for var_fac in var_factors]
+                                               hist_binning=hist_binning) for var_fac in cons_pt_variations]
+
+    corr_hist_track_eff = [prepare_histogram(filename_root_hist=filename,
+                                             hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_cons_eta_phi_{:}_None_{:}_{:}_{:}_{:}'.format(level,
+                                                                                                                                                                 pt_range[0], pt_range[1],
+                                                                                                                                                                 eff_deltaR, eff_probability),
+                                             hist_binning=hist_binning) for eff_deltaR in deltaR_variations for eff_probability in probab_variations]
 
     plot_corr_hist(corr_hists=corr_hist_templates,
                    filename_graphic='chi2_plots/chi2_pt_varied_29_hist/corr_hist_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
@@ -161,15 +182,25 @@ def main(level, pt_range):
     plot_corr_hist(corr_hists=corr_hist_templates_mc,
                    filename_graphic='chi2_plots/chi2_pt_varied_29_hist/corr_hist_mc_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
                    sample_names=sample_names_mc_values, title='Correlator Histograms (Monte-Carlo)', hist_range=None)
-    apply_linear_bin_fit(corr_hists=corr_hist_templates+corr_hist_templates_mc,
-                         factors=[float(sample_name) for sample_name in sample_names]+sample_names_mc_values, type_name='mass_samples')
+    fitted_hists = apply_linear_bin_fit(corr_hists=corr_hist_templates, orig_factors=[float(sample_name) for sample_name in sample_names],
+                                        new_factors=[float(sample_name) for sample_name in sample_names], type_name='mass_samples',
+                                        additional_hists=corr_hist_templates_mc, additional_factors=sample_names_mc_values)
+    corr_hist_templates[:int(len(corr_hist_templates)/2)] = fitted_hists[:int(len(corr_hist_templates)/2)]
+    corr_hist_templates[int(len(corr_hist_templates)/2)+1:] = fitted_hists[int(len(corr_hist_templates)/2)+1:]
+
     plot_corr_hist(corr_hists=[corr_hist_data]+corr_hist_varied_jet,
                    filename_graphic='chi2_plots/chi2_pt_varied_29_hist/corr_hist_varied_jet_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
-                   sample_names=['original']+var_factor_names, title='Jet-p_{T} Variances', hist_range=None)
-    apply_linear_bin_fit(corr_hists=corr_hist_varied_jet, factors=var_factors, type_name='varied_jet')
+                   sample_names=['original']+jet_var_names, title='Jet-p_{T} Variances', hist_range=None)
+    corr_hist_varied_jet = apply_linear_bin_fit(corr_hists=corr_hist_varied_jet+[corr_hist_data], orig_factors=jet_pt_variations+[1.],
+                                                new_factors=[1.05, 1.02, 1.01, 1.005, 1.002, 1.001, 0.999, 0.998, 0.995, 0.99, 0.98, 0.95], type_name='varied_jet')
+
     plot_corr_hist(corr_hists=[corr_hist_data]+corr_hist_varied_cons,
                    filename_graphic='chi2_plots/chi2_pt_varied_29_hist/corr_hist_varied_cons_pt_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
-                   sample_names=['original']+var_factor_names, title='Constituent-p_{T} Variances', hist_range=None)
+                   sample_names=['original']+cons_pt_variations, title='Constituent-p_{T} Variances', hist_range=None)
+
+    plot_corr_hist(corr_hists=[corr_hist_data]+corr_hist_track_eff,
+                   filename_graphic='chi2_plots/chi2_pt_varied_29_hist/corr_hist_track_efficiency_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
+                   sample_names=['original']+track_eff_names, title='Tracker Efficiency', hist_range=None)
 
     num_bins = corr_hist_data.GetNbinsX()
     matrix_stat_orig = np.zeros((num_bins, num_bins), dtype=np.float64)
@@ -181,17 +212,17 @@ def main(level, pt_range):
         for j in range(num_bins):
             matrix_test[i, j] = 0.25 * corr_hist_data.GetBinContent(i+1) * corr_hist_data.GetBinContent(j+1)
 
-    sigma_jet = [[corr_hist_varied_jet[v].GetBinContent(i+1) - corr_hist_data.GetBinContent(i+1) for i in range(num_bins)] for v in range(len(var_factors))]
-    sigma_cons = [[corr_hist_varied_cons[v].GetBinContent(i+1) - corr_hist_data.GetBinContent(i+1) for i in range(num_bins)] for v in range(len(var_factors))]
+    sigma_jet = [[corr_hist_varied_jet[v].GetBinContent(i+1) - corr_hist_data.GetBinContent(i+1) for i in range(num_bins)] for v in range(len(jet_pt_variations))]
+    sigma_cons = [[corr_hist_varied_cons[v].GetBinContent(i+1) - corr_hist_data.GetBinContent(i+1) for i in range(num_bins)] for v in range(len(cons_pt_variations))]
 
-    matrix_varied_jet_orig = [np.zeros((num_bins, num_bins), dtype=np.float64) for _ in range(len(var_factors))]
-    for v in range(len(var_factors)):
+    matrix_varied_jet_orig = [np.zeros((num_bins, num_bins), dtype=np.float64) for _ in range(len(jet_pt_variations))]
+    for v in range(len(jet_pt_variations)):
         for i in range(num_bins):
             for j in range(num_bins):
                 matrix_varied_jet_orig[v][i, j] = sigma_jet[v][i] * sigma_jet[v][j]
 
-    matrix_varied_cons_orig = [np.zeros((num_bins, num_bins), dtype=np.float64) for _ in range(len(var_factors))]
-    for v in range(len(var_factors)):
+    matrix_varied_cons_orig = [np.zeros((num_bins, num_bins), dtype=np.float64) for _ in range(len(cons_pt_variations))]
+    for v in range(len(cons_pt_variations)):
         for i in range(num_bins):
             for j in range(num_bins):
                 matrix_varied_cons_orig[v][i, j] = sigma_cons[v][i] * sigma_cons[v][j]
@@ -202,21 +233,21 @@ def main(level, pt_range):
     plot_matrix_in_root(matrix=matrix_test, filename_graphic='chi2_plots/chi2_pt_varied_29_matrix/matrix_test_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
                         hist_axis_range=hist_binning, title='Test Matrix')
 
-    for v, var_name in enumerate(var_factor_names):
+    for v, var_name in enumerate(jet_var_names):
         plot_vector_in_root(vector=sigma_jet[v], filename_graphic='chi2_plots/chi2_pt_varied_29_matrix/corr_sigmas_jet_{}_{}-{}_{}.png'.format(level, pt_range[0], pt_range[1], var_name),
                             hist_axis_range=hist_binning, title='Correlator Sigmas Jet-p_{T}-variation '+var_name)
 
-    for v, var_name in enumerate(var_factor_names):
+    for v, var_name in enumerate(jet_var_names):
         plot_matrix_in_root(matrix=matrix_varied_jet_orig[v], filename_graphic='chi2_plots/chi2_pt_varied_29_matrix/matrix_varied_jet_orig_{}_{}-{}_{}.png'.format(level, pt_range[0], pt_range[1], var_name),
                             hist_axis_range=hist_binning, title='Covariance Matrix Jet-p_{T}-variation '+var_name)
 
-    for v, var_name in enumerate(var_factor_names):
+    for v, var_name in enumerate(cons_pt_variations):
         plot_vector_in_root(vector=sigma_cons[v], filename_graphic='chi2_plots/chi2_pt_varied_29_matrix/corr_sigmas_cons_{}_{}-{}_{}.png'.format(level, pt_range[0], pt_range[1], var_name),
-                            hist_axis_range=hist_binning, title='Correlator Sigmas Constituent-p_{T}-variation '+var_name)
+                            hist_axis_range=hist_binning, title='Correlator Sigmas Constituent-p_{T}-variation '+str(var_name))
 
-    for v, var_name in enumerate(var_factor_names):
+    for v, var_name in enumerate(cons_pt_variations):
         plot_matrix_in_root(matrix=matrix_varied_cons_orig[v], filename_graphic='chi2_plots/chi2_pt_varied_29_matrix/matrix_varied_cons_orig_{}_{}-{}_{}.png'.format(level, pt_range[0], pt_range[1], var_name),
-                            hist_axis_range=hist_binning, title='Covariance Matrix Constituent-p_{T}-variation '+var_name)
+                            hist_axis_range=hist_binning, title='Covariance Matrix Constituent-p_{T}-variation '+str(var_name))
 
     corr_hist_data_norm = corr_hist_data.Clone()
     corr_hist_data_norm.Scale(1 / corr_hist_data_norm.Integral(), 'width')
@@ -228,27 +259,34 @@ def main(level, pt_range):
     matrix_stat_norm = NormalizeMatrix(old_cov=matrix_stat_orig, hist_=corr_hist_data)
     matrix_test_norm = NormalizeMatrix(old_cov=matrix_test, hist_=corr_hist_data)
 
-    corr_hist_varied_jet_norm = [corr_hist_varied_jet[v].Clone() for v in range(len(var_factors))]
-    for v in range(len(var_factors)):
+    corr_hist_varied_jet_norm = [corr_hist_varied_jet[v].Clone() for v in range(len(jet_pt_variations))]
+    for v in range(len(jet_pt_variations)):
         corr_hist_varied_jet_norm[v].Scale(1 / corr_hist_varied_jet_norm[v].Integral(), 'width')
 
-    matrix_varied_jet_norm = [NormalizeMatrix(old_cov=matrix_varied_jet_orig[v], hist_=corr_hist_data) for v in range(len(var_factors))]
+    matrix_varied_jet_norm = [NormalizeMatrix(old_cov=matrix_varied_jet_orig[v], hist_=corr_hist_data) for v in range(len(jet_pt_variations))]
 
-    corr_hist_varied_cons_norm = [corr_hist_varied_cons[v].Clone() for v in range(len(var_factors))]
-    for v in range(len(var_factors)):
+    corr_hist_varied_cons_norm = [corr_hist_varied_cons[v].Clone() for v in range(len(cons_pt_variations))]
+    for v in range(len(cons_pt_variations)):
         corr_hist_varied_cons_norm[v].Scale(1 / corr_hist_varied_cons_norm[v].Integral(), 'width')
 
-    matrix_varied_cons_norm = [NormalizeMatrix(old_cov=matrix_varied_cons_orig[v], hist_=corr_hist_data) for v in range(len(var_factors))]
+    matrix_varied_cons_norm = [NormalizeMatrix(old_cov=matrix_varied_cons_orig[v], hist_=corr_hist_data) for v in range(len(cons_pt_variations))]
+
+    corr_hist_track_eff_norm = [corr_hist_track_eff[v].Clone() for v in range(len(deltaR_variations)*len(probab_variations))]
+    for v in range(len(deltaR_variations)*len(probab_variations)):
+        corr_hist_track_eff_norm[v].Scale(1 / corr_hist_track_eff_norm[v].Integral(), 'width')
 
     plot_corr_hist(corr_hists=corr_hist_templates_norm,
                    filename_graphic='chi2_plots/chi2_pt_varied_29_hist/corr_hist_norm_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
                    sample_names=sample_names, title='Normalized Correlator Histograms (BW-reweighted)', hist_range=None)
-    plot_corr_hist(corr_hists=[corr_hist_data_norm]+[corr_hist_varied_jet_norm[v] for v in range(len(var_factors))],
+    plot_corr_hist(corr_hists=[corr_hist_data_norm]+[corr_hist_varied_jet_norm[v] for v in range(len(jet_pt_variations))],
                    filename_graphic='chi2_plots/chi2_pt_varied_29_hist/corr_hist_varied_jet_norm_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
-                   sample_names=['original']+var_factor_names, title='Normalized Jet-p_{T} variances',  hist_range=None)
-    plot_corr_hist(corr_hists=[corr_hist_data_norm]+[corr_hist_varied_cons_norm[v] for v in range(len(var_factors))],
+                   sample_names=['original']+jet_var_names, title='Normalized Jet-p_{T} variances',  hist_range=None)
+    plot_corr_hist(corr_hists=[corr_hist_data_norm]+[corr_hist_varied_cons_norm[v] for v in range(len(cons_pt_variations))],
                    filename_graphic='chi2_plots/chi2_pt_varied_29_hist/corr_hist_varied_cons_norm_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
-                   sample_names=['original']+var_factor_names, title='Normalized Constituent-p_{T} variances',  hist_range=None)
+                   sample_names=['original']+cons_pt_variations, title='Normalized Constituent-p_{T} variances',  hist_range=None)
+    plot_corr_hist(corr_hists=[corr_hist_data_norm]+[corr_hist_track_eff_norm[v] for v in range(len(deltaR_variations)*len(probab_variations))],
+                   filename_graphic='chi2_plots/chi2_pt_varied_29_hist/corr_hist_track_efficiency_norm_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
+                   sample_names=['original']+track_eff_names, title='Normalized Tracker Efficiency',  hist_range=None)
 
     plot_matrix_in_root(matrix=matrix_stat_norm, filename_graphic='chi2_plots/chi2_pt_varied_29_matrix/matrix_norm_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
                         hist_axis_range=hist_binning, title='Normalized Covariance Matrix')
@@ -256,19 +294,19 @@ def main(level, pt_range):
     plot_matrix_in_root(matrix=matrix_test_norm, filename_graphic='chi2_plots/chi2_pt_varied_29_matrix/matrix_test_norm_{}_{}-{}.png'.format(level, pt_range[0], pt_range[1]),
                         hist_axis_range=hist_binning, title='Normalized Test Matrix')
 
-    for v, var_name in enumerate(var_factor_names):
+    for v, var_name in enumerate(jet_var_names):
         plot_matrix_in_root(matrix=matrix_varied_jet_norm[v], filename_graphic='chi2_plots/chi2_pt_varied_29_matrix/matrix_varied_jet_norm_{}_{}-{}_{}.png'.format(level, pt_range[0], pt_range[1], var_name),
                             hist_axis_range=hist_binning, title='Normalized Covariance Matrix Jet-p_{T}-variation '+var_name)
 
-    for v, var_name in enumerate(var_factor_names):
+    for v, var_name in enumerate(cons_pt_variations):
         plot_matrix_in_root(matrix=matrix_varied_cons_norm[v], filename_graphic='chi2_plots/chi2_pt_varied_29_matrix/matrix_varied_cons_norm_{}_{}-{}_{}.png'.format(level, pt_range[0], pt_range[1], var_name),
-                            hist_axis_range=hist_binning, title='Normalized Covariance Matrix Cons-p_{T}-variation '+var_name)
+                            hist_axis_range=hist_binning, title='Normalized Covariance Matrix Cons-p_{T}-variation '+str(var_name))
 
-    total_matrix_varied_jet_norm = [matrix_varied_jet_norm[v] + matrix_stat_norm for v in range(len(var_factors))]
-    total_matrix_varied_cons_norm = [matrix_varied_cons_norm[v] + matrix_stat_norm for v in range(len(var_factors))]
+    total_matrix_varied_jet_norm = [matrix_varied_jet_norm[v] + matrix_stat_norm for v in range(len(jet_pt_variations))]
+    total_matrix_varied_cons_norm = [matrix_varied_cons_norm[v] + matrix_stat_norm for v in range(len(cons_pt_variations))]
     # total_matrix_test_norm = [matrix_test_norm + matrix_stat_norm]
 
-    for total_matrix_varied_norm, var_label in [(total_matrix_varied_jet_norm, 'jet'), (total_matrix_varied_cons_norm, 'cons')]:
+    for total_matrix_varied_norm, var_label, var_factors in [(total_matrix_varied_jet_norm, 'jet', jet_pt_variations), (total_matrix_varied_cons_norm, 'cons', cons_pt_variations)]:
         chi2 = [[compute_chi2(template_hist=corr_hist_templates_norm[h], data_hist=corr_hist_data_norm, data_cov_matrix=matrix_stat_norm) for h in range(len(sample_names))]]
         for v in range(len(var_factors)):
             chi2.append([compute_chi2(template_hist=corr_hist_templates_norm[h], data_hist=corr_hist_data_norm, data_cov_matrix=total_matrix_varied_norm[v]) for h in range(len(sample_names))])
@@ -288,11 +326,11 @@ def main(level, pt_range):
         print('Uncertainty Up: {:.5f} GeV.'.format(uncertainties[2]))
         print('Uncertainty Down: {:.5f} GeV.'.format(uncertainties[5]))
 
-        plot_chi2(root_graph=chi2_graph, label=['Variance: '+e for e in ['original']+var_factor_names],
+        plot_chi2(root_graph=chi2_graph, label=['Variance: '+str(e) for e in ['original']+var_factors],
                   filename='chi2_plots/chi2_variations_29/chi2_varied_{}_29_{}_{}-{}.pdf'.format(var_label, level, pt_range[0], pt_range[1]),
                   obt_top_masses=[obt_top_masses[3], obt_top_masses[6]], uncertainties=[uncertainties[2], uncertainties[5]])
 
-        plot_uncertainties(uncertainties=uncertainties,
+        plot_uncertainties(uncertainties=uncertainties, var_factors=var_factors,
                            filename='chi2_plots/chi2_variations_29/chi2_varied_{}_29_uncertainties_{}_{}-{}.pdf'.format(var_label, level, pt_range[0], pt_range[1]))
 
 
@@ -386,8 +424,12 @@ if __name__ == '__main__':
     sample_names_mc = ['TTbar_1', 'TTbar_2', 'TTbar_4', 'TTbar_5']
     sample_names_mc_values = [169.5, 171.5, 173.5, 175.5]
 
-    var_factors = [1.05, 1.02, 1.01, 0.99, 0.98, 0.95]
-    var_factor_names = ['+ 5 %', '+ 2 %', '+ 1 %', '- 1 %', '- 2 %', '- 5 %']
+    jet_pt_variations = [1.1, 1.05, 1.02, 1.01, 0.99, 0.98, 0.95, 0.9]
+    jet_var_names = ['+ 10 %', '+ 5 %', '+ 2 %', '+ 1 %', '- 1 %', '- 2 %', '- 5 %', '- 10 %']
+    cons_pt_variations = [-2, -1, -0.5, 0.5, 1, 2]
+    deltaR_variations = [0.01, 0.05, 0.1, 0.4]
+    probab_variations = [2, 5, 10]
+    track_eff_names = ['{}, {}'.format(eff_deltaR, eff_probability) for eff_deltaR in deltaR_variations for eff_probability in probab_variations]
 
     # hist_binning = np.array([0.9, 1.2, 1.55, 1.72, 1.87, 1.9, 2.4, 2.8])
     hist_binning = np.array([0.0, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 3.0])
@@ -404,9 +446,11 @@ if __name__ == '__main__':
         histogram.SetDirectory(ROOT.nullptr)
         f.Close()
         print('Number of events ('+level+'): {:.0f}'.format(histogram.GetBinContent(1)))
+        print('Bin-Error of number of events ('+level+'): {:.0f}'.format(histogram.GetBinError(1)))
 
         f = ROOT.TFile(filename, 'read')
         histogram = f.Get('/Others/'+level+'-Level/weighted_number_of_events_{:}_{:}_{:}'.format(level, 450, 500))
         histogram.SetDirectory(ROOT.nullptr)
         f.Close()
         print('Number of events weighted by event weight ('+level+'): {:.2f}'.format(histogram.GetBinContent(1)))
+        print('Bin-Error of number of events weighted by event weight ('+level+'): {:.2f}'.format(histogram.GetBinError(1)))
