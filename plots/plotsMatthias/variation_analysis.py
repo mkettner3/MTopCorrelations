@@ -119,24 +119,30 @@ def apply_linear_bin_fit(corr_hists, orig_factors, new_factors, type_name, addit
         ROOT.gPad.SetLeftMargin(0.19)
         ROOT.gPad.SetBottomMargin(0.12)
         graph.SetTitle(" ")
-        graph.GetXaxis().SetTitle("f")
+        graph.GetXaxis().SetTitle(type_name)
         graph.GetYaxis().SetTitle("bin content")
         graph.SetLineColor(1)
         graph.SetMarkerColor(1)
         graph.SetMarkerStyle(20)
-        graph.Draw("AP")
-        line_func = ROOT.TF1('pol1_fit', 'pol1')
-        graph.Fit(line_func)
-        fit = graph.GetFunction('pol1_fit')
-        fit.SetLineColor(ROOT.kRed)
-        fit.Draw("SAME")
 
         if additional_hists is not None and additional_factors is not None:
             graph_additional_data = ROOT.TGraphErrors(len(additional_factors),
                                                       np.array(additional_factors), np.array([additional_hists[j].GetBinContent(i) for j in range(len(additional_factors))]),
                                                       np.zeros(len(additional_factors)), np.array([additional_hists[j].GetBinError(i) for j in range(len(additional_factors))]))
-            graph_additional_data.Draw("SAME")
-            print('Additional data for fit for {} was plotted...'.format(type_name))
+
+            graph_additional_data.SetLineColor(1)
+            graph_additional_data.SetMarkerColor(1)
+            graph_additional_data.SetMarkerStyle(20)
+            graph_additional_data.Draw("AP")
+            graph.Draw("SAME")
+        else:
+            graph.Draw("AP")
+
+        line_func = ROOT.TF1('pol1_fit', 'pol1')
+        graph.Fit(line_func)
+        fit = graph.GetFunction('pol1_fit')
+        fit.SetLineColor(ROOT.kRed)
+        fit.Draw("SAME")
 
         c.Print(plot_directory+'chi2_plots/chi2_pt_varied_29_hist/linear_fit_{}_bin_{}.pdf'.format(type_name, i))
 
