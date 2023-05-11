@@ -348,6 +348,24 @@ pt_jet_ranges = zip(range(pt_jet_lowest, pt_jet_highest, pt_jet_step),
 
 
 if __name__ == '__main__':
+    """
+    matrix = np.array([[0.000007, 0.00004], [0.00008, 0.000001]], dtype=np.float64)
+    hist = ROOT.TH1D("test", "test", 2, 0, 2)
+    hist.SetBinContent(1, 0.35)
+    hist.SetBinContent(2, 25.)
+
+    matrix_norm_c = NormalizeMatrix(old_cov=matrix, hist_=hist)
+    matrix_norm_numpy = normalize_cov_matrix(matrix_orig=matrix, root_hist=hist)
+
+    print('C++ Code:')
+    print(matrix_norm_c)
+    print(' ')
+    print('Numpy Code:')
+    print(matrix_norm_numpy)
+    print(' ')
+    print('Difference: '+str((matrix_norm_numpy-matrix_norm_c).sum()))
+    """
+
     filename = 'histogram_files/correlator_hist_trip_22.root'
     sample_names = ['171.5', '171.75', '172.0', '172.25', 'None', '172.75', '173.0', '173.25', '173.5']
     error_scales = [1, 2, 4]
