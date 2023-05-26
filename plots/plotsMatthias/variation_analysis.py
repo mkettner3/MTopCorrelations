@@ -134,11 +134,11 @@ def apply_linear_bin_fit(corr_hists, orig_factors, new_factors, type_name, addit
             graph_additional_data.SetMarkerColor(1)
             graph_additional_data.SetMarkerStyle(20)
             graph_additional_data.Draw("AP")
-            graph.Draw("SAME")
+            graph.Draw("P SAME")
         else:
             graph.Draw("AP")
 
-        line_func = ROOT.TF1('pol1_fit', 'pol1')
+        line_func = ROOT.TF1('pol1_fit', 'pol1', 169.5, 175.5)
         graph.Fit(line_func)
         fit = graph.GetFunction('pol1_fit')
         fit.SetLineColor(ROOT.kRed)
@@ -161,7 +161,7 @@ def main(level, pt_range):
     corr_hist_data = corr_hist_templates[sample_names.index('172.5')]
 
     corr_hist_templates_mc = [prepare_histogram(filename_root_hist=filename,
-                                                hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_{:}_{:}_{:}'.format(level, sample_name_mc, pt_range[0], pt_range[1]),
+                                                hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_MC_{:}_{:}_{:}'.format(level, sample_name_mc, pt_range[0], pt_range[1]),
                                                 hist_binning=hist_binning) for sample_name_mc in sample_names_mc]
 
     corr_hist_varied_jet = [prepare_histogram(filename_root_hist=filename,

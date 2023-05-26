@@ -238,7 +238,7 @@ def plot_matrix_in_root(matrix, filename_graphic, hist_axis_range, title='Normal
     c.Print(plot_directory+filename_graphic)
 
 
-def plot_vector_in_root(vector, filename_graphic, hist_axis_range, title='Unnamed histogram'):
+def plot_vector_in_root(vector, filename_graphic, hist_axis_range, title='Unnamed histogram', x_axis_label='3#zeta'):
     if isinstance(hist_axis_range, np.ndarray):
         hist = ROOT.TH1D("Vector", "Array_plot", len(vector), hist_axis_range)
     else:
@@ -258,7 +258,7 @@ def plot_vector_in_root(vector, filename_graphic, hist_axis_range, title='Unname
     hist.SetTitle(title)
     hist.SetLineWidth(2)
     hist.SetLineStyle(1)
-    hist.GetXaxis().SetTitle('3#zeta')
+    hist.GetXaxis().SetTitle(x_axis_label)
     hist.GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
     hist.GetYaxis().SetRangeUser(hist.GetMinimum()*1.1, hist.GetMaximum()*1.1)
     hist.GetYaxis().SetNdivisions(505)      # Unterteilung der x-Achse

@@ -21,7 +21,7 @@ def cons_pt_var_func(var_fac, cons_pt):
     if cons_pt <= 10:
         return 1 + np.sign(var_fac) * 0.01
     else:
-        return 1 + np.sign(var_fac) * (0.01 + 0.03/90 * (cons_pt - 10) * var_fac)
+        return 1 + np.sign(var_fac) * (0.01 + 0.03/90 * (cons_pt - 10) * np.abs(var_fac))
 
 
 def calc_triplets_and_hist(sample, rew_samples, mc_samples, pt_jet_ranges, max_delta_zeta=float('nan'), delta_legs=float('nan'),
@@ -48,8 +48,8 @@ def calc_triplets_and_hist(sample, rew_samples, mc_samples, pt_jet_ranges, max_d
     hists_varied_cons_eta_phi = [[[[[ROOT.TH1D("Correlator varied cons eta phi ({:}, {:}, {:}, {:}, {:})".format(i, j, k, m, n), "3 #zeta", nbins, hist_range[0], hist_range[1]) for n in range(3)] for m in range(4)] for k in range(len(pt_jet_ranges))] for j in range(len(rew_samples))] for i in range(2)]
     hists_jet_pt = [[ROOT.TH1D("Hadronic Top-Jet-p_{T} ("+str(i)+", "+str(j)+")", "Jet-p_{t}", nbins, 380, 730) for j in range(len(rew_samples))] for i in range(2)]
     hists_cons_pt = [[ROOT.TH1D("Hadronic Top-Constituents-p_{T} ("+str(i)+", "+str(j)+")", "Constituent-p_{t}", nbins, 0, 30) for j in range(len(rew_samples))] for i in range(2)]
-    hists_jet_mass = [[ROOT.TH1D("Hadronic Top-Jet-mass ({:}, {:})".format(i, j), "Jet-mass", nbins, 75, 300) for j in range(len(rew_samples))] for i in range(2)]
-    hists_top_mass = [[ROOT.TH1D("Hadronic Top-mass ({:}, {:})".format(i, j), "Jet-mass", nbins, 167.5, 177.5) for j in range(len(rew_samples))] for i in range(2)]
+    hists_jet_mass = [[ROOT.TH1D("Hadronic Top-Jet-mass ({:}, {:})".format(i, j), "Jet-mass", nbins, 75, 300) for j in range(len(rew_samples)+len(mc_samples))] for i in range(2)]
+    hists_top_mass = [[ROOT.TH1D("Hadronic Top-mass ({:}, {:})".format(i, j), "Jet-mass", nbins, 167.5, 177.5) for j in range(len(rew_samples)+len(mc_samples))] for i in range(2)]
     hists_event_weight = [[ROOT.TH1D("Event weights ({:}, {:})".format(i, k), "event-weight", nbins, -1, 1) for k in range(len(pt_jet_ranges))] for i in range(2)]
     hists_number_events = [[ROOT.TH1I("Number of events ({:}, {:})".format(i, k), "Number of events", 1, 0, 1) for k in range(len(pt_jet_ranges))] for i in range(2)]
     hists_weighted_events = [[ROOT.TH1D("Weighted number of events ({:}, {:})".format(i, k), "Weighted number of events", 1, 0, 1) for k in range(len(pt_jet_ranges))] for i in range(2)]
@@ -171,6 +171,9 @@ def calc_triplets_and_hist(sample, rew_samples, mc_samples, pt_jet_ranges, max_d
                                     hists[g][h+len(rew_samples)][k][1].Fill(three_zeta, event_weight)
                                 break
 
+                        hists_jet_mass[g][h+len(rew_samples)].Fill(hadronic_jet_mass, event_weight)
+                        hists_top_mass[g][h+len(rew_samples)].Fill(m_top_had, event_weight)
+
     return hists, hists_w, hists_jet_pt, hists_cons_pt, hists_jet_mass, hists_top_mass, hists_varied_jet, hists_varied_cons_pt, hists_varied_cons_eta_phi, hists_event_weight, hists_number_events, hists_weighted_events
 
 
@@ -256,13 +259,16 @@ def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_cons_pt, hists_jet_m
             for k, pt_jet_range in enumerate(pt_jet_ranges):
                 for f, (weighted, weight_dir) in enumerate(zip(['', '_abscou'], ['weighted', 'absolute'])):
                     r_file.cd('/Top-Quark/'+level+'-Level/'+weight_dir)
-                    hists_top[g][h+len(rew_samples)][k][f].Write('correlator_hist_{:}_{:}_{:}_{:}{:}'.format(level, mtop_mc, pt_jet_range[0], pt_jet_range[1], weighted))
+                    hists_top[g][h+len(rew_samples)][k][f].Write('correlator_hist_{:}_MC_{:}_{:}_{:}{:}'.format(level, mtop_mc, pt_jet_range[0], pt_jet_range[1], weighted))
         r_file.cd('/Others/'+level+'-Level')
         for h, mtop_bw in enumerate(rew_values):
             hists_jet_pt[g][h].Write('hadronic_top_jet_pt_hist_{:}_{:}'.format(level, mtop_bw))
             hists_cons_pt[g][h].Write('hadronic_top_constituents_pt_hist_{:}_{:}'.format(level, mtop_bw))
             hists_jet_mass[g][h].Write('hadronic_top_jet_mass_hist_{:}_{:}'.format(level, mtop_bw))
             hists_top_mass[g][h].Write('hadronic_top_mass_hist_{:}_{:}'.format(level, mtop_bw))
+        for h, mtop_mc in enumerate(mc_samples):
+            hists_jet_mass[g][h+len(rew_samples)].Write('hadronic_top_jet_mass_hist_{:}_MC_{:}'.format(level, mtop_mc))
+            hists_top_mass[g][h+len(rew_samples)].Write('hadronic_top_mass_hist_{:}_MC_{:}'.format(level, mtop_mc))
         for k, pt_jet_range in enumerate(pt_jet_ranges):
             hists_ev_weight[g][k].Write('event_weights_{:}_{:}_{:}'.format(level, pt_jet_range[0], pt_jet_range[1]))
             hists_number_events[g][k].Write('number_of_events_{:}_{:}_{:}'.format(level, pt_jet_range[0], pt_jet_range[1]))
