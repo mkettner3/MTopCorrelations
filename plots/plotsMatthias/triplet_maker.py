@@ -29,9 +29,9 @@ def make_triplets_and_cut(jet_pt, particle_vectors, n=2, max_delta_zeta=None, de
     for i in range(len(particle_vectors)):
         for j in range(i+1, len(particle_vectors)):
             for k in range(j+1, len(particle_vectors)):
-                zeta_value = [particle_vectors[i].DeltaR(particle_vectors[j]),
-                              particle_vectors[i].DeltaR(particle_vectors[k]),
-                              particle_vectors[j].DeltaR(particle_vectors[k])]
+                zeta_value = [particle_vectors[i].DeltaR(particle_vectors[j])**2,
+                              particle_vectors[i].DeltaR(particle_vectors[k])**2,
+                              particle_vectors[j].DeltaR(particle_vectors[k])**2]
                 zeta_value.sort()
 
                 if (zeta_value[2]-zeta_value[0]) < max_delta_zeta:
@@ -74,13 +74,13 @@ def make_triplets_and_cut_sim_eff(jet_pt, particle_vectors, n=2, max_delta_zeta=
         if i in particles_lost_in_tracker:
             continue
         for j in range(i+1, len(particle_vectors)):
-            if particle_vectors[i].DeltaR(particle_vectors[j]) < tracker_efficiency_deltaR and random.randrange(tracker_efficiency_loss_rate) == 0:
+            if particle_vectors[i].DeltaR(particle_vectors[j])**2 < tracker_efficiency_deltaR and random.randrange(tracker_efficiency_loss_rate) == 0:
                 particles_lost_in_tracker.append(j)
                 continue
             for k in range(j+1, len(particle_vectors)):
-                zeta_value = [particle_vectors[i].DeltaR(particle_vectors[j]),
-                              particle_vectors[i].DeltaR(particle_vectors[k]),
-                              particle_vectors[j].DeltaR(particle_vectors[k])]
+                zeta_value = [particle_vectors[i].DeltaR(particle_vectors[j])**2,
+                              particle_vectors[i].DeltaR(particle_vectors[k])**2,
+                              particle_vectors[j].DeltaR(particle_vectors[k])**2]
                 zeta_value.sort()
 
                 if (zeta_value[2]-zeta_value[0]) < max_delta_zeta:
@@ -120,9 +120,9 @@ def make_triplets(jet_pt, particle_vectors, n=2, top_data=True, w_data=True, pt_
     for i in range(len(particle_vectors)):
         for j in range(i+1, len(particle_vectors)):
             for k in range(j+1, len(particle_vectors)):
-                zeta_value.append([particle_vectors[i].DeltaR(particle_vectors[j]),
-                                   particle_vectors[i].DeltaR(particle_vectors[k]),
-                                   particle_vectors[j].DeltaR(particle_vectors[k])])
+                zeta_value.append([particle_vectors[i].DeltaR(particle_vectors[j])**2,
+                                   particle_vectors[i].DeltaR(particle_vectors[k])**2,
+                                   particle_vectors[j].DeltaR(particle_vectors[k])**2])
 
                 w.append((particle_vectors[i].Pt() * particle_vectors[j].Pt() * particle_vectors[k].Pt())**n / ((jet_pt**3)**n))
 

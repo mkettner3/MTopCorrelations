@@ -1,5 +1,4 @@
 import ROOT
-# import Analysis.Tools.syncer                    # Starts syncing by itself, does not need to be called in script
 from MTopCorrelations.Tools.user import plot_directory
 from calc_triplet_and_hist import pt_jet_ranges
 
@@ -68,19 +67,18 @@ def style_varied_hist(filename_root, hist_name, varied_hist_name, var_factors, f
 
     f = ROOT.TFile(filename_root)
     hists = {}
-    hists[1] = f.Get(hist_name)
-    hists[0] = f.Get(varied_hist_name.replace('$', var_factors[0]))
-    hists[2] = f.Get(varied_hist_name.replace('$', var_factors[1]))
-    # hists[2] = f.Get(varied_hist_name.replace('$', var_factors[2]))
-    # hists[4] = f.Get(varied_hist_name.replace('$', var_factors[3]))
-    # hists[5] = f.Get(varied_hist_name.replace('$', var_factors[4]))
-    # hists[6] = f.Get(varied_hist_name.replace('$', var_factors[5]))
+    hists[int(len(var_factors)/2)] = f.Get(hist_name)         # Only works if the length of var_factors is even
+    for i in range(int(len(var_factors)/2)):
+        hists[i] = f.Get(varied_hist_name.replace('$', var_factors[i]))
+    for i in range(int(len(var_factors)/2+1), len(var_factors)+1):
+        hists[i] = f.Get(varied_hist_name.replace('$', var_factors[i-1]))
+
     for i in range(len(hists)):
         hists[i].SetDirectory(ROOT.nullptr)
     f.Close()
     c = ROOT.TCanvas('c', 'c', 600, 600)
     legend = ROOT.TLegend(0.75, 0.7, 0.94, 0.89)
-    for i, label in enumerate([var_factors[0]+' %', 'original', var_factors[1]+' %']):
+    for i, label in enumerate([var_factors[j] for j in range(int(len(var_factors)/2))] + ['original'] + [var_factors[j] for j in range(int(len(var_factors)/2), len(var_factors))]):
         legend.AddEntry(hists[i], label, 'l')
     ROOT.gPad.SetLeftMargin(0.19)
     ROOT.gPad.SetBottomMargin(0.2)
@@ -176,8 +174,8 @@ def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xli
 
 
 if __name__ == '__main__':
-    subfolder = '/generation_25'
-    filename = 'histogram_files/correlator_hist_trip_25.root'
+    subfolder = '/generation_30'
+    filename = 'histogram_files/correlator_hist_trip_30.root'
     sample_names = ['171.5', '171.75', '172.0', '172.25', 'None', '172.75', '173.0', '173.25', '173.5']
 
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
@@ -188,7 +186,7 @@ if __name__ == '__main__':
                             hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_$_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
                             sample_names=sample_names,
                             filename_graphic=subfolder+'/correlator_hist_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
-                            ylim=(0, 0.02), verb=False)
+                            ylim=(0, 0.006), verb=False)
 
             style_corr_hist(filename_root=filename,
                             hist_name='/Top-Quark/'+level+'-Level/absolute/correlator_hist_{:}_$_{:}_{:}_abscou'.format(level, pt_range[0], pt_range[1]),
@@ -200,7 +198,7 @@ if __name__ == '__main__':
                             hist_name='/W-Boson/'+level+'-Level/weighted/correlator_hist_W_{:}_$_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
                             sample_names=sample_names,
                             filename_graphic=subfolder+'/correlator_hist_W_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
-                            ylim=(0, 0.06), verb=False)
+                            ylim=(0, 0.08), verb=False)
 
             style_corr_hist(filename_root=filename,
                             hist_name='/W-Boson/'+level+'-Level/absolute/correlator_hist_W_{:}_$_{:}_{:}_abscou'.format(level, pt_range[0], pt_range[1]),
@@ -211,23 +209,23 @@ if __name__ == '__main__':
             style_varied_hist(filename_root=filename,
                               hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
                               varied_hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_jet_$_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
-                              var_factors=['1.02', '0.98'],
+                              var_factors=['{:.2f}'.format(value) for value in [1.1, 1.02, 0.98, 0.9]],
                               filename_graphic=subfolder+'/correlator_hist_varied_jet_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
-                              ylim=(0, 0.02), verb=False)
-
-            # style_varied_hist(filename_root=filename,
-            #                   hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
-            #                   varied_hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_cons_pt_$_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
-            #                   var_factors=['1.02', '0.98'],
-            #                   filename_graphic=subfolder+'/correlator_hist_varied_cons_pt_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
-            #                   ylim=(0, 0.02), verb=False)
+                              ylim=(0, 0.006), verb=False)
 
             style_varied_hist(filename_root=filename,
                               hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
-                              varied_hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_cons_eta_phi_$_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
-                              var_factors=['1.02', '0.98'],
-                              filename_graphic=subfolder+'/correlator_hist_varied_cons_eta_phi_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
-                              ylim=(0, 0.02), verb=False)
+                              varied_hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_cons_pt_$_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
+                              var_factors=['{:.2f}'.format(value) for value in [-2, -1, -0.5, 0.5, 1, 2]],
+                              filename_graphic=subfolder+'/correlator_hist_varied_cons_pt_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
+                              ylim=(0, 0.006), verb=False)
+
+            # style_varied_hist(filename_root=filename,
+            #                   hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
+            #                   varied_hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_cons_eta_phi_$_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
+            #                   var_factors=['1.02', '0.98'],
+            #                   filename_graphic=subfolder+'/correlator_hist_varied_cons_eta_phi_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
+            #                   ylim=(0, 0.02), verb=False)
 
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_jet_pt_hist_{:}_$'.format(level),

@@ -298,7 +298,7 @@ def plot_chi2(root_graph, label, filename, obt_top_mass, uncertainty):
     c.Print(plot_directory+filename)
 
 
-def plot_corr_hist(corr_hists, filename_graphic, sample_names, title=None, hist_range=None):
+def plot_corr_hist(corr_hists, filename_graphic, sample_names, title=None, hist_range=None, y_range=None):
     ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
     ROOT.gStyle.SetPadTickX(1)          # Axis ticks on top
     ROOT.gStyle.SetPadTickY(1)          # Axis ticks right
@@ -328,7 +328,10 @@ def plot_corr_hist(corr_hists, filename_graphic, sample_names, title=None, hist_
         corr_hists[0].GetXaxis().SetRangeUser(hist_range[0], hist_range[1])
     corr_hists[0].GetXaxis().SetTitle('3#zeta')
     corr_hists[0].GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
-    corr_hists[0].GetYaxis().SetRangeUser(0, max([corr_hists[i].GetMaximum() for i in range(len(corr_hists))])*1.1)
+    if y_range is None:
+        corr_hists[0].GetYaxis().SetRangeUser(0, max([corr_hists[i].GetMaximum() for i in range(len(corr_hists))])*1.1)
+    else:
+        corr_hists[0].GetYaxis().SetRangeUser(y_range[0], y_range[1])
     corr_hists[0].GetYaxis().SetTitle('Energy-weighted Triplets')
     corr_hists[0].GetYaxis().SetNdivisions(505)      # Unterteilung der x-Achse
 
