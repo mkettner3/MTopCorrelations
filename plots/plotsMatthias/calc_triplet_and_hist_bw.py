@@ -304,7 +304,7 @@ if __name__ == '__main__':
      hists_varied_jet, hists_varied_cons_pt, hists_varied_cons_eta_phi,
      hists_event_weight, hists_number_events, hists_weighted_events) = calc_triplets_and_hist(
                                                   sample=sample, rew_samples=rew_samples, mc_samples=mc_samples,
-                                                  pt_jet_ranges=pt_jet_ranges, max_delta_zeta=0.13, delta_legs=float('nan'),
+                                                  pt_jet_ranges=pt_jet_ranges, max_delta_zeta=float('nan'), delta_legs=float('nan'),
                                                   shortest_side=0.05, jet_pt_variations=jet_pt_variations, cons_pt_variations=cons_pt_variations)
     save_root_hists(hists_top=hists, hists_w=hists_w, hists_jet_pt=hists_jet_pt, hists_cons_pt=hists_cons_pt,
                     hists_jet_mass=hists_jet_mass, hists_top_mass=hists_top_mass, hists_varied_jet=hists_varied_jet,
@@ -312,7 +312,7 @@ if __name__ == '__main__':
                     jet_pt_variations=jet_pt_variations, cons_pt_variations=cons_pt_variations,
                     hists_ev_weight=hists_event_weight, hists_number_events=hists_number_events,
                     hists_weighted_events=hists_weighted_events, rew_values=rew_samples, mc_samples=mc_sample_names, pt_jet_ranges=pt_jet_ranges,
-                    filename='histogram_files/correlator_hist_trip_30_pp_{:03}.root'.format(args.job))
+                    filename='histogram_files/correlator_hist_trip_31_pp_{:03}.root'.format(args.job))
     end = time.time()
 
     print('Executing calc_triplet_and_hist.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))

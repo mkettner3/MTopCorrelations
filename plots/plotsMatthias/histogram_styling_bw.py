@@ -174,8 +174,8 @@ def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xli
 
 
 if __name__ == '__main__':
-    subfolder = '/generation_30'
-    filename = 'histogram_files/correlator_hist_trip_30.root'
+    subfolder = '/generation_31'
+    filename = 'histogram_files/correlator_hist_trip_31.root'
     sample_names = ['171.5', '171.75', '172.0', '172.25', 'None', '172.75', '173.0', '173.25', '173.5']
 
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
