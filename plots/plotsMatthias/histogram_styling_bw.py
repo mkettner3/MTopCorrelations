@@ -122,7 +122,7 @@ def style_varied_hist(filename_root, hist_name, varied_hist_name, var_factors, f
         print('{:.3f}'.format(peak_mean))
 
 
-def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xlim=(380, 730), ylim=(0, 0.0005), mea_type='mass', verb=True):
+def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xlim=(380, 730), ylim=(0, 0.0005), title='Hadronic Top-Jet-Mass', verb=True):
     ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
     ROOT.gStyle.SetPadTickX(1)          # Axis ticks on top
     ROOT.gStyle.SetPadTickY(1)          # Axis ticks right
@@ -155,7 +155,7 @@ def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xli
         hist.SetLineWidth(2)
         hist.SetLineStyle(1)
     hists[0].GetXaxis().SetRangeUser(xlim[0], xlim[1])
-    hists[0].GetXaxis().SetTitle("Hadronic Top-Jet-{:}".format(mea_type))
+    hists[0].GetXaxis().SetTitle(title)
     hists[0].GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
     hists[0].GetYaxis().SetRangeUser(ylim[0], ylim[1])
     hists[0].GetYaxis().SetTitle("Number of Events")
@@ -231,16 +231,16 @@ if __name__ == '__main__':
                        hist_name='/Others/'+level+'-Level/hadronic_top_jet_pt_hist_{:}_$'.format(level),
                        sample_names=sample_names,
                        filename_graphic=subfolder+'/hadronic_top_jet_pt_hist_{:}.png'.format(level),
-                       xlim=(380, 730), ylim=(0, 200), mea_type='p_{T}', verb=False)
+                       xlim=(380, 730), ylim=(0, 200), title='Hadronic Top-Jet-p_{T}', verb=False)
 
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_jet_mass_hist_{:}_$'.format(level),
                        sample_names=sample_names,
                        filename_graphic=subfolder+'/hadronic_top_jet_mass_hist_{:}.png'.format(level),
-                       xlim=(150, 200), ylim=(0, 800), mea_type='mass', verb=False)
+                       xlim=(160, 195), ylim=(0, 800), title='Hadronic Top-Jet-Mass', verb=False)
 
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_mass_hist_{:}_$'.format(level),
                        sample_names=sample_names,
                        filename_graphic=subfolder+'/hadronic_top_mass_hist_{:}.png'.format(level),
-                       xlim=(167.5, 177.5), ylim=(0, 600), mea_type='mass', verb=False)
+                       xlim=(170, 175), ylim=(0, 600), title='Hadronic Top-Mass', verb=False)
