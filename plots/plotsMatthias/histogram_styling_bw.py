@@ -139,6 +139,10 @@ def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xli
 
     if len(hists) == 3:
         line_colors = [ROOT.kBlue, ROOT.kGreen, ROOT.kRed]
+    elif len(hists) == 2:
+        line_colors = [ROOT.kGreen, ROOT.kRed]
+    elif len(hists) == 4:
+        line_colors = [ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kYellow]
     elif len(hists) == 5:
         line_colors = [ROOT.kMagenta, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kYellow]
     elif len(hists) == 7:
@@ -238,6 +242,18 @@ if __name__ == '__main__':
                        sample_names=sample_names,
                        filename_graphic=subfolder+'/hadronic_top_jet_mass_hist_{:}.png'.format(level),
                        xlim=(160, 195), ylim=(0, 800), title='Hadronic Top-Jet-Mass', verb=False)
+
+        style_jet_hist(filename_root=filename,
+                       hist_name='/Others/'+level+'-Level/hadronic_top_jet_mass_hist_{:}_MC_$'.format(level),
+                       sample_names=['TTbar_1', 'TTbar_2', 'TTbar_4', 'TTbar_5'],
+                       filename_graphic=subfolder+'/hadronic_top_jet_mass_hist_{:}_MC.png'.format(level),
+                       xlim=(160, 195), ylim=(0, 800), title='Hadronic Top-Jet-Mass (Monte-Carlo)', verb=False)
+
+        style_jet_hist(filename_root=filename,
+                       hist_name='/Others/'+level+'-Level/hadronic_top_jet_mass_hist_{:}_$'.format(level),
+                       sample_names=['173.5', 'MC_TTbar_4'],
+                       filename_graphic=subfolder+'/hadronic_top_jet_mass_hist_{:}_MC_comparison.png'.format(level),
+                       xlim=(160, 195), ylim=(0, 800), title='Hadronic Top-Jet-Mass (Comparison)', verb=False)
 
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_mass_hist_{:}_$'.format(level),
