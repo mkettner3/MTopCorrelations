@@ -15,18 +15,15 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, yl
         hists[i].SetDirectory(ROOT.nullptr)
     f.Close()
     c = ROOT.TCanvas('c', 'c', 600, 600)
-    legend = ROOT.TLegend(0.75, 0.6, 0.94, 0.89)
-    ROOT.gPad.SetLeftMargin(0.19)
-    ROOT.gPad.SetBottomMargin(0.2)
+    legend = ROOT.TLegend(0.72, 0.5, 0.87, 0.87)
+    ROOT.gPad.SetBottomMargin(0.12)
 
     if len(hists) == 3:
         line_colors = [ROOT.kBlue, ROOT.kGreen, ROOT.kRed]
     elif len(hists) == 5:
         line_colors = [ROOT.kMagenta, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kYellow]
-    elif len(hists) == 9:
-        line_colors = list(range(1, 10))
     else:
-        raise RuntimeError('Please specify the line colors in style_corr_hist()!')
+        line_colors = list(range(1, len(hists)+1))
 
     for hist, line_color, sample_name in zip(hists, line_colors, sample_names):
         if sample_name == 'None':
@@ -36,15 +33,17 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, yl
         hist.SetTitle('')
         hist.SetLineWidth(2)
         hist.SetLineStyle(1)
-        legend.AddEntry(hist, sample_name[-5:], 'l')
+        legend.AddEntry(hist, sample_name, 'l')
         if hist_name[-6:] != 'abscou':
             hist.Scale(1/hist.Integral())
-    hists[0].GetXaxis().SetRangeUser(0, 3)    # x-axis range (also works for y-axis)
+    hists[0].GetXaxis().SetRangeUser(0, 2.5)    # x-axis range (also works for y-axis)
     hists[0].GetXaxis().SetTitle("3#zeta")
+    hists[0].GetXaxis().CenterTitle(ROOT.kTRUE)
     hists[0].GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
     hists[0].GetYaxis().SetRangeUser(ylim[0], ylim[1])
-    hists[0].GetYaxis().SetTitle("Energy-weighted Triplets")
-    hists[0].GetYaxis().SetNdivisions(505)      # Unterteilung der x-Achse
+    # hists[0].GetYaxis().SetTitle("Energy-weighted Triplets")
+    hists[0].GetYaxis().SetNdivisions(505)      # Unterteilung der y-Achse
+    hists[0].GetYaxis().SetMaxDigits(3)     # 3 ist die einzig sinnvolle Einstellung, weil als Exponent der Zehnerpotenz nur Vielfache von 3 verwendet werden.
 
     hists[0].Draw('HIST')
     for i in range(1, len(hists)):
@@ -77,11 +76,10 @@ def style_varied_hist(filename_root, hist_name, varied_hist_name, var_factors, f
         hists[i].SetDirectory(ROOT.nullptr)
     f.Close()
     c = ROOT.TCanvas('c', 'c', 600, 600)
-    legend = ROOT.TLegend(0.75, 0.7, 0.94, 0.89)
+    legend = ROOT.TLegend(0.75, 0.65, 0.87, 0.87)
     for i, label in enumerate([var_factors[j] for j in range(int(len(var_factors)/2))] + ['original'] + [var_factors[j] for j in range(int(len(var_factors)/2), len(var_factors))]):
         legend.AddEntry(hists[i], label, 'l')
-    ROOT.gPad.SetLeftMargin(0.19)
-    ROOT.gPad.SetBottomMargin(0.2)
+    ROOT.gPad.SetBottomMargin(0.12)
 
     if len(hists) == 3:
         line_colors = [ROOT.kBlue, ROOT.kGreen, ROOT.kRed]
@@ -89,10 +87,8 @@ def style_varied_hist(filename_root, hist_name, varied_hist_name, var_factors, f
         line_colors = [ROOT.kMagenta, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kYellow]
     elif len(hists) == 7:
         line_colors = [ROOT.kMagenta, ROOT.kViolet, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kOrange, ROOT.kYellow]
-    elif len(hists) == 9:
-        line_colors = list(range(1, 10))
     else:
-        raise RuntimeError('Please specify the line colors in style_corr_hist()!')
+        line_colors = list(range(1, len(hists)+1))
 
     for hist, line_color in zip(hists.values(), line_colors):
         hist.Rebin(20)
@@ -102,12 +98,14 @@ def style_varied_hist(filename_root, hist_name, varied_hist_name, var_factors, f
         hist.SetLineStyle(1)
         if hist_name[-6:] != 'abscou':
             hist.Scale(1/hist.Integral())
-    hists[0].GetXaxis().SetRangeUser(0, 3)    # x-axis range (also works for y-axis)
+    hists[0].GetXaxis().SetRangeUser(0, 2.5)    # x-axis range (also works for y-axis)
     hists[0].GetXaxis().SetTitle("3#zeta")
+    hists[0].GetXaxis().CenterTitle(ROOT.kTRUE)
     hists[0].GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
     hists[0].GetYaxis().SetRangeUser(ylim[0], ylim[1])
-    hists[0].GetYaxis().SetTitle("Energy-weighted Triplets")
-    hists[0].GetYaxis().SetNdivisions(505)      # Unterteilung der x-Achse
+    # hists[0].GetYaxis().SetTitle("Energy-weighted Triplets")
+    hists[0].GetYaxis().SetNdivisions(505)      # Unterteilung der y-Achse
+    hists[0].GetYaxis().SetMaxDigits(3)     # 3 ist die einzig sinnvolle Einstellung, weil als Exponent der Zehnerpotenz nur Vielfache von 3 verwendet werden.
 
     hists[0].Draw('HIST')
     for i in range(1, len(hists)):
@@ -122,7 +120,7 @@ def style_varied_hist(filename_root, hist_name, varied_hist_name, var_factors, f
         print('{:.3f}'.format(peak_mean))
 
 
-def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xlim=(380, 730), ylim=(0, 0.0005), title='Hadronic Top-Jet-Mass', verb=True):
+def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xlim=(380, 730), ylim=(0, 0.0005), rebin=5, title='Hadronic Top-Jet-Mass'):
     ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
     ROOT.gStyle.SetPadTickX(1)          # Axis ticks on top
     ROOT.gStyle.SetPadTickY(1)          # Axis ticks right
@@ -134,8 +132,9 @@ def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xli
         hists[i].SetDirectory(ROOT.nullptr)
     f.Close()
     c = ROOT.TCanvas('c', 'c', 600, 600)
-    ROOT.gPad.SetLeftMargin(0.19)
-    ROOT.gPad.SetBottomMargin(0.2)
+    legend = ROOT.TLegend(0.72, 0.5, 0.87, 0.87)
+    ROOT.gPad.SetLeftMargin(0.12)
+    ROOT.gPad.SetBottomMargin(0.12)
 
     if len(hists) == 3:
         line_colors = [ROOT.kBlue, ROOT.kGreen, ROOT.kRed]
@@ -147,34 +146,34 @@ def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xli
         line_colors = [ROOT.kMagenta, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kYellow]
     elif len(hists) == 7:
         line_colors = [ROOT.kMagenta, ROOT.kViolet, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kOrange, ROOT.kYellow]
-    elif len(hists) == 9:
-        line_colors = list(range(1, 10))
     else:
-        raise RuntimeError('Please specify the line colors in style_corr_hist()!')
+        line_colors = list(range(1, len(hists)+1))
 
     for hist, line_color, sample_name in zip(hists, line_colors, sample_names):
-        hist.Rebin(2)
+        if sample_name == 'None':
+            sample_name = '172.5'
+        hist.Rebin(rebin)
         hist.SetLineColor(line_color)
         hist.SetTitle('')
         hist.SetLineWidth(2)
         hist.SetLineStyle(1)
+        legend.AddEntry(hist, sample_name, 'l')
     hists[0].GetXaxis().SetRangeUser(xlim[0], xlim[1])
     hists[0].GetXaxis().SetTitle(title)
+    hists[0].GetXaxis().CenterTitle(ROOT.kTRUE)
     hists[0].GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
     hists[0].GetYaxis().SetRangeUser(ylim[0], ylim[1])
     hists[0].GetYaxis().SetTitle("Number of Events")
-    hists[0].GetYaxis().SetNdivisions(505)      # Unterteilung der x-Achse
+    hists[0].GetYaxis().CenterTitle(ROOT.kTRUE)
+    hists[0].GetYaxis().SetNdivisions(505)      # Unterteilung der y-Achse
+    hists[0].GetYaxis().SetMaxDigits(3)     # 3 ist die einzig sinnvolle Einstellung, weil als Exponent der Zehnerpotenz nur Vielfache von 3 verwendet werden.
 
     hists[0].Draw('HIST')
     for i in range(1, len(hists)):
         hists[i].Draw('HIST SAME')
 
+    legend.Draw()
     c.Print(plot_directory+filename_graphic)
-
-    if verb:
-        hists[0].GetXaxis().SetRangeUser(1, 3)
-        peak_mean = hists[0].GetMean()
-        print('{:.3f}'.format(peak_mean))
 
 
 if __name__ == '__main__':
@@ -189,40 +188,40 @@ if __name__ == '__main__':
             style_corr_hist(filename_root=filename,
                             hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_$_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
                             sample_names=sample_names,
-                            filename_graphic=subfolder+'/correlator_hist_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
-                            ylim=(0, 0.006), verb=False)
+                            filename_graphic=subfolder+'/correlator_hist_{:}_{:}-{:}.pdf'.format(level, pt_range[0], pt_range[1]),
+                            ylim=(0, 0.007), verb=False)
 
             style_corr_hist(filename_root=filename,
                             hist_name='/Top-Quark/'+level+'-Level/absolute/correlator_hist_{:}_$_{:}_{:}_abscou'.format(level, pt_range[0], pt_range[1]),
                             sample_names=sample_names,
-                            filename_graphic=subfolder+'/correlator_hist_{:}_{:}-{:}_abs.png'.format(level, pt_range[0], pt_range[1]),
+                            filename_graphic=subfolder+'/correlator_hist_{:}_{:}-{:}_abs.pdf'.format(level, pt_range[0], pt_range[1]),
                             ylim=(0, 500000), verb=False)
 
             style_corr_hist(filename_root=filename,
                             hist_name='/W-Boson/'+level+'-Level/weighted/correlator_hist_W_{:}_$_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
                             sample_names=sample_names,
-                            filename_graphic=subfolder+'/correlator_hist_W_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
+                            filename_graphic=subfolder+'/correlator_hist_W_{:}_{:}-{:}.pdf'.format(level, pt_range[0], pt_range[1]),
                             ylim=(0, 0.08), verb=False)
 
             style_corr_hist(filename_root=filename,
                             hist_name='/W-Boson/'+level+'-Level/absolute/correlator_hist_W_{:}_$_{:}_{:}_abscou'.format(level, pt_range[0], pt_range[1]),
                             sample_names=sample_names,
-                            filename_graphic=subfolder+'/correlator_hist_W_{:}_{:}-{:}_abs.png'.format(level, pt_range[0], pt_range[1]),
+                            filename_graphic=subfolder+'/correlator_hist_W_{:}_{:}-{:}_abs.pdf'.format(level, pt_range[0], pt_range[1]),
                             ylim=(0, 400000), verb=False)
 
             style_varied_hist(filename_root=filename,
                               hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
                               varied_hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_jet_$_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
                               var_factors=['{:.2f}'.format(value) for value in [1.1, 1.02, 0.98, 0.9]],
-                              filename_graphic=subfolder+'/correlator_hist_varied_jet_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
-                              ylim=(0, 0.006), verb=False)
+                              filename_graphic=subfolder+'/correlator_hist_varied_jet_{:}_{:}-{:}.pdf'.format(level, pt_range[0], pt_range[1]),
+                              ylim=(0, 0.007), verb=False)
 
             style_varied_hist(filename_root=filename,
                               hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
                               varied_hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_cons_pt_$_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
                               var_factors=['{:.2f}'.format(value) for value in [-2, -1, -0.5, 0.5, 1, 2]],
-                              filename_graphic=subfolder+'/correlator_hist_varied_cons_pt_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
-                              ylim=(0, 0.006), verb=False)
+                              filename_graphic=subfolder+'/correlator_hist_varied_cons_pt_{:}_{:}-{:}.pdf'.format(level, pt_range[0], pt_range[1]),
+                              ylim=(0, 0.007), verb=False)
 
             # style_varied_hist(filename_root=filename,
             #                   hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
@@ -234,29 +233,29 @@ if __name__ == '__main__':
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_jet_pt_hist_{:}_$'.format(level),
                        sample_names=sample_names,
-                       filename_graphic=subfolder+'/hadronic_top_jet_pt_hist_{:}.png'.format(level),
-                       xlim=(380, 730), ylim=(0, 200), title='Hadronic Top-Jet-p_{T}', verb=False)
+                       filename_graphic=subfolder+'/hadronic_top_jet_pt_hist_{:}.pdf'.format(level),
+                       xlim=(380, 730), ylim=(0, 2000), rebin=20, title='Hadronic Top-Jet-p_{T} [GeV]')
 
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_jet_mass_hist_{:}_$'.format(level),
                        sample_names=sample_names,
-                       filename_graphic=subfolder+'/hadronic_top_jet_mass_hist_{:}.png'.format(level),
-                       xlim=(160, 195), ylim=(0, 800), title='Hadronic Top-Jet-Mass', verb=False)
+                       filename_graphic=subfolder+'/hadronic_top_jet_mass_hist_{:}.pdf'.format(level),
+                       xlim=(165, 190), ylim=(0, 2200), title='Hadronic Top-Jet-Mass [GeV]')
 
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_jet_mass_hist_{:}_MC_$'.format(level),
                        sample_names=['TTbar_1', 'TTbar_2', 'TTbar_4', 'TTbar_5'],
-                       filename_graphic=subfolder+'/hadronic_top_jet_mass_hist_{:}_MC.png'.format(level),
-                       xlim=(160, 195), ylim=(0, 800), title='Hadronic Top-Jet-Mass (Monte-Carlo)', verb=False)
+                       filename_graphic=subfolder+'/hadronic_top_jet_mass_hist_{:}_MC.pdf'.format(level),
+                       xlim=(160, 195), ylim=(0, 2200), title='Hadronic Top-Jet-Mass (Monte-Carlo) [GeV]')
 
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_jet_mass_hist_{:}_$'.format(level),
                        sample_names=['173.5', 'MC_TTbar_4'],
-                       filename_graphic=subfolder+'/hadronic_top_jet_mass_hist_{:}_MC_comparison.png'.format(level),
-                       xlim=(160, 195), ylim=(0, 800), title='Hadronic Top-Jet-Mass (Comparison)', verb=False)
+                       filename_graphic=subfolder+'/hadronic_top_jet_mass_hist_{:}_MC_comparison.pdf'.format(level),
+                       xlim=(160, 195), ylim=(0, 2200), title='Hadronic Top-Jet-Mass (Comparison) [GeV]')
 
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_mass_hist_{:}_$'.format(level),
                        sample_names=sample_names,
-                       filename_graphic=subfolder+'/hadronic_top_mass_hist_{:}.png'.format(level),
-                       xlim=(170, 175), ylim=(0, 600), title='Hadronic Top-Mass', verb=False)
+                       filename_graphic=subfolder+'/hadronic_top_mass_hist_{:}.pdf'.format(level),
+                       xlim=(170, 175), ylim=(0, 1500), title='Hadronic Top-Mass [GeV]')
