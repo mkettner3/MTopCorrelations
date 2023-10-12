@@ -8,7 +8,6 @@ import time
 from math import isnan
 import numpy as np
 import MTopCorrelations.samples.nanoTuples_UL2018_nanoAOD as UL2018
-from calc_triplet_and_hist import pt_jet_ranges
 from triplet_maker import make_triplets_and_cut, make_triplets_and_cut_sim_eff
 from find_hadronic_jet import find_hadronic_jet
 from jet_constituents import get_jet_constituents
@@ -283,7 +282,15 @@ mc_sample_names = ['TTbar_1', 'TTbar_2', 'TTbar_4', 'TTbar_5']
 number_events_ttbar = 139438020309
 number_events_ttbar_mc = [61694526814.8, 55968875821.1, 51889503097.9, 42054325908.3]
 
+pt_jet_lowest = 400
+pt_jet_highest = 700
+pt_jet_step = 50
+pt_jet_ranges = zip(range(pt_jet_lowest, pt_jet_highest, pt_jet_step),
+                    range(pt_jet_lowest+50, pt_jet_highest+50, pt_jet_step))
+
 rew_samples = [171.5, 171.75, 172., 172.25, None, 172.75, 173., 173.25, 173.5]   # Breit-Wigner reweighted samples
+jet_pt_variations = [1.1, 1.05, 1.02, 1.01, 0.99, 0.98, 0.95, 0.9]
+cons_pt_variations = [-2, -1, -0.5, 0.5, 1, 2]
 
 
 if __name__ == '__main__':
@@ -294,8 +301,6 @@ if __name__ == '__main__':
 
     sample = sample.split(n=args.nJobs, nSub=args.job)
     mc_samples = [mc_sample.split(n=args.nJobs, nSub=args.job) for mc_sample in mc_ttbar]
-    jet_pt_variations = [1.1, 1.05, 1.02, 1.01, 0.99, 0.98, 0.95, 0.9]
-    cons_pt_variations = [-2, -1, -0.5, 0.5, 1, 2]
 
     start = time.time()
     count = 0
