@@ -163,7 +163,7 @@ def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xli
     hists[0].GetXaxis().CenterTitle(ROOT.kTRUE)
     hists[0].GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
     hists[0].GetYaxis().SetRangeUser(ylim[0], ylim[1])
-    hists[0].GetYaxis().SetTitle("Number of Events")
+    # hists[0].GetYaxis().SetTitle("Number of Events")
     hists[0].GetYaxis().CenterTitle(ROOT.kTRUE)
     hists[0].GetYaxis().SetNdivisions(505)      # Unterteilung der y-Achse
     hists[0].GetYaxis().SetMaxDigits(3)     # 3 ist die einzig sinnvolle Einstellung, weil als Exponent der Zehnerpotenz nur Vielfache von 3 verwendet werden.
@@ -177,8 +177,8 @@ def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xli
 
 
 if __name__ == '__main__':
-    subfolder = '/generation_31'
-    filename = 'histogram_files/correlator_hist_trip_31.root'
+    subfolder = '/generation_32'
+    filename = 'histogram_files/correlator_hist_trip_32.root'
     sample_names = ['171.5', '171.75', '172.0', '172.25', 'None', '172.75', '173.0', '173.25', '173.5']
 
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
@@ -235,6 +235,12 @@ if __name__ == '__main__':
                        sample_names=sample_names,
                        filename_graphic=subfolder+'/hadronic_top_jet_pt_hist_{:}.pdf'.format(level),
                        xlim=(380, 730), ylim=(0, 2000), rebin=20, title='Hadronic Top-Jet-p_{T} [GeV]')
+
+        style_jet_hist(filename_root=filename,
+                       hist_name='/Others/'+level+'-Level/hadronic_top_constituents_pt_hist_{:}_$'.format(level),
+                       sample_names=sample_names,
+                       filename_graphic=subfolder+'/hadronic_top_jet_constituents_pt_hist_{:}.pdf'.format(level),
+                       xlim=(0, 30), ylim=(0, 250000), rebin=20, title='Hadronic Top-Jet-Constituents-p_{T} [GeV]')
 
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_jet_mass_hist_{:}_$'.format(level),

@@ -45,7 +45,7 @@ def calc_triplets_and_hist(sample, rew_samples, mc_samples, pt_jet_ranges, max_d
     hists_varied_jet = [[[[ROOT.TH1D("Correlator varied jet ({:}, {:}, {:}, {:})".format(i, j, k, l), "3 #zeta", nbins, hist_range[0], hist_range[1]) for l in range(len(jet_pt_variations))] for k in range(len(pt_jet_ranges))] for j in range(len(rew_samples))] for i in range(2)]
     hists_varied_cons_pt = [[[[ROOT.TH1D("Correlator varied cons pt ({:}, {:}, {:}, {:})".format(i, j, k, l), "3 #zeta", nbins, hist_range[0], hist_range[1]) for l in range(len(cons_pt_variations))] for k in range(len(pt_jet_ranges))] for j in range(len(rew_samples))] for i in range(2)]
     hists_varied_cons_eta_phi = [[[[[ROOT.TH1D("Correlator varied cons eta phi ({:}, {:}, {:}, {:}, {:})".format(i, j, k, m, n), "3 #zeta", nbins, hist_range[0], hist_range[1]) for n in range(3)] for m in range(4)] for k in range(len(pt_jet_ranges))] for j in range(len(rew_samples))] for i in range(2)]
-    hists_jet_pt = [[ROOT.TH1D("Hadronic Top-Jet-p_{T} ("+str(i)+", "+str(j)+")", "Jet-p_{t}", nbins, 380, 730) for j in range(len(rew_samples))] for i in range(2)]
+    hists_jet_pt = [[ROOT.TH1D("Hadronic Top-Jet-p_{T} ("+str(i)+", "+str(j)+")", "Jet-p_{t}", nbins, 400, 730) for j in range(len(rew_samples))] for i in range(2)]
     hists_cons_pt = [[ROOT.TH1D("Hadronic Top-Constituents-p_{T} ("+str(i)+", "+str(j)+")", "Constituent-p_{t}", nbins, 0, 30) for j in range(len(rew_samples))] for i in range(2)]
     hists_jet_mass = [[ROOT.TH1D("Hadronic Top-Jet-mass ({:}, {:})".format(i, j), "Jet-mass", nbins, 75, 300) for j in range(len(rew_samples)+len(mc_samples))] for i in range(2)]
     hists_top_mass = [[ROOT.TH1D("Hadronic Top-mass ({:}, {:})".format(i, j), "Jet-mass", nbins, 167.5, 177.5) for j in range(len(rew_samples)+len(mc_samples))] for i in range(2)]
@@ -87,7 +87,7 @@ def calc_triplets_and_hist(sample, rew_samples, mc_samples, pt_jet_ranges, max_d
 
                         hists_jet_pt[g][h].Fill(hadronic_jet_pt, event_weight*bw_weight)
                         for cons in jet_constituents:
-                            hists_cons_pt[g][h].Fill(cons.Pt())
+                            hists_cons_pt[g][h].Fill(cons.Pt(), event_weight*bw_weight)
                         hists_jet_mass[g][h].Fill(hadronic_jet_mass, event_weight*bw_weight)
                         hists_top_mass[g][h].Fill(m_top_had, event_weight*bw_weight)
                     for k, jet_range in enumerate(pt_jet_ranges):
@@ -317,7 +317,7 @@ if __name__ == '__main__':
                     jet_pt_variations=jet_pt_variations, cons_pt_variations=cons_pt_variations,
                     hists_ev_weight=hists_event_weight, hists_number_events=hists_number_events,
                     hists_weighted_events=hists_weighted_events, rew_values=rew_samples, mc_samples=mc_sample_names, pt_jet_ranges=pt_jet_ranges,
-                    filename='histogram_files/correlator_hist_trip_31_pp_{:03}.root'.format(args.job))
+                    filename='histogram_files/correlator_hist_trip_32_pp_{:03}.root'.format(args.job))
     end = time.time()
 
     print('Executing calc_triplet_and_hist.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))
