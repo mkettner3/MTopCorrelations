@@ -15,13 +15,14 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, yl
         hists[i].SetDirectory(ROOT.nullptr)
     f.Close()
     c = ROOT.TCanvas('c', 'c', 600, 600)
-    legend = ROOT.TLegend(0.72, 0.5, 0.87, 0.87)
+    legend = ROOT.TLegend(0.65, 0.5, 0.85, 0.87)
+    ROOT.gPad.SetLeftMargin(0.12)
     ROOT.gPad.SetBottomMargin(0.12)
 
     if len(hists) == 3:
-        line_colors = [ROOT.kBlue, ROOT.kGreen, ROOT.kRed]
+        line_colors = [ROOT.kRed, ROOT.kGreen, ROOT.kBlue]
     elif len(hists) == 5:
-        line_colors = [ROOT.kMagenta, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kYellow]
+        line_colors = [ROOT.kYellow, ROOT.kMagenta, ROOT.kGreen, ROOT.kRed, ROOT.kBlue]
     else:
         line_colors = list(range(1, len(hists)+1))
 
@@ -33,17 +34,20 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, yl
         hist.SetTitle('')
         hist.SetLineWidth(2)
         hist.SetLineStyle(1)
-        legend.AddEntry(hist, sample_name, 'l')
+        legend.AddEntry(hist, 'm_{top} = '+sample_name+' GeV', 'l')
         if hist_name[-6:] != 'abscou':
             hist.Scale(1/hist.Integral())
     hists[0].GetXaxis().SetRangeUser(0, 2.5)    # x-axis range (also works for y-axis)
     hists[0].GetXaxis().SetTitle("3#zeta")
     hists[0].GetXaxis().CenterTitle(ROOT.kTRUE)
     hists[0].GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
+    hists[0].GetXaxis().SetTitleOffset(1.5)
     hists[0].GetYaxis().SetRangeUser(ylim[0], ylim[1])
-    # hists[0].GetYaxis().SetTitle("Energy-weighted Triplets")
+    hists[0].GetYaxis().SetTitle("Energy-weighted Triplets")
+    hists[0].GetYaxis().CenterTitle(ROOT.kTRUE)
     hists[0].GetYaxis().SetNdivisions(505)      # Unterteilung der y-Achse
     hists[0].GetYaxis().SetMaxDigits(3)     # 3 ist die einzig sinnvolle Einstellung, weil als Exponent der Zehnerpotenz nur Vielfache von 3 verwendet werden.
+    hists[0].GetYaxis().SetTitleOffset(1.5)
 
     hists[0].Draw('HIST')
     for i in range(1, len(hists)):
@@ -65,8 +69,7 @@ def style_varied_hist(filename_root, hist_name, varied_hist_name, var_factors, f
     ROOT.gStyle.SetOptStat(0)           # Do not display stat box
 
     f = ROOT.TFile(filename_root)
-    hists = {}
-    hists[int(len(var_factors)/2)] = f.Get(hist_name)         # Only works if the length of var_factors is even
+    hists = {int(len(var_factors) / 2): f.Get(hist_name)}               # Only works if the length of var_factors is even
     for i in range(int(len(var_factors)/2)):
         hists[i] = f.Get(varied_hist_name.replace('$', var_factors[i]))
     for i in range(int(len(var_factors)/2+1), len(var_factors)+1):
@@ -82,9 +85,9 @@ def style_varied_hist(filename_root, hist_name, varied_hist_name, var_factors, f
     ROOT.gPad.SetBottomMargin(0.12)
 
     if len(hists) == 3:
-        line_colors = [ROOT.kBlue, ROOT.kGreen, ROOT.kRed]
+        line_colors = [ROOT.kRed, ROOT.kGreen, ROOT.kBlue]
     elif len(hists) == 5:
-        line_colors = [ROOT.kMagenta, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kYellow]
+        line_colors = [ROOT.kYellow, ROOT.kMagenta, ROOT.kGreen, ROOT.kRed, ROOT.kBlue]
     elif len(hists) == 7:
         line_colors = [ROOT.kMagenta, ROOT.kViolet, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kOrange, ROOT.kYellow]
     else:
@@ -132,18 +135,18 @@ def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xli
         hists[i].SetDirectory(ROOT.nullptr)
     f.Close()
     c = ROOT.TCanvas('c', 'c', 600, 600)
-    legend = ROOT.TLegend(0.72, 0.5, 0.87, 0.87)
+    legend = ROOT.TLegend(0.65, 0.5, 0.85, 0.87)
     ROOT.gPad.SetLeftMargin(0.12)
     ROOT.gPad.SetBottomMargin(0.12)
 
     if len(hists) == 3:
-        line_colors = [ROOT.kBlue, ROOT.kGreen, ROOT.kRed]
+        line_colors = [ROOT.kRed, ROOT.kGreen, ROOT.kBlue]
     elif len(hists) == 2:
         line_colors = [ROOT.kGreen, ROOT.kRed]
     elif len(hists) == 4:
         line_colors = [ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kYellow]
     elif len(hists) == 5:
-        line_colors = [ROOT.kMagenta, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kYellow]
+        line_colors = [ROOT.kYellow, ROOT.kMagenta, ROOT.kGreen, ROOT.kRed, ROOT.kBlue]
     elif len(hists) == 7:
         line_colors = [ROOT.kMagenta, ROOT.kViolet, ROOT.kBlue, ROOT.kGreen, ROOT.kRed, ROOT.kOrange, ROOT.kYellow]
     else:
@@ -157,16 +160,18 @@ def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xli
         hist.SetTitle('')
         hist.SetLineWidth(2)
         hist.SetLineStyle(1)
-        legend.AddEntry(hist, sample_name, 'l')
+        legend.AddEntry(hist, 'm_{top} = '+sample_name+' GeV', 'l')
     hists[0].GetXaxis().SetRangeUser(xlim[0], xlim[1])
     hists[0].GetXaxis().SetTitle(title)
     hists[0].GetXaxis().CenterTitle(ROOT.kTRUE)
     hists[0].GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
+    hists[0].GetXaxis().SetTitleOffset(1.5)
     hists[0].GetYaxis().SetRangeUser(ylim[0], ylim[1])
-    # hists[0].GetYaxis().SetTitle("Number of Events")
+    hists[0].GetYaxis().SetTitle("Number of Events")
     hists[0].GetYaxis().CenterTitle(ROOT.kTRUE)
     hists[0].GetYaxis().SetNdivisions(505)      # Unterteilung der y-Achse
     hists[0].GetYaxis().SetMaxDigits(3)     # 3 ist die einzig sinnvolle Einstellung, weil als Exponent der Zehnerpotenz nur Vielfache von 3 verwendet werden.
+    hists[0].GetYaxis().SetTitleOffset(1.5)
 
     hists[0].Draw('HIST')
     for i in range(1, len(hists)):
