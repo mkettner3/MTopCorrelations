@@ -54,60 +54,60 @@ def perform_gauss_fit(root_hist, window):
     return gauss_fit, norm_gauss, mean_gauss, sigma_gauss
 
 
-def perform_crystal_ball_fit(root_hist, window, norm_gauss, mean_gauss, sigma_gauss):
-    # type: (Any, tuple, float, float, float) -> tuple
+def perform_crystal_ball_fit(root_hist, window, norm_gauss, mean_gauss, sigma_gauss, double_sided=True):
+    # type: (Any, tuple, float, float, float, bool) -> tuple
 
     norm_init = norm_gauss
     mean_init = mean_gauss
-    sigmaL_init = sigma_gauss
-    sigmaR_init = sigma_gauss
+    sigma_init = sigma_gauss
     alphaL_init = 2 * sigma_gauss
     alphaR_init = 2 * sigma_gauss
     nL_init = 2
     nR_init = 2
-    rangeGaus_lo = window[0]
-    rangeGaus_hi = window[1]
 
-    CBFunction = ROOT.TF1("CBFunction", DoubleSidedCB, rangeGaus_lo, rangeGaus_hi, 8)
-    CBFunction.SetParameters(norm_init, mean_init, sigmaL_init, sigmaR_init, alphaL_init, alphaR_init, nL_init, nR_init)
-    CBFunction.SetParLimits(6, -5, 5)
-    CBFunction.SetParLimits(7, -5, 5)
+    if double_sided:
+        CBFunction = ROOT.TF1("CBFunction", DoubleSidedCB, window[0], window[1], 8)
+        CBFunction.SetParameters(norm_init, mean_init, sigma_init, sigma_init, alphaL_init, alphaR_init, nL_init, nR_init)
+        CBFunction.SetParLimits(2, 0, 10)
+        CBFunction.SetParLimits(3, 0, 10)
+        CBFunction.SetParLimits(6, 0, 5)
+        CBFunction.SetParLimits(7, 0, 5)
+    else:
+        CBFunction = ROOT.TF1("CBFunction", OneSidedCB, window[0], window[1], 7)
+        CBFunction.SetParameters(norm_init, mean_init, sigma_init, alphaL_init, alphaR_init, nL_init, nR_init)
+        CBFunction.SetParLimits(2, 0, 10)
+        CBFunction.SetParLimits(5, 0, 5)
+        CBFunction.SetParLimits(6, 0, 5)
 
     root_hist.Fit(CBFunction, "RQ")
     CB_fit = root_hist.GetFunction("CBFunction")
 
-    return CB_fit
+    crystal_ball_mean = CB_fit.GetParameter(1)
+
+    return CB_fit, crystal_ball_mean
 
 
 def DoubleSidedCB(x, params):
-    norm = params[0]
-    mu = params[1]
-    widthL = abs(params[2])
-    widthR = abs(params[3])
-    alphaL = params[4]
-    alphaR = params[5]
-    nL = params[6]
-    nR = params[7]
+    norm, mu, widthL, widthR, alphaL, alphaR, nL, nR = params
 
     signAL = 1.0 if nL > 0.0 else -1.
     signAR = 1.0 if nR > 0.0 else -1.
 
-    # print mu, widthL, widthR, alphaL, alphaR, nL, nR
-    AL = signAL * pow(abs(nL)/abs(alphaL), nL) * np.exp(-abs(alphaL*alphaL)/2.0)
-    AR = signAR * pow(abs(nR)/abs(alphaR), nR) * np.exp(-abs(alphaR*alphaR)/2.0)
+    AL = signAL * pow(abs(nL)/abs(alphaL), nL) * np.exp(-abs(alphaL**2)/2.0)
+    AR = signAR * pow(abs(nR)/abs(alphaR), nR) * np.exp(-abs(alphaR**2)/2.0)
     BL = nL/abs(alphaL) - abs(alphaL)
     BR = nR/abs(alphaR) - abs(alphaR)
 
     diffL = (x[0]-mu)/widthL
     diffR = (x[0]-mu)/widthR
 
-    if diffL < -alphaL:
+    if diffL <= -alphaL:
         result = AL * pow(abs(BL-diffL), -nL)
     elif -alphaL < diffL < 0.:
-        result = np.exp(-0.5 * diffL*diffL)
+        result = np.exp(-0.5 * diffL**2)
     elif 0. < diffR < alphaR:
-        result = np.exp(-0.5 * diffR*diffR)
-    elif diffR > alphaR:
+        result = np.exp(-0.5 * diffR**2)
+    elif diffR >= alphaR:
         result = AR * pow(abs(BR+diffR), -nR)
     else:
         raise RuntimeError('Crystal-Ball-function is out of bounds! ({}, {}, {}, {})'.format(diffL, diffR, alphaL, alphaR))
@@ -116,35 +116,20 @@ def DoubleSidedCB(x, params):
 
 
 def OneSidedCB(x, params):
-    norm = params[0]
-    mu = params[1]
-    width = abs(params[2])
-    alphaL = params[3]
-    alphaR = params[4]
-    nL = params[5]
-    nR = params[6]
+    norm, mu, width, alphaL, alphaR, nL, nR = params
 
-    signAL = 1.0
-    if nL < 0.0 and not (nL % 2) == 0:
-        signAL = -1
-
-    signAR = 1.0
-    if nR < 0.0 and not (nR % 2) == 0:
-        signAR = -1
-
-    # print mu, widthL, widthR, alphaL, alphaR, nL, nR
-    AL = signAL * pow(abs(nL)/abs(alphaL), nL) * np.exp(-abs(alphaL*alphaL)/2.0)
-    AR = signAR * pow(abs(nR)/abs(alphaR), nR) * np.exp(-abs(alphaR*alphaR)/2.0)
+    AL = pow(nL/abs(alphaL), nL) * np.exp(-abs(alphaL**2)/2.0)
+    AR = pow(nR/abs(alphaR), nR) * np.exp(-abs(alphaR**2)/2.0)
     BL = nL/abs(alphaL) - abs(alphaL)
     BR = nR/abs(alphaR) - abs(alphaR)
 
     diff = (x[0]-mu)/width
 
-    if diff < -alphaL:
+    if diff <= -alphaL:
         result = AL * pow(abs(BL-diff), -nL)
     elif -alphaL < diff < alphaR:
-        result = np.exp(-0.5 * diff*diff)
-    elif diff > alphaR:
+        result = np.exp(-0.5 * diff**2)
+    elif diff >= alphaR:
         result = AR * pow(abs(BR+diff), -nR)
     else:
         raise RuntimeError('Crystal-Ball-function is out of bounds! ({}, {}, {})'.format(diff, alphaL, alphaR))
@@ -181,13 +166,51 @@ def draw_histogram(root_hist, filename_graphic, sample_name, fit_label, fit_func
     root_hist.GetYaxis().SetRangeUser(ylim[0], ylim[1])
     root_hist.GetYaxis().SetTitle("Energy-weighted Triplets")
     root_hist.GetYaxis().CenterTitle(ROOT.kTRUE)
-    root_hist.GetYaxis().SetNdivisions(505)  # Unterteilung der y-Achse
+    root_hist.GetYaxis().SetNdivisions(505)    # 2*1000000 + (root_hist.GetYaxis().GetNdiv() % 1000000))  # Unterteilung der y-Achse
     root_hist.GetYaxis().SetMaxDigits(3)  # 3 ist die einzig sinnvolle Einstellung, weil als Exponent der Zehnerpotenz nur Vielfache von 3 verwendet werden.
     root_hist.GetYaxis().SetTitleOffset(1.5)
 
     root_hist.Draw('HIST')
     root_hist.GetFunction(fit_function).Draw('SAME')
     legend.Draw()
+    c.Print(plot_directory+filename_graphic)
+
+
+def draw_mass_fit_graph(correlator_values, filename_graphic, chart_title):
+    top_mass_graph = ROOT.TGraph(len(correlator_values), np.array(list(correlator_values.keys())), np.asarray(list(correlator_values.values())))
+    fit_func = ROOT.TF1('pol2_fit', 'pol2', 170, 175)
+    top_mass_graph.Fit(fit_func, 'RQ')
+
+    ROOT.gStyle.SetOptStat(0)  # Do not display stat box
+    ROOT.gStyle.SetLegendBorderSize(1)  # No border for legend
+    ROOT.gStyle.SetPadTickX(0)
+    ROOT.gStyle.SetPadTickY(0)
+    c = ROOT.TCanvas('c', 'c', 600, 600)
+    # legend = ROOT.TLegend(0.65, 0.5, 0.85, 0.87)
+    ROOT.gPad.SetLeftMargin(0.12)
+    ROOT.gPad.SetBottomMargin(0.12)
+
+    top_mass_graph.SetMarkerSize(2)
+    top_mass_graph.SetMarkerStyle(47)
+    top_mass_graph.SetMarkerColor(1)
+    top_mass_graph.GetFunction('pol2_fit').SetLineColor(ROOT.kRed)
+    # legend.AddEntry(top_mass_graph.GetFunction('pol2_fit'), label[s], 'l')
+    top_mass_graph.SetTitle(chart_title)
+    top_mass_graph.GetXaxis().SetTitle('Top-Mass (GeV)')
+    top_mass_graph.GetXaxis().CenterTitle(ROOT.kTRUE)
+    top_mass_graph.GetXaxis().SetNdivisions(505)  # Unterteilung der x-Achse
+    top_mass_graph.GetXaxis().SetTitleOffset(1.5)
+    top_mass_graph.GetYaxis().SetTitle("3#zeta")
+    top_mass_graph.GetYaxis().CenterTitle(ROOT.kTRUE)
+    top_mass_graph.GetYaxis().SetNdivisions(505)
+    top_mass_graph.GetYaxis().SetTitleOffset(1.5)
+    # top_mass_graph.SetMaximum(top_mass_graph.GetHistogram().GetMaximum())
+    # top_mass_graph.SetMinimum(top_mass_graph.GetHistogram().GetMinimum())
+    top_mass_graph.Draw('AP')
+    # for g in root_graph:
+    #     g.Draw('P SAME')
+    # legend.Draw()
+
     c.Print(plot_directory+filename_graphic)
 
 
@@ -200,22 +223,34 @@ if __name__ == '__main__':
     mtop_bw_names = ['{:.2f}'.format(elem) if elem is not None else '172.50' for elem in rew_samples]
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
 
-    for mtop_bw, mtop_bw_name in zip(rew_samples, mtop_bw_names):
+    gauss_means = {}
+    CB_means = {}
+    for mtop_bw, mtop_bw_name in zip(rew_samples[1:-1], mtop_bw_names[1:-1]):
         hist = prepare_histogram(filename_root_hist=filename,
                                  hist_name='/Top-Quark/Gen-Level/weighted/correlator_hist_Gen_{:}_{:}_{:}'.format(mtop_bw, pt_jet_range[0], pt_jet_range[1]),
                                  bin_number=45)
 
         # Find the maximum bin
         peak_max_bin, peak_max_value = find_peak_argmax(root_hist=hist, window=peak_window)
-        print(peak_max_bin, peak_max_value)
+        print('Maximum bin number: {:}; Maximum value: {:}'.format(peak_max_bin,  peak_max_value))
 
         # Perform a Gauss fit to get a rough idea of fit parameters
         gauss_fit_func, gauss_norm, gauss_mean, gauss_sigma = perform_gauss_fit(root_hist=hist, window=peak_window)
-        print(gauss_norm, gauss_mean, gauss_sigma)
+        print('Gauss-Fit mean: {:.3f}; Gauss-Fit Sigma: {:.3f}'.format(gauss_mean, gauss_sigma))
         draw_histogram(root_hist=hist, filename_graphic=subfolder+'/peak_fitting/correlator_gauss_fit_Gen_{:}_{:}-{:}.pdf'.format(mtop_bw_name, pt_jet_range[0], pt_jet_range[1]),
                        sample_name=mtop_bw_name, fit_label='Gauss-Fit', fit_function='gaussFitFunction')
 
         # Now fit with double-sided crystal ball function
-        perform_crystal_ball_fit(root_hist=hist, window=peak_window, norm_gauss=gauss_norm, mean_gauss=gauss_mean, sigma_gauss=gauss_sigma)
+        CB_fit_func, CB_mean = perform_crystal_ball_fit(root_hist=hist, window=peak_window, norm_gauss=gauss_norm,
+                                                        mean_gauss=gauss_mean, sigma_gauss=gauss_sigma, double_sided=False)
+        print('Crystal-Ball-Fit mean: {:.3f}'.format(CB_mean))
         draw_histogram(root_hist=hist, filename_graphic=subfolder+'/peak_fitting/correlator_CB_fit_Gen_{:}_{:}-{:}.pdf'.format(mtop_bw_name, pt_jet_range[0], pt_jet_range[1]),
                        sample_name=mtop_bw_name, fit_label='Crystal-Ball-Fit', fit_function='CBFunction')
+        gauss_means[mtop_bw if mtop_bw is not None else 172.5] = gauss_mean
+        CB_means[mtop_bw if mtop_bw is not None else 172.5] = CB_mean
+
+        print(' ')
+
+    print(CB_means)
+    draw_mass_fit_graph(correlator_values=gauss_means, filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_fit.pdf', chart_title='Top Mass Gauss Fit')
+    draw_mass_fit_graph(correlator_values=CB_means, filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit.pdf', chart_title='Top Mass Crystal Ball Fit')
