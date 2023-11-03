@@ -50,8 +50,9 @@ def perform_gauss_fit(root_hist, window):
     norm_gauss = gauss_fit.GetParameter(0)
     mean_gauss = gauss_fit.GetParameter(1)
     sigma_gauss = gauss_fit.GetParameter(2)
+    max_gauss = gauss_fit.GetMaximumX()
 
-    return gauss_fit, norm_gauss, mean_gauss, sigma_gauss
+    return gauss_fit, norm_gauss, mean_gauss, sigma_gauss, max_gauss
 
 
 def perform_crystal_ball_fit(root_hist, window, norm_gauss, mean_gauss, sigma_gauss, double_sided=True):
@@ -70,12 +71,16 @@ def perform_crystal_ball_fit(root_hist, window, norm_gauss, mean_gauss, sigma_ga
         CBFunction.SetParameters(norm_init, mean_init, sigma_init, sigma_init, alphaL_init, alphaR_init, nL_init, nR_init)
         CBFunction.SetParLimits(2, 0, 10)
         CBFunction.SetParLimits(3, 0, 10)
+        CBFunction.SetParLimits(4, 1.5*sigma_gauss, 10)
+        CBFunction.SetParLimits(5, 1.5*sigma_gauss, 10)
         CBFunction.SetParLimits(6, 0, 5)
         CBFunction.SetParLimits(7, 0, 5)
     else:
         CBFunction = ROOT.TF1("CBFunction", OneSidedCB, window[0], window[1], 7)
         CBFunction.SetParameters(norm_init, mean_init, sigma_init, alphaL_init, alphaR_init, nL_init, nR_init)
         CBFunction.SetParLimits(2, 0, 10)
+        CBFunction.SetParLimits(3, 1.5*sigma_gauss, 10)
+        CBFunction.SetParLimits(4, 1.5*sigma_gauss, 10)
         CBFunction.SetParLimits(5, 0, 5)
         CBFunction.SetParLimits(6, 0, 5)
 
@@ -83,8 +88,12 @@ def perform_crystal_ball_fit(root_hist, window, norm_gauss, mean_gauss, sigma_ga
     CB_fit = root_hist.GetFunction("CBFunction")
 
     crystal_ball_mean = CB_fit.GetParameter(1)
+    crystal_ball_mean_error = CB_fit.GetParError(1)
+    crystal_ball_max = CB_fit.GetMaximumX()
+    ndf = CB_fit.GetNDF()
+    chi2 = CB_fit.GetChisquare()
 
-    return CB_fit, crystal_ball_mean
+    return CB_fit, crystal_ball_mean, crystal_ball_mean_error, crystal_ball_max, chi2, chi2/ndf
 
 
 def DoubleSidedCB(x, params):
@@ -137,7 +146,7 @@ def OneSidedCB(x, params):
     return norm*result
 
 
-def draw_histogram(root_hist, filename_graphic, sample_name, fit_label, fit_function, ylim=(0, 0.0001)):
+def draw_histogram(root_hist, filename_graphic, sample_name, fit_label, fit_function, ylim=(0, 0.00015)):
     # type: (Any, str, str, str, str, tuple) -> None
 
     ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
@@ -176,8 +185,12 @@ def draw_histogram(root_hist, filename_graphic, sample_name, fit_label, fit_func
     c.Print(plot_directory+filename_graphic)
 
 
-def draw_mass_fit_graph(correlator_values, filename_graphic, chart_title):
-    top_mass_graph = ROOT.TGraph(len(correlator_values), np.array(list(correlator_values.keys())), np.asarray(list(correlator_values.values())))
+def draw_mass_fit_graph(correlator_values, filename_graphic, chart_title, correlator_value_errors=None):
+    if correlator_value_errors is None:
+        top_mass_graph = ROOT.TGraph(len(correlator_values), np.array(list(correlator_values.keys())), np.asarray(list(correlator_values.values())))
+    else:
+        top_mass_graph = ROOT.TGraphErrors(len(correlator_values), np.array(list(correlator_values.keys())), np.asarray(list(correlator_values.values())),
+                                           np.zeros(len(correlator_values)), np.array(list(correlator_value_errors.values())))
     fit_func = ROOT.TF1('pol2_fit', 'pol2', 170, 175)
     top_mass_graph.Fit(fit_func, 'RQ')
 
@@ -218,39 +231,48 @@ if __name__ == '__main__':
     subfolder = '/generation_32'
     filename = 'histogram_files/correlator_hist_trip_32.root'
     pt_jet_range = (450, 500)
-    peak_window = (0.7, 1.7)
+    peak_window = (0.8, 1.6)
 
     mtop_bw_names = ['{:.2f}'.format(elem) if elem is not None else '172.50' for elem in rew_samples]
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
 
     gauss_means = {}
+    gauss_maximums = {}
     CB_means = {}
-    for mtop_bw, mtop_bw_name in zip(rew_samples[1:-1], mtop_bw_names[1:-1]):
+    CB_mean_errors = {}
+    CB_maximums = {}
+    for mtop_bw, mtop_bw_name in zip(rew_samples, mtop_bw_names):
         hist = prepare_histogram(filename_root_hist=filename,
                                  hist_name='/Top-Quark/Gen-Level/weighted/correlator_hist_Gen_{:}_{:}_{:}'.format(mtop_bw, pt_jet_range[0], pt_jet_range[1]),
-                                 bin_number=45)
+                                 bin_number=30)
 
         # Find the maximum bin
         peak_max_bin, peak_max_value = find_peak_argmax(root_hist=hist, window=peak_window)
         print('Maximum bin number: {:}; Maximum value: {:}'.format(peak_max_bin,  peak_max_value))
 
         # Perform a Gauss fit to get a rough idea of fit parameters
-        gauss_fit_func, gauss_norm, gauss_mean, gauss_sigma = perform_gauss_fit(root_hist=hist, window=peak_window)
+        gauss_fit_func, gauss_norm, gauss_mean, gauss_sigma, gauss_max = perform_gauss_fit(root_hist=hist, window=peak_window)
         print('Gauss-Fit mean: {:.3f}; Gauss-Fit Sigma: {:.3f}'.format(gauss_mean, gauss_sigma))
         draw_histogram(root_hist=hist, filename_graphic=subfolder+'/peak_fitting/correlator_gauss_fit_Gen_{:}_{:}-{:}.pdf'.format(mtop_bw_name, pt_jet_range[0], pt_jet_range[1]),
                        sample_name=mtop_bw_name, fit_label='Gauss-Fit', fit_function='gaussFitFunction')
 
         # Now fit with double-sided crystal ball function
-        CB_fit_func, CB_mean = perform_crystal_ball_fit(root_hist=hist, window=peak_window, norm_gauss=gauss_norm,
-                                                        mean_gauss=gauss_mean, sigma_gauss=gauss_sigma, double_sided=False)
-        print('Crystal-Ball-Fit mean: {:.3f}'.format(CB_mean))
+        (CB_fit_func, CB_mean, CB_mean_error,
+         CB_max, CB_chi2, CB_chi2_ndf) = perform_crystal_ball_fit(root_hist=hist, window=peak_window, norm_gauss=gauss_norm,
+                                                                  mean_gauss=gauss_mean, sigma_gauss=gauss_sigma, double_sided=False)
+        print('Crystal-Ball-Fit mean: {:.3f} +- {:.3f}; Chi2: {:.3f}; Chi2/NDF: {:.3f}'.format(CB_mean, CB_mean_error, CB_chi2, CB_chi2_ndf))
         draw_histogram(root_hist=hist, filename_graphic=subfolder+'/peak_fitting/correlator_CB_fit_Gen_{:}_{:}-{:}.pdf'.format(mtop_bw_name, pt_jet_range[0], pt_jet_range[1]),
                        sample_name=mtop_bw_name, fit_label='Crystal-Ball-Fit', fit_function='CBFunction')
         gauss_means[mtop_bw if mtop_bw is not None else 172.5] = gauss_mean
+        gauss_maximums[mtop_bw if mtop_bw is not None else 172.5] = gauss_max
         CB_means[mtop_bw if mtop_bw is not None else 172.5] = CB_mean
+        CB_mean_errors[mtop_bw if mtop_bw is not None else 172.5] = CB_mean_error
+        CB_maximums[mtop_bw if mtop_bw is not None else 172.5] = CB_max
 
         print(' ')
 
     print(CB_means)
-    draw_mass_fit_graph(correlator_values=gauss_means, filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_fit.pdf', chart_title='Top Mass Gauss Fit')
-    draw_mass_fit_graph(correlator_values=CB_means, filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit.pdf', chart_title='Top Mass Crystal Ball Fit')
+    draw_mass_fit_graph(correlator_values=gauss_means, filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_fit.pdf', chart_title='Top Mass Gauss Fit (Means)')
+    draw_mass_fit_graph(correlator_values=gauss_maximums, filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_max_fit.pdf', chart_title='Top Mass Gauss Fit (Maximums)')
+    draw_mass_fit_graph(correlator_values=CB_means, filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit.pdf', chart_title='Top Mass Crystal Ball Fit (Means)') # , correlator_value_errors=CB_mean_errors
+    draw_mass_fit_graph(correlator_values=CB_maximums, filename_graphic=subfolder+'/peak_fitting/top_mass_CB_max_fit.pdf', chart_title='Top Mass Crystal Ball Fit (Maximums)')
