@@ -310,25 +310,41 @@ if __name__ == '__main__':
     filename = 'histogram_files/correlator_hist_trip_32.root'
     pt_jet_range = (450, 500)
     peak_window = (0.7, 1.7)
+    mtop_bw_names = ['{:.2f}'.format(elem) if elem is not None else '172.50' for elem in rew_samples]
+    ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
+
     jet_pt_variations = [1.05, 1.02, 1.01, 0.99, 0.98, 0.95]
     jet_pt_var_ids = ['_varied_jet_{:.2f}'.format(v) for v in jet_pt_variations]
     jet_pt_var_names = ['+ 5 %', '+ 2 %', '+ 1 %', '- 1 %', '- 2 %', '- 5 %']        # ['+ 10 %', '+ 5 %', '+ 2 %', '+ 1 %', '- 1 %', '- 2 %', '- 5 %', '- 10 %']
 
-    mtop_bw_names = ['{:.2f}'.format(elem) if elem is not None else '172.50' for elem in rew_samples]
-    ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
+    cons_pt_variations = [-2, -1, -0.5, 0.5, 1, 2]
+    cons_pt_var_ids = ['_varied_cons_pt_{:.2f}'.format(v) for v in cons_pt_variations]
+    cons_pt_var_names = ['{:.1f}'.format(v) for v in cons_pt_variations]
 
-    gauss_means_all_pt_var = []
-    gauss_maximums_all_pt_var = []
-
+    gauss_means_all_jet_pt_var = []
+    gauss_maximums_all_jet_pt_var = []
     for var_id, var_name in zip(['']+jet_pt_var_ids, ['original']+jet_pt_var_names):
         gauss_means, gauss_maximums = generate_fits(rew_samples=rew_samples, mtop_bw_names=mtop_bw_names, filename=filename, subfolder=subfolder,
                                                     pt_jet_range=pt_jet_range, peak_window=peak_window, variation_id=var_id)
-        gauss_means_all_pt_var.append((var_name, gauss_means))
-        gauss_maximums_all_pt_var.append((var_name, gauss_maximums))
+        gauss_means_all_jet_pt_var.append((var_name, gauss_means))
+        gauss_maximums_all_jet_pt_var.append((var_name, gauss_maximums))
 
-    draw_mass_fit_graph(correlator_values_variations=gauss_means_all_pt_var,
-                        filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_fit.pdf', chart_title='Top Mass Gauss Fit (Means)')
-    draw_mass_fit_graph(correlator_values_variations=gauss_maximums_all_pt_var,
-                        filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_max_fit.pdf', chart_title='Top Mass Gauss Fit (Maximums)')
+    draw_mass_fit_graph(correlator_values_variations=gauss_means_all_jet_pt_var,
+                        filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_fit_jet.pdf', chart_title='Top Mass Gauss Fit (Means)')
+    draw_mass_fit_graph(correlator_values_variations=gauss_maximums_all_jet_pt_var,
+                        filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_max_fit_jet.pdf', chart_title='Top Mass Gauss Fit (Maximums)')
     # draw_mass_fit_graph(correlator_values=CB_means, filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit.pdf', chart_title='Top Mass Crystal Ball Fit (Means)') # , correlator_value_errors=CB_mean_errors
     # draw_mass_fit_graph(correlator_values=CB_maximums, filename_graphic=subfolder+'/peak_fitting/top_mass_CB_max_fit.pdf', chart_title='Top Mass Crystal Ball Fit (Maximums)')
+
+    gauss_means_all_cons_pt_var = []
+    gauss_maximums_all_cons_pt_var = []
+    for var_id, var_name in zip(['']+cons_pt_var_ids, ['original']+cons_pt_var_names):
+        gauss_means, gauss_maximums = generate_fits(rew_samples=rew_samples, mtop_bw_names=mtop_bw_names, filename=filename, subfolder=subfolder,
+                                                    pt_jet_range=pt_jet_range, peak_window=peak_window, variation_id=var_id)
+        gauss_means_all_cons_pt_var.append((var_name, gauss_means))
+        gauss_maximums_all_cons_pt_var.append((var_name, gauss_maximums))
+
+    draw_mass_fit_graph(correlator_values_variations=gauss_means_all_cons_pt_var,
+                        filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_fit_cons.pdf', chart_title='Top Mass Gauss Fit (Means)')
+    draw_mass_fit_graph(correlator_values_variations=gauss_maximums_all_cons_pt_var,
+                        filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_max_fit_cons.pdf', chart_title='Top Mass Gauss Fit (Maximums)')
