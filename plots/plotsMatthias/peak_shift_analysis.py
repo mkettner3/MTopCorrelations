@@ -224,7 +224,7 @@ def draw_histogram(root_hist, filename_graphic, sample_name, fit_label, fit_func
 
 
 def draw_mass_fit_graph(correlator_values_variations, filename_graphic, chart_title, correlator_value_errors=None):
-    # type: (list, str, str, list) -> None
+    # type: (list, str, str, list) -> dict
 
     ROOT.gStyle.SetOptStat(0)  # Do not display stat box
     ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
@@ -242,8 +242,8 @@ def draw_mass_fit_graph(correlator_values_variations, filename_graphic, chart_ti
         else:
             top_mass_graph[s] = ROOT.TGraphErrors(len(correlator_values), np.array(list(correlator_values.keys())), np.asarray(list(correlator_values.values())),
                                                   np.zeros(len(correlator_values)), np.array(list(correlator_value_errors[s].values())))
-        fit_func = ROOT.TF1('pol2_fit', 'pol2', 170, 175)
-        top_mass_graph[s].Fit(fit_func, 'RQ')
+        fit_func = ROOT.TF1('pol2_fit', 'pol2', 150, 195)
+        top_mass_graph[s].Fit(fit_func, 'RQ', '', 170, 175)
 
         top_mass_graph[s].SetMarkerSize(2)
         top_mass_graph[s].SetMarkerStyle(47)
@@ -267,6 +267,8 @@ def draw_mass_fit_graph(correlator_values_variations, filename_graphic, chart_ti
         top_mass_graph[s].Draw('P SAME')        # This object must not be deleted until c.Print() is executed.
     legend.Draw()
     c.Print(plot_directory+filename_graphic)
+
+    return top_mass_graph
 
 
 def generate_fits(rew_samples, mtop_bw_names, filename, subfolder, pt_jet_range, peak_window, variation_id='', bin_number=30):
@@ -319,6 +321,50 @@ def generate_fits(rew_samples, mtop_bw_names, filename, subfolder, pt_jet_range,
     return gauss_means, gauss_maximums, CB_means, CB_mean_errors, CB_maximums
 
 
+def calc_variation_shifts(mass_fit_graph, var_values, original_corr_value, filename_graphic):
+    # type: (dict, list, float, str) -> dict
+
+    std_val = (var_values[0]+var_values[-1])/2
+
+    var_shifts = {}
+    for s, var_value in enumerate([std_val]+var_values):
+        var_shifts[var_value] = mass_fit_graph[s].GetFunction('pol2_fit').GetX(original_corr_value)
+
+    # print('====    ====    ====    ====')
+    # print(original_corr_value)
+    # for k in [1]+var_values:
+    #     print(k, var_shifts[k])
+    var_shifts = {var_value: var_shifts[var_value] - 172.5 for var_value in [std_val]+var_values}
+
+    ROOT.gStyle.SetOptStat(0)  # Do not display stat box
+    ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
+    ROOT.gStyle.SetPadTickX(1)
+    ROOT.gStyle.SetPadTickY(1)
+    c = ROOT.TCanvas('c', 'c', 600, 600)
+    ROOT.gPad.SetLeftMargin(0.12)
+    ROOT.gPad.SetBottomMargin(0.12)
+
+    var_shifts_graph = ROOT.TGraph(len(var_shifts), np.asarray(list(var_shifts.keys())), np.asarray(list(var_shifts.values())))
+
+    var_shifts_graph.SetMarkerSize(2)
+    var_shifts_graph.SetMarkerStyle(47)
+    var_shifts_graph.SetMarkerColor(1)
+    var_shifts_graph.SetTitle('Variation Shifts')
+    var_shifts_graph.GetXaxis().SetTitle('Variation Factor')
+    var_shifts_graph.GetXaxis().CenterTitle(ROOT.kTRUE)
+    var_shifts_graph.GetXaxis().SetNdivisions(505)  # Unterteilung der x-Achse
+    var_shifts_graph.GetXaxis().SetTitleOffset(1.5)
+    var_shifts_graph.GetYaxis().SetTitle('Shift in the Top Mass (GeV)')
+    var_shifts_graph.GetYaxis().CenterTitle(ROOT.kTRUE)
+    var_shifts_graph.GetYaxis().SetNdivisions(505)
+    var_shifts_graph.GetYaxis().SetTitleOffset(1.5)
+    var_shifts_graph.Draw('AP')
+
+    c.Print(plot_directory+filename_graphic)
+
+    return var_shifts
+
+
 if __name__ == '__main__':
     subfolder = '/generation_32'
     filename = 'histogram_files/correlator_hist_trip_32.root'
@@ -352,10 +398,13 @@ if __name__ == '__main__':
                         filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_fit_jet.pdf', chart_title='Top Mass Gauss Fit (Means)')
     draw_mass_fit_graph(correlator_values_variations=gauss_maximums_all_jet_pt_var,
                         filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_max_fit_jet.pdf', chart_title='Top Mass Gauss Fit (Maximums)')
-    draw_mass_fit_graph(correlator_values_variations=CB_means_all_jet_pt_var,
-                        filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_jet.pdf', chart_title='Top Mass Crystal Ball Fit (Means)') # , correlator_value_errors=CB_mean_errors
+    fit_graph_CB_means = draw_mass_fit_graph(correlator_values_variations=CB_means_all_jet_pt_var,
+                                             filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_jet.pdf', chart_title='Top Mass Crystal Ball Fit (Means)') # , correlator_value_errors=CB_mean_errors
     draw_mass_fit_graph(correlator_values_variations=CB_maximums_all_jet_pt_var,
                         filename_graphic=subfolder+'/peak_fitting/top_mass_CB_max_fit_jet.pdf', chart_title='Top Mass Crystal Ball Fit (Maximums)')
+
+    jet_pt_var_shifts = calc_variation_shifts(mass_fit_graph=fit_graph_CB_means, var_values=jet_pt_variations,
+                                              original_corr_value=CB_means_all_jet_pt_var[0][1][172.5], filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_jet_shifts.pdf')
 
     gauss_means_all_cons_pt_var = []
     gauss_maximums_all_cons_pt_var = []
@@ -374,7 +423,10 @@ if __name__ == '__main__':
                         filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_fit_cons.pdf', chart_title='Top Mass Gauss Fit (Means)')
     draw_mass_fit_graph(correlator_values_variations=gauss_maximums_all_cons_pt_var,
                         filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_max_fit_cons.pdf', chart_title='Top Mass Gauss Fit (Maximums)')
-    draw_mass_fit_graph(correlator_values_variations=CB_means_all_cons_pt_var,
-                        filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_cons.pdf', chart_title='Top Mass Crystal Ball Fit (Means)') # , correlator_value_errors=CB_mean_errors
+    fit_graph_CB_means = draw_mass_fit_graph(correlator_values_variations=CB_means_all_cons_pt_var,
+                                             filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_cons.pdf', chart_title='Top Mass Crystal Ball Fit (Means)') # , correlator_value_errors=CB_mean_errors
     draw_mass_fit_graph(correlator_values_variations=CB_maximums_all_cons_pt_var,
                         filename_graphic=subfolder+'/peak_fitting/top_mass_CB_max_fit_cons.pdf', chart_title='Top Mass Crystal Ball Fit (Maximums)')
+
+    jet_cons_var_shifts = calc_variation_shifts(mass_fit_graph=fit_graph_CB_means, var_values=cons_pt_variations,
+                                                original_corr_value=CB_means_all_cons_pt_var[0][1][172.5], filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_cons_shifts.pdf')
