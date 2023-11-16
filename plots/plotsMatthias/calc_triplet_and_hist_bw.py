@@ -289,7 +289,7 @@ pt_jet_ranges = zip(range(pt_jet_lowest, pt_jet_highest, pt_jet_step),
                     range(pt_jet_lowest+50, pt_jet_highest+50, pt_jet_step))
 
 rew_samples = [171.5, 171.75, 172., 172.25, None, 172.75, 173., 173.25, 173.5]   # Breit-Wigner reweighted samples
-jet_pt_variations = [1.1, 1.05, 1.02, 1.01, 0.99, 0.98, 0.95, 0.9]
+jet_pt_variations = [1.05, 1.02, 1.01, 1.008, 1.005, 0.995, 0.992, 0.99, 0.98, 0.95]
 cons_pt_variations = [-2, -1, -0.5, 0.5, 1, 2]
 
 
