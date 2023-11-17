@@ -248,7 +248,7 @@ def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_cons_pt, hists_jet_m
                     hists_w[g][h][k][f].Write('correlator_hist_W_{:}_{:}_{:}_{:}{:}'.format(level, mtop_bw, pt_jet_range[0], pt_jet_range[1], weighted))
                 for v, var_fac in enumerate(jet_pt_variations):
                     r_file.cd('/Top-Quark/'+level+'-Level/weighted')
-                    hists_varied_jet[g][h][k][v].Write('correlator_hist_varied_jet_{:.2f}_{:}_{:}_{:}_{:}'.format(var_fac, level, mtop_bw, pt_jet_range[0], pt_jet_range[1]))
+                    hists_varied_jet[g][h][k][v].Write('correlator_hist_varied_jet_{:.3f}_{:}_{:}_{:}_{:}'.format(var_fac, level, mtop_bw, pt_jet_range[0], pt_jet_range[1]))
                 for v, var_fac in enumerate(cons_pt_variations):
                     hists_varied_cons_pt[g][h][k][v].Write('correlator_hist_varied_cons_pt_{:.2f}_{:}_{:}_{:}_{:}'.format(var_fac, level, mtop_bw, pt_jet_range[0], pt_jet_range[1]))
                 for m, eff_deltaR in enumerate([0.01, 0.05, 0.1, 0.4]):
@@ -289,7 +289,7 @@ pt_jet_ranges = zip(range(pt_jet_lowest, pt_jet_highest, pt_jet_step),
                     range(pt_jet_lowest+50, pt_jet_highest+50, pt_jet_step))
 
 rew_samples = [171.5, 171.75, 172., 172.25, None, 172.75, 173., 173.25, 173.5]   # Breit-Wigner reweighted samples
-jet_pt_variations = [1.05, 1.02, 1.01, 1.008, 1.005, 0.995, 0.992, 0.99, 0.98, 0.95]
+jet_pt_variations = [1.05, 1.02, 1.01, 1.005, 1.002, 1.001, 0.999, 0.998, 0.995, 0.99, 0.98, 0.95]
 cons_pt_variations = [-2, -1, -0.5, 0.5, 1, 2]
 
 
