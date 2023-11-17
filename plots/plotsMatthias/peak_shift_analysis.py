@@ -184,8 +184,8 @@ def OneSidedCB_standard(x, params):
     return norm*result
 
 
-def draw_histogram(root_hist, filename_graphic, sample_name, fit_label, fit_function, ylim=(0, 0.00015)):
-    # type: (Any, str, str, str, str, tuple) -> None
+def draw_histogram(root_hist, filename_graphic, sample_name, fit_label, fit_function, chi2_ndf=None, ylim=(0, 0.00015)):
+    # type: (Any, str, str, str, str, float, tuple) -> None
 
     ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
     ROOT.gStyle.SetPadTickX(1)  # Axis ticks on top
@@ -204,6 +204,8 @@ def draw_histogram(root_hist, filename_graphic, sample_name, fit_label, fit_func
     legend.AddEntry(root_hist, 'm_{top} = '+sample_name+' GeV', 'l')
     root_hist.GetFunction(fit_function).SetLineColor(ROOT.kRed)
     legend.AddEntry(root_hist.GetFunction(fit_function), fit_label, 'l')
+    if chi2_ndf is not None:
+        legend.AddEntry(ROOT.nullptr, '#chi^{2}/NDF = '+'{:.2f}'.format(chi2_ndf), '')
 
     root_hist.GetXaxis().SetRangeUser(0, 2.5)  # x-axis range (also works for y-axis)
     root_hist.GetXaxis().SetTitle("3#zeta")
@@ -308,7 +310,7 @@ def generate_fits(rew_samples, mtop_bw_names, filename, subfolder, pt_jet_range,
          CB_chi2, CB_chi2_ndf) = perform_standardized_crystal_ball_fit(root_hist=hist, window=peak_window, norm_gauss=gauss_norm, mean_gauss=gauss_mean)
         print('Crystal-Ball-Fit mean: {:.3f} +- {:.3f}; Chi2: {:.3f}; Chi2/NDF: {:.3f}'.format(CB_mean, CB_mean_error, CB_chi2, CB_chi2_ndf))
         draw_histogram(root_hist=hist, filename_graphic=subfolder+'/peak_fitting/correlator_CB_fit{:}_Gen_{:}_{:}-{:}.pdf'.format(variation_id, mtop_bw_name, pt_jet_range[0], pt_jet_range[1]),
-                       sample_name=mtop_bw_name, fit_label='Crystal-Ball-Fit', fit_function='CBFunction')
+                       sample_name=mtop_bw_name, fit_label='Crystal-Ball-Fit', fit_function='CBFunction', chi2_ndf=CB_chi2_ndf)
 
         gauss_means[mtop_bw if mtop_bw is not None else 172.5] = gauss_mean
         gauss_maximums[mtop_bw if mtop_bw is not None else 172.5] = gauss_max
