@@ -321,14 +321,14 @@ def generate_fits(rew_samples, mtop_bw_names, filename, subfolder, pt_jet_range,
     return gauss_means, gauss_maximums, CB_means, CB_mean_errors, CB_maximums
 
 
-def calc_variation_shifts(mass_fit_graph, var_values, original_corr_value, filename_graphic):
-    # type: (dict, list, float, str) -> dict
+def calc_variation_shifts(mass_fit_graph, var_values, var_corr_values, filename_graphic):
+    # type: (Any, list, list, str) -> dict
 
     std_val = (var_values[0]+var_values[-1])/2
 
     var_shifts = {}
-    for s, var_value in enumerate([std_val]+var_values):
-        var_shifts[var_value] = mass_fit_graph[s].GetFunction('pol2_fit').GetX(original_corr_value)
+    for k, var_value in enumerate([std_val]+var_values):
+        var_shifts[var_value] = mass_fit_graph.GetFunction('pol2_fit').GetX(var_corr_values[k][1][172.5])
 
     # print('====    ====    ====    ====')
     # print(original_corr_value)
@@ -375,7 +375,7 @@ if __name__ == '__main__':
 
     jet_pt_variations = [1.05, 1.02, 1.01, 0.99, 0.98, 0.95]
     jet_pt_var_ids = ['_varied_jet_{:.2f}'.format(v) for v in jet_pt_variations]
-    jet_pt_var_names = ['+ 5 %', '+ 2 %', '+ 1 %', '- 1 %', '- 2 %', '- 5 %']        # ['+ 10 %', '+ 5 %', '+ 2 %', '+ 1 %', '- 1 %', '- 2 %', '- 5 %', '- 10 %']
+    jet_pt_var_names = ['+ 5 %', '+ 2 %', '+ 1 %', '- 1 %', '- 2 %', '- 5 %']
 
     cons_pt_variations = [-2, -1, -0.5, 0.5, 1, 2]
     cons_pt_var_ids = ['_varied_cons_pt_{:.2f}'.format(v) for v in cons_pt_variations]
@@ -403,8 +403,8 @@ if __name__ == '__main__':
     draw_mass_fit_graph(correlator_values_variations=CB_maximums_all_jet_pt_var,
                         filename_graphic=subfolder+'/peak_fitting/top_mass_CB_max_fit_jet.pdf', chart_title='Top Mass Crystal Ball Fit (Maximums)')
 
-    jet_pt_var_shifts = calc_variation_shifts(mass_fit_graph=fit_graph_CB_means, var_values=jet_pt_variations,
-                                              original_corr_value=CB_means_all_jet_pt_var[0][1][172.5], filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_jet_shifts.pdf')
+    jet_pt_var_shifts = calc_variation_shifts(mass_fit_graph=fit_graph_CB_means[0], var_values=jet_pt_variations,
+                                              var_corr_values=CB_means_all_jet_pt_var, filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_jet_shifts.pdf')
 
     gauss_means_all_cons_pt_var = []
     gauss_maximums_all_cons_pt_var = []
@@ -428,5 +428,5 @@ if __name__ == '__main__':
     draw_mass_fit_graph(correlator_values_variations=CB_maximums_all_cons_pt_var,
                         filename_graphic=subfolder+'/peak_fitting/top_mass_CB_max_fit_cons.pdf', chart_title='Top Mass Crystal Ball Fit (Maximums)')
 
-    jet_cons_var_shifts = calc_variation_shifts(mass_fit_graph=fit_graph_CB_means, var_values=cons_pt_variations,
-                                                original_corr_value=CB_means_all_cons_pt_var[0][1][172.5], filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_cons_shifts.pdf')
+    jet_cons_var_shifts = calc_variation_shifts(mass_fit_graph=fit_graph_CB_means[0], var_values=cons_pt_variations,
+                                                var_corr_values=CB_means_all_cons_pt_var, filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_cons_shifts.pdf')
