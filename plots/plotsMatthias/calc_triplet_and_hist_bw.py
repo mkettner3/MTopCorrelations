@@ -44,7 +44,7 @@ def calc_triplets_and_hist(sample, rew_samples, mc_samples, pt_jet_ranges, max_d
     hists_w = [[[[ROOT.TH1D("Correlator W ({:}, {:}, {:}, {:})".format(i, j, k, l), "3 #zeta", nbins, hist_range[0], hist_range[1]) for l in range(2)] for k in range(len(pt_jet_ranges))] for j in range(len(rew_samples))] for i in range(2)]
     hists_varied_jet = [[[[ROOT.TH1D("Correlator varied jet ({:}, {:}, {:}, {:})".format(i, j, k, l), "3 #zeta", nbins, hist_range[0], hist_range[1]) for l in range(len(jet_pt_variations))] for k in range(len(pt_jet_ranges))] for j in range(len(rew_samples))] for i in range(2)]
     hists_varied_cons_pt = [[[[ROOT.TH1D("Correlator varied cons pt ({:}, {:}, {:}, {:})".format(i, j, k, l), "3 #zeta", nbins, hist_range[0], hist_range[1]) for l in range(len(cons_pt_variations))] for k in range(len(pt_jet_ranges))] for j in range(len(rew_samples))] for i in range(2)]
-    hists_varied_cons_eta_phi = [[[[[ROOT.TH1D("Correlator varied cons eta phi ({:}, {:}, {:}, {:}, {:})".format(i, j, k, m, n), "3 #zeta", nbins, hist_range[0], hist_range[1]) for n in range(3)] for m in range(4)] for k in range(len(pt_jet_ranges))] for j in range(len(rew_samples))] for i in range(2)]
+    hists_varied_efficiency = [[[[[ROOT.TH1D("Correlator varied efficiency ({:}, {:}, {:}, {:}, {:})".format(i, j, k, m, n), "3 #zeta", nbins, hist_range[0], hist_range[1]) for n in range(3)] for m in range(4)] for k in range(len(pt_jet_ranges))] for j in range(len(rew_samples))] for i in range(2)]
     hists_jet_pt = [[ROOT.TH1D("Hadronic Top-Jet-p_{T} ("+str(i)+", "+str(j)+")", "Jet-p_{t}", nbins, 400, 730) for j in range(len(rew_samples))] for i in range(2)]
     hists_cons_pt = [[ROOT.TH1D("Hadronic Top-Constituents-p_{T} ("+str(i)+", "+str(j)+")", "Constituent-p_{t}", nbins, 0, 30) for j in range(len(rew_samples))] for i in range(2)]
     hists_jet_mass = [[ROOT.TH1D("Hadronic Top-Jet-mass ({:}, {:})".format(i, j), "Jet-mass", nbins, 75, 300) for j in range(len(rew_samples)+len(mc_samples))] for i in range(2)]
@@ -141,7 +141,7 @@ def calc_triplets_and_hist(sample, rew_samples, mc_samples, pt_jet_ranges, max_d
                                 for k, jet_range in enumerate(pt_jet_ranges):
                                     if jet_range[0] <= hadronic_jet_pt < jet_range[1]:
                                         for three_zeta, weight in zip(triplets[0], triplets[1]):
-                                            hists_varied_cons_eta_phi[g][h][k][m][n].Fill(three_zeta, weight*event_weight*bw_weight)
+                                            hists_varied_efficiency[g][h][k][m][n].Fill(three_zeta, weight*event_weight*bw_weight)
                                         break
 
         for h, mc_sample in enumerate(mc_samples):
@@ -173,7 +173,7 @@ def calc_triplets_and_hist(sample, rew_samples, mc_samples, pt_jet_ranges, max_d
                         hists_jet_mass[g][h+len(rew_samples)].Fill(hadronic_jet_mass, event_weight)
                         hists_top_mass[g][h+len(rew_samples)].Fill(m_top_had, event_weight)
 
-    return hists, hists_w, hists_jet_pt, hists_cons_pt, hists_jet_mass, hists_top_mass, hists_varied_jet, hists_varied_cons_pt, hists_varied_cons_eta_phi, hists_event_weight, hists_number_events, hists_weighted_events
+    return hists, hists_w, hists_jet_pt, hists_cons_pt, hists_jet_mass, hists_top_mass, hists_varied_jet, hists_varied_cons_pt, hists_varied_efficiency, hists_event_weight, hists_number_events, hists_weighted_events
 
 
 def construct_triplets(hadronic_jet_pt, jet_constituents, max_delta_zeta, delta_legs, shortest_side,
@@ -224,7 +224,7 @@ def breit_wigner(width, peak_position, mass):
 
 
 def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_cons_pt, hists_jet_mass, hists_top_mass, hists_varied_jet,
-                    hists_varied_cons_pt, hists_varied_cons_eta_phi, jet_pt_variations, cons_pt_variations, hists_ev_weight,
+                    hists_varied_cons_pt, hists_varied_efficiency, jet_pt_variations, cons_pt_variations, hists_ev_weight,
                     hists_number_events, hists_weighted_events, rew_values, mc_samples, pt_jet_ranges, filename):
     # type: (list, list, list, list, list, list, list, list, list, list, list, list, list, list, list, list, list, str) -> None
 
@@ -253,7 +253,7 @@ def save_root_hists(hists_top, hists_w, hists_jet_pt, hists_cons_pt, hists_jet_m
                     hists_varied_cons_pt[g][h][k][v].Write('correlator_hist_varied_cons_pt_{:.2f}_{:}_{:}_{:}_{:}'.format(var_fac, level, mtop_bw, pt_jet_range[0], pt_jet_range[1]))
                 for m, eff_deltaR in enumerate([0.01, 0.05, 0.1, 0.4]):
                     for n, eff_probability in enumerate([2, 5, 10]):
-                        hists_varied_cons_eta_phi[g][h][k][m][n].Write('correlator_hist_varied_cons_eta_phi_{:}_{:}_{:}_{:}_{:}_{:}'.format(level, mtop_bw, pt_jet_range[0], pt_jet_range[1], eff_deltaR, eff_probability))
+                        hists_varied_efficiency[g][h][k][m][n].Write('correlator_hist_varied_efficiency_{:.2f}_{:.2f}_{:}_{:}_{:}_{:}'.format(eff_deltaR, eff_probability, level, mtop_bw, pt_jet_range[0], pt_jet_range[1]))
         for h, mtop_mc in enumerate(mc_samples):
             for k, pt_jet_range in enumerate(pt_jet_ranges):
                 for f, (weighted, weight_dir) in enumerate(zip(['', '_abscou'], ['weighted', 'absolute'])):
@@ -306,18 +306,18 @@ if __name__ == '__main__':
     count = 0
     (hists, hists_w,
      hists_jet_pt, hists_cons_pt, hists_jet_mass, hists_top_mass,
-     hists_varied_jet, hists_varied_cons_pt, hists_varied_cons_eta_phi,
+     hists_varied_jet, hists_varied_cons_pt, hists_varied_efficiency,
      hists_event_weight, hists_number_events, hists_weighted_events) = calc_triplets_and_hist(
                                                   sample=sample, rew_samples=rew_samples, mc_samples=mc_samples,
                                                   pt_jet_ranges=pt_jet_ranges, max_delta_zeta=float('nan'), delta_legs=float('nan'),
                                                   shortest_side=0.05, jet_pt_variations=jet_pt_variations, cons_pt_variations=cons_pt_variations)
     save_root_hists(hists_top=hists, hists_w=hists_w, hists_jet_pt=hists_jet_pt, hists_cons_pt=hists_cons_pt,
                     hists_jet_mass=hists_jet_mass, hists_top_mass=hists_top_mass, hists_varied_jet=hists_varied_jet,
-                    hists_varied_cons_pt=hists_varied_cons_pt, hists_varied_cons_eta_phi=hists_varied_cons_eta_phi,
+                    hists_varied_cons_pt=hists_varied_cons_pt, hists_varied_efficiency=hists_varied_efficiency,
                     jet_pt_variations=jet_pt_variations, cons_pt_variations=cons_pt_variations,
                     hists_ev_weight=hists_event_weight, hists_number_events=hists_number_events,
                     hists_weighted_events=hists_weighted_events, rew_values=rew_samples, mc_samples=mc_sample_names, pt_jet_ranges=pt_jet_ranges,
-                    filename='histogram_files/correlator_hist_trip_32_pp_{:03}.root'.format(args.job))
+                    filename='histogram_files/correlator_hist_trip_33_pp_{:03}.root'.format(args.job))
     end = time.time()
 
     print('Executing calc_triplet_and_hist.py took {:.0f}:{:.2f} min:sec.'.format((end-start)//60, (end-start)%60))
