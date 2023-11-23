@@ -367,22 +367,67 @@ def calc_variation_shifts(mass_fit_graph, var_values, var_corr_values, filename_
     return var_shifts
 
 
+def calc_efficiency_shifts(mass_fit_graph, var_values, var_corr_values, filename_graphic):
+    # type: (Any, list, list, str) -> dict
+
+    var_shifts = {}
+    k = 0
+    for m in var_values[0]:
+        for n in var_values[1]:
+            var_shifts[(m, n)] = mass_fit_graph.GetFunction('pol2_fit').GetX(var_corr_values[k+1][1][172.5])
+            k += 1
+
+    # print('====    ====    ====    ====')
+    # print(original_corr_value)
+    # for k in [1]+var_values:
+    #     print(k, var_shifts[k])
+    var_shifts = {(m, n): var_shifts[(m, n)] - 172.5 for m in var_values[0] for n in var_values[1]}
+
+    efficiency_graph = ROOT.TH2D("Efficiencies", "Efficiency Variations", len(var_values[0]), 0, len(var_values[0]), len(var_values[1]), 0, len(var_values[1]))
+    for i, m in enumerate(var_values[0]):
+        for j, n in enumerate(var_values[1]):
+            efficiency_graph.SetBinContent(i+1, j+1, var_shifts[(m, n)])
+
+    ROOT.gStyle.SetOptStat(0)  # Do not display stat box
+    c = ROOT.TCanvas('c', 'c', 600, 600)
+    ROOT.gPad.SetRightMargin(0.2)
+    efficiency_graph.SetTitle('Systematic uncertainties for tracker efficiency')
+    efficiency_graph.GetXaxis().SetTitle('Detection limit of #DeltaR')
+    for i, m in enumerate(var_values[0]):
+        efficiency_graph.GetXaxis().SetBinLabel(i+1, '{:}'.format(m))
+    efficiency_graph.GetYaxis().SetTitle('Probability of lost events')
+    for j, n in enumerate(var_values[1]):
+        efficiency_graph.GetYaxis().SetBinLabel(j+1, '{:}%'.format(n))
+    efficiency_graph.Draw('COLZ')
+    c.Print(plot_directory+filename_graphic)
+
+    return var_shifts
+
+
 if __name__ == '__main__':
-    subfolder = '/generation_32'
-    filename = 'histogram_files/correlator_hist_trip_32.root'
+    subfolder = '/generation_33'
+    filename = 'histogram_files/correlator_hist_trip_33.root'
     pt_jet_range = (450, 500)
     peak_window = (0.7, 1.7)
     mtop_bw_names = ['{:.2f}'.format(elem) if elem is not None else '172.50' for elem in rew_samples]
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
 
-    jet_pt_variations = [1.05, 1.02, 1.01, 0.99, 0.98, 0.95]
-    jet_pt_var_ids = ['_varied_jet_{:.2f}'.format(v) for v in jet_pt_variations]
-    jet_pt_var_names = ['+ 5 %', '+ 2 %', '+ 1 %', '- 1 %', '- 2 %', '- 5 %']
+    jet_pt_variations = [1.02, 1.01, 1.005, 1.002, 1.001, 0.999, 0.998, 0.995, 0.99, 0.98]
+    jet_pt_var_ids = ['_varied_jet_{:.3f}'.format(v) for v in jet_pt_variations]
+    jet_pt_var_names = ['+ 2 %', '+ 1 %', '+ 0.5 %', '+ 0.2 %', '+ 0.1 %', '- 0.1 %', '- 0.2 %', '- 0.5 %', '- 1 %', '- 2 %']
 
     cons_pt_variations = [-2, -1, -0.5, 0.5, 1, 2]
     cons_pt_var_ids = ['_varied_cons_pt_{:.2f}'.format(v) for v in cons_pt_variations]
     cons_pt_var_names = ['{:.1f}'.format(v) for v in cons_pt_variations]
 
+    deltaR_variations = [0.01, 0.05, 0.1]
+    probab_variations = [2, 5, 10]
+    efficiency_variations = [deltaR_variations, [50, 20, 10]]
+    # efficiency_var_combinations = [(i, j) for i in deltaR_variations for j in [50, 20, 10]]
+    efficiency_ids = ['_varied_efficiency_{:.2f}_{:.2f}'.format(eff_deltaR, eff_probability) for eff_deltaR in deltaR_variations for eff_probability in probab_variations]
+    efficiency_names = ['{:}, {:}'.format(delR, probab) for delR in deltaR_variations for probab in ['50 %', '20 %', '10 %']]
+
+    # ========== Variations of Jet-pT ========== #
     gauss_means_all_jet_pt_var = []
     gauss_maximums_all_jet_pt_var = []
     CB_means_all_jet_pt_var = []
@@ -408,6 +453,7 @@ if __name__ == '__main__':
     jet_pt_var_shifts = calc_variation_shifts(mass_fit_graph=fit_graph_CB_means[0], var_values=jet_pt_variations,
                                               var_corr_values=CB_means_all_jet_pt_var, filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_jet_shifts.pdf')
 
+    # ========== Variations of Constituent-pT ========== #
     gauss_means_all_cons_pt_var = []
     gauss_maximums_all_cons_pt_var = []
     CB_means_all_cons_pt_var = []
@@ -432,3 +478,30 @@ if __name__ == '__main__':
 
     jet_cons_var_shifts = calc_variation_shifts(mass_fit_graph=fit_graph_CB_means[0], var_values=cons_pt_variations,
                                                 var_corr_values=CB_means_all_cons_pt_var, filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_cons_shifts.pdf')
+
+    # ========== Efficiency analysis ========== #
+    gauss_means_all_efficiency_var = []
+    gauss_maximums_all_efficiency_var = []
+    CB_means_all_efficiency_var = []
+    CB_maximums_all_efficiency_var = []
+    for var_id, var_name in zip(['']+efficiency_ids, ['original']+efficiency_names):
+        (gauss_means, gauss_maximums,
+         CB_means, CB_mean_errors, CB_maximums) = generate_fits(rew_samples=rew_samples, mtop_bw_names=mtop_bw_names, filename=filename, subfolder=subfolder,
+                                                                pt_jet_range=pt_jet_range, peak_window=peak_window, variation_id=var_id)
+        gauss_means_all_efficiency_var.append((var_name, gauss_means))
+        gauss_maximums_all_efficiency_var.append((var_name, gauss_maximums))
+        CB_means_all_efficiency_var.append((var_name, CB_means))
+        CB_maximums_all_efficiency_var.append((var_name, CB_maximums))
+
+    draw_mass_fit_graph(correlator_values_variations=gauss_means_all_efficiency_var,
+                        filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_fit_efficiency.pdf', chart_title='Top Mass Gauss Fit (Means)')
+    draw_mass_fit_graph(correlator_values_variations=gauss_maximums_all_efficiency_var,
+                        filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_max_fit_efficiency.pdf', chart_title='Top Mass Gauss Fit (Maximums)')
+    fit_graph_CB_means = draw_mass_fit_graph(correlator_values_variations=CB_means_all_efficiency_var,
+                                             filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_efficiency.pdf',
+                                             chart_title='Top Mass Crystal Ball Fit (Means)')  # , correlator_value_errors=CB_mean_errors
+    draw_mass_fit_graph(correlator_values_variations=CB_maximums_all_efficiency_var,
+                        filename_graphic=subfolder+'/peak_fitting/top_mass_CB_max_fit_efficiency.pdf', chart_title='Top Mass Crystal Ball Fit (Maximums)')
+
+    efficiency_var_shifts = calc_efficiency_shifts(mass_fit_graph=fit_graph_CB_means[0], var_values=efficiency_variations,
+                                                   var_corr_values=CB_means_all_efficiency_var, filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_efficiency_shifts.pdf')
