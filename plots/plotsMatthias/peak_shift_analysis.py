@@ -18,7 +18,7 @@ def prepare_histogram(filename_root_hist, hist_name, bin_number):
     root_hist.SetDirectory(ROOT.nullptr)            # Returns a pointer to root_hist in memory.
     f.Close()                                       # f.Get only returns a handle, which gets lost when TFile is closed
 
-    group_size = int(root_hist.GetNbinsX()/bin_number)
+    group_size = 20 if bin_number is None else int(root_hist.GetNbinsX()/bin_number)
     hist_new = root_hist.Rebin(group_size, 'hist_new')
 
     return hist_new
@@ -210,12 +210,12 @@ def draw_histogram(root_hist, filename_graphic, sample_name, fit_label, fit_func
     root_hist.GetXaxis().SetRangeUser(0, 2.5)  # x-axis range (also works for y-axis)
     root_hist.GetXaxis().SetTitle("3#zeta")
     root_hist.GetXaxis().CenterTitle(ROOT.kTRUE)
-    root_hist.GetXaxis().SetNdivisions(505)  # Unterteilung der x-Achse
+    root_hist.GetXaxis().SetNdivisions(5, 5, 0)  # Unterteilung der x-Achse
     root_hist.GetXaxis().SetTitleOffset(1.5)
     root_hist.GetYaxis().SetRangeUser(ylim[0], ylim[1])
-    root_hist.GetYaxis().SetTitle("Energy-weighted Triplets")
+    # root_hist.GetYaxis().SetTitle("Energy-weighted Triplets")
     root_hist.GetYaxis().CenterTitle(ROOT.kTRUE)
-    root_hist.GetYaxis().SetNdivisions(505)    # 2*1000000 + (root_hist.GetYaxis().GetNdiv() % 1000000))  # Unterteilung der y-Achse
+    root_hist.GetYaxis().SetNdivisions(5, 5, 0)    # 2*1000000 + (root_hist.GetYaxis().GetNdiv() % 1000000))  # Unterteilung der y-Achse
     root_hist.GetYaxis().SetMaxDigits(3)  # 3 ist die einzig sinnvolle Einstellung, weil als Exponent der Zehnerpotenz nur Vielfache von 3 verwendet werden.
     root_hist.GetYaxis().SetTitleOffset(1.5)
 
@@ -273,7 +273,7 @@ def draw_mass_fit_graph(correlator_values_variations, filename_graphic, chart_ti
     return top_mass_graph
 
 
-def generate_fits(rew_samples, mtop_bw_names, filename, subfolder, pt_jet_range, peak_window, variation_id='', bin_number=30):
+def generate_fits(rew_samples, mtop_bw_names, filename, subfolder, pt_jet_range, peak_window, variation_id='', bin_number=None):
     # type: (list, list, str, str, tuple, tuple, str, int) -> tuple
 
     # hist = prepare_histogram(filename_root_hist=filename,

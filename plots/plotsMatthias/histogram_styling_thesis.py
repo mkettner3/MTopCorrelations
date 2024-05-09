@@ -14,6 +14,7 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, sa
     for i in range(len(hists)):
         hists[i].SetDirectory(ROOT.nullptr)
     f.Close()
+
     c = ROOT.TCanvas('c', 'c', 600, 600)
     if all_ranges:
         legend = ROOT.TLegend(0.63, 0.55, 0.87, 0.87)
@@ -50,12 +51,12 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, sa
     hists[0].GetXaxis().SetRangeUser(0, 2.5)    # x-axis range (also works for y-axis)
     hists[0].GetXaxis().SetTitle("3#zeta")
     hists[0].GetXaxis().CenterTitle(ROOT.kTRUE)
-    hists[0].GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
+    hists[0].GetXaxis().SetNdivisions(5, 5, 0)      # Unterteilung der x-Achse
     hists[0].GetXaxis().SetTitleOffset(1.5)
     hists[0].GetYaxis().SetRangeUser(ylim[0], ylim[1])
     # hists[0].GetYaxis().SetTitle("Energy-weighted Triplets")
     hists[0].GetYaxis().CenterTitle(ROOT.kTRUE)
-    hists[0].GetYaxis().SetNdivisions(505)      # Unterteilung der y-Achse
+    hists[0].GetYaxis().SetNdivisions(5, 5, 0)      # Unterteilung der y-Achse
     hists[0].GetYaxis().SetMaxDigits(3)     # 3 ist die einzig sinnvolle Einstellung, weil als Exponent der Zehnerpotenz nur Vielfache von 3 verwendet werden.
     hists[0].GetYaxis().SetTitleOffset(1.5)
 
@@ -114,10 +115,10 @@ def style_varied_hist(filename_root, hist_name, varied_hist_name, var_factors, f
     hists[0].GetXaxis().SetRangeUser(0, 2.5)    # x-axis range (also works for y-axis)
     hists[0].GetXaxis().SetTitle("3#zeta")
     hists[0].GetXaxis().CenterTitle(ROOT.kTRUE)
-    hists[0].GetXaxis().SetNdivisions(505)      # Unterteilung der x-Achse
+    hists[0].GetXaxis().SetNdivisions(5, 5, 0)      # Unterteilung der x-Achse
     hists[0].GetYaxis().SetRangeUser(ylim[0], ylim[1])
     # hists[0].GetYaxis().SetTitle("Energy-weighted Triplets")
-    hists[0].GetYaxis().SetNdivisions(505)      # Unterteilung der y-Achse
+    hists[0].GetYaxis().SetNdivisions(5, 5, 0)      # Unterteilung der y-Achse
     hists[0].GetYaxis().SetMaxDigits(3)     # 3 ist die einzig sinnvolle Einstellung, weil als Exponent der Zehnerpotenz nur Vielfache von 3 verwendet werden.
 
     hists[0].Draw('HIST')
