@@ -423,7 +423,6 @@ if __name__ == '__main__':
     deltaR_variations = [0.01, 0.05, 0.1]
     probab_variations = [2, 5, 10]
     efficiency_variations = [deltaR_variations, [50, 20, 10]]
-    # efficiency_var_combinations = [(i, j) for i in deltaR_variations for j in [50, 20, 10]]
     efficiency_ids = ['_varied_efficiency_{:.2f}_{:.2f}'.format(eff_deltaR, eff_probability) for eff_deltaR in deltaR_variations for eff_probability in probab_variations]
     efficiency_names = ['{:}, {:}'.format(delR, probab) for delR in deltaR_variations for probab in ['50 %', '20 %', '10 %']]
 
