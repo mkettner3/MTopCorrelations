@@ -40,6 +40,21 @@ def find_peak_argmax(root_hist, window):
     return max_bin, max_value
 
 
+def get_peak_mean(root_hist, window):
+    # type: (Any, tuple) -> tuple
+
+    peak_mean = 0
+    integral = 0
+    for i in range(1, root_hist.GetNbinsX()+1):
+        if root_hist.GetXaxis().GetBinLowEdge(i) > window[0] and root_hist.GetXaxis().GetBinUpEdge(i) < window[1]:
+            peak_mean += i * root_hist.GetBinContent(i)
+            integral += root_hist.GetBinContent(i)
+    peak_mean /= integral
+    peak_mean = peak_mean * (root_hist.GetBinCenter(11)-root_hist.GetBinCenter(1)) / 10 + root_hist.GetBinCenter(11) - (root_hist.GetBinCenter(11)-root_hist.GetBinCenter(1)) * 1.1
+
+    return peak_mean
+
+
 def perform_gauss_fit(root_hist, window):
     # type: (Any, tuple) -> tuple
 
@@ -225,7 +240,7 @@ def draw_histogram(root_hist, filename_graphic, sample_name, fit_label, fit_func
     c.Print(plot_directory+filename_graphic)
 
 
-def draw_mass_fit_graph(correlator_values_variations, filename_graphic, chart_title, correlator_value_errors=None):
+def draw_mass_fit_graph(correlator_values_variations, filename_graphic, chart_title, y_lim=None, correlator_value_errors=None):
     # type: (list, str, str, list) -> dict
 
     ROOT.gStyle.SetOptStat(0)  # Do not display stat box
@@ -251,19 +266,23 @@ def draw_mass_fit_graph(correlator_values_variations, filename_graphic, chart_ti
         top_mass_graph[s].SetMarkerStyle(47)
         top_mass_graph[s].SetMarkerColor(1)
         top_mass_graph[s].GetFunction('pol2_fit').SetLineColor(s+1)
-        legend.AddEntry(top_mass_graph[s].GetFunction('pol2_fit'), label, 'l')
+        if label != '':
+            legend.AddEntry(top_mass_graph[s].GetFunction('pol2_fit'), label, 'l')
 
     top_mass_graph[0].SetTitle(chart_title)
     top_mass_graph[0].GetXaxis().SetTitle('Top-Mass (GeV)')
     top_mass_graph[0].GetXaxis().CenterTitle(ROOT.kTRUE)
-    top_mass_graph[0].GetXaxis().SetNdivisions(505)  # Unterteilung der x-Achse
+    top_mass_graph[0].GetXaxis().SetNdivisions(5, 5, 0)  # Unterteilung der x-Achse
     top_mass_graph[0].GetXaxis().SetTitleOffset(1.5)
     top_mass_graph[0].GetYaxis().SetTitle("3#zeta")
     top_mass_graph[0].GetYaxis().CenterTitle(ROOT.kTRUE)
-    top_mass_graph[0].GetYaxis().SetNdivisions(505)
+    top_mass_graph[0].GetYaxis().SetNdivisions(5, 5, 0)
     top_mass_graph[0].GetYaxis().SetTitleOffset(1.5)
-    top_mass_graph[0].GetYaxis().SetRangeUser(min([top_mass_graph[i].GetHistogram().GetMinimum() for i in top_mass_graph]),
-                                              max([top_mass_graph[i].GetHistogram().GetMaximum() for i in top_mass_graph]))
+    if y_lim is None:
+        top_mass_graph[0].GetYaxis().SetRangeUser(min([top_mass_graph[i].GetHistogram().GetMinimum() for i in top_mass_graph]),
+                                                  max([top_mass_graph[i].GetHistogram().GetMaximum() for i in top_mass_graph]))
+    else:
+        top_mass_graph[0].GetYaxis().SetRangeUser(y_lim[0], y_lim[1])
     top_mass_graph[0].Draw('AP')
     for s in range(len(correlator_values_variations)):
         top_mass_graph[s].Draw('P SAME')        # This object must not be deleted until c.Print() is executed.
@@ -284,6 +303,7 @@ def generate_fits(rew_samples, mtop_bw_names, filename, subfolder, pt_jet_range,
     #                                                            mean_gauss=gauss_mean, sigma_gauss=gauss_sigma, double_sided=False)
     # print(standard_param)
 
+    direct_means = {}
     gauss_means = {}
     gauss_maximums = {}
     CB_means = {}
@@ -299,6 +319,9 @@ def generate_fits(rew_samples, mtop_bw_names, filename, subfolder, pt_jet_range,
         peak_max_bin, peak_max_value = find_peak_argmax(root_hist=hist, window=peak_window)
         print('Maximum bin number: {:}; Maximum value: {:}'.format(peak_max_bin, peak_max_value))
 
+        # Directly calculate mean of distribution
+        peak_mean = get_peak_mean(root_hist=hist, window=peak_window)
+
         # Perform a Gauss fit to get a rough idea of fit parameters
         gauss_norm, gauss_mean, gauss_sigma, gauss_max = perform_gauss_fit(root_hist=hist, window=peak_window)
         print('Gauss-Fit mean: {:.3f}; Gauss-Fit Sigma: {:.3f}'.format(gauss_mean, gauss_sigma))
@@ -312,6 +335,7 @@ def generate_fits(rew_samples, mtop_bw_names, filename, subfolder, pt_jet_range,
         draw_histogram(root_hist=hist, filename_graphic=subfolder+'/peak_fitting/correlator_CB_fit{:}_Gen_{:}_{:}-{:}.pdf'.format(variation_id, mtop_bw_name, pt_jet_range[0], pt_jet_range[1]),
                        sample_name=mtop_bw_name, fit_label='Crystal-Ball-Fit', fit_function='CBFunction', chi2_ndf=CB_chi2_ndf)
 
+        direct_means[mtop_bw if mtop_bw is not None else 172.5] = peak_mean
         gauss_means[mtop_bw if mtop_bw is not None else 172.5] = gauss_mean
         gauss_maximums[mtop_bw if mtop_bw is not None else 172.5] = gauss_max
         CB_means[mtop_bw if mtop_bw is not None else 172.5] = CB_mean
@@ -320,7 +344,7 @@ def generate_fits(rew_samples, mtop_bw_names, filename, subfolder, pt_jet_range,
 
         print(' ')
 
-    return gauss_means, gauss_maximums, CB_means, CB_mean_errors, CB_maximums
+    return direct_means, gauss_means, gauss_maximums, CB_means, CB_mean_errors, CB_maximums
 
 
 def calc_variation_shifts(mass_fit_graph, var_values, var_corr_values, filename_graphic):
@@ -427,18 +451,27 @@ if __name__ == '__main__':
     efficiency_names = ['{:}, {:}'.format(delR, probab) for delR in deltaR_variations for probab in ['50 %', '20 %', '10 %']]
 
     # ========== Variations of Jet-pT ========== #
+    drt_means_all_jet_pt_var = []
     gauss_means_all_jet_pt_var = []
     gauss_maximums_all_jet_pt_var = []
     CB_means_all_jet_pt_var = []
     CB_maximums_all_jet_pt_var = []
     for var_id, var_name in zip(['']+jet_pt_var_ids, ['original']+jet_pt_var_names):
-        (gauss_means, gauss_maximums,
+        (drt_means, gauss_means, gauss_maximums,
          CB_means, CB_mean_errors, CB_maximums) = generate_fits(rew_samples=rew_samples, mtop_bw_names=mtop_bw_names, filename=filename, subfolder=subfolder,
-                                                                pt_jet_range=pt_jet_range, peak_window=peak_window, variation_id=var_id)
+                                                                pt_jet_range=pt_jet_range, peak_window=peak_window, variation_id=var_id, bin_number=30)
+        drt_means_all_jet_pt_var.append((var_name, drt_means))
         gauss_means_all_jet_pt_var.append((var_name, gauss_means))
         gauss_maximums_all_jet_pt_var.append((var_name, gauss_maximums))
         CB_means_all_jet_pt_var.append((var_name, CB_means))
         CB_maximums_all_jet_pt_var.append((var_name, CB_maximums))
+
+    draw_mass_fit_graph(correlator_values_variations=[('', drt_means_all_jet_pt_var[0][1])], filename_graphic=subfolder+'/peak_fitting/top_mass_fit.pdf',
+                        chart_title='Top Mass No Fit (Means)', y_lim=(1.075, 1.11))
+    draw_mass_fit_graph(correlator_values_variations=[('', gauss_means_all_jet_pt_var[0][1])], filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit.pdf',
+                        chart_title='Top Mass Crystal Ball Fit (Means)', y_lim=(1.045, 1.09))
+    draw_mass_fit_graph(correlator_values_variations=[('', CB_maximums_all_jet_pt_var[0][1])], filename_graphic=subfolder+'/peak_fitting/top_mass_CB_max_fit.pdf',
+                        chart_title='Top Mass Crystal Ball Fit (Maximums)', y_lim=(1.10, 1.17))
 
     draw_mass_fit_graph(correlator_values_variations=gauss_means_all_jet_pt_var,
                         filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_fit_jet.pdf', chart_title='Top Mass Gauss Fit (Means)')
@@ -458,7 +491,7 @@ if __name__ == '__main__':
     CB_means_all_cons_pt_var = []
     CB_maximums_all_cons_pt_var = []
     for var_id, var_name in zip(['']+cons_pt_var_ids, ['original']+cons_pt_var_names):
-        (gauss_means, gauss_maximums,
+        (_, gauss_means, gauss_maximums,
          CB_means, CB_mean_errors, CB_maximums) = generate_fits(rew_samples=rew_samples, mtop_bw_names=mtop_bw_names, filename=filename, subfolder=subfolder,
                                                                 pt_jet_range=pt_jet_range, peak_window=peak_window, variation_id=var_id)
         gauss_means_all_cons_pt_var.append((var_name, gauss_means))
@@ -484,7 +517,7 @@ if __name__ == '__main__':
     CB_means_all_efficiency_var = []
     CB_maximums_all_efficiency_var = []
     for var_id, var_name in zip(['']+efficiency_ids, ['original']+efficiency_names):
-        (gauss_means, gauss_maximums,
+        (_, gauss_means, gauss_maximums,
          CB_means, CB_mean_errors, CB_maximums) = generate_fits(rew_samples=rew_samples, mtop_bw_names=mtop_bw_names, filename=filename, subfolder=subfolder,
                                                                 pt_jet_range=pt_jet_range, peak_window=peak_window, variation_id=var_id)
         gauss_means_all_efficiency_var.append((var_name, gauss_means))
