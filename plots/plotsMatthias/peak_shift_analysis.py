@@ -241,7 +241,7 @@ def draw_histogram(root_hist, filename_graphic, sample_name, fit_label, fit_func
 
 
 def draw_mass_fit_graph(correlator_values_variations, filename_graphic, chart_title, y_lim=None, correlator_value_errors=None):
-    # type: (list, str, str, list) -> dict
+    # type: (list, str, str, tuple, list) -> dict
 
     ROOT.gStyle.SetOptStat(0)  # Do not display stat box
     ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
@@ -269,7 +269,7 @@ def draw_mass_fit_graph(correlator_values_variations, filename_graphic, chart_ti
         if label != '':
             legend.AddEntry(top_mass_graph[s].GetFunction('pol2_fit'), label, 'l')
 
-    top_mass_graph[0].SetTitle(chart_title)
+    top_mass_graph[0].SetTitle('')
     top_mass_graph[0].GetXaxis().SetTitle('Top-Mass (GeV)')
     top_mass_graph[0].GetXaxis().CenterTitle(ROOT.kTRUE)
     top_mass_graph[0].GetXaxis().SetNdivisions(5, 5, 0)  # Unterteilung der x-Achse
@@ -375,7 +375,7 @@ def calc_variation_shifts(mass_fit_graph, var_values, var_corr_values, filename_
     var_shifts_graph.SetMarkerSize(2)
     var_shifts_graph.SetMarkerStyle(47)
     var_shifts_graph.SetMarkerColor(1)
-    var_shifts_graph.SetTitle('Variation Shifts')
+    var_shifts_graph.SetTitle('')
     var_shifts_graph.GetXaxis().SetTitle('Variation Factor')
     var_shifts_graph.GetXaxis().CenterTitle(ROOT.kTRUE)
     var_shifts_graph.GetXaxis().SetNdivisions(505)  # Unterteilung der x-Achse
