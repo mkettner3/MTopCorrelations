@@ -220,34 +220,20 @@ if __name__ == '__main__':
                         filename_graphic=subfolder+'/correlator_hist_{:}_{:}-{:}_MC.pdf'.format(level, pt_range[0], pt_range[1]),
                         ylim=(0, 0.007), verb=False)
 
-        """
         style_corr_hist(filename_root=filename,
                         hist_name='/W-Boson/'+level+'-Level/weighted/correlator_hist_W_{:}_$_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
                         sample_names=sample_names,
                         filename_graphic=subfolder+'/correlator_hist_W_{:}_{:}-{:}.pdf'.format(level, pt_range[0], pt_range[1]),
                         ylim=(0, 0.08), verb=False)
 
-        style_varied_hist(filename_root=filename,
-                          hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
-                          varied_hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_jet_$_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
-                          var_factors=['{:.2f}'.format(value) for value in [1.1, 1.02, 0.98, 0.9]],
-                          filename_graphic=subfolder+'/correlator_hist_varied_jet_{:}_{:}-{:}.pdf'.format(level, pt_range[0], pt_range[1]),
-                          ylim=(0, 0.007), verb=False)
-
-        style_varied_hist(filename_root=filename,
-                          hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
-                          varied_hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_cons_pt_$_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
-                          var_factors=['{:.2f}'.format(value) for value in [-2, -1, -0.5, 0.5, 1, 2]],
-                          filename_graphic=subfolder+'/correlator_hist_varied_cons_pt_{:}_{:}-{:}.pdf'.format(level, pt_range[0], pt_range[1]),
-                          ylim=(0, 0.007), verb=False)
-
-        # style_varied_hist(filename_root=filename,
-        #                   hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
-        #                   varied_hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_varied_cons_eta_phi_$_{:}_None_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
-        #                   var_factors=['1.02', '0.98'],
-        #                   filename_graphic=subfolder+'/correlator_hist_varied_cons_eta_phi_{:}_{:}-{:}.png'.format(level, pt_range[0], pt_range[1]),
-        #                   ylim=(0, 0.02), verb=False)
         """
+        style_corr_hist(filename_root=filename,
+                        hist_name='/W-Boson/'+level+'-Level/weighted/correlator_hist_W_{:}_$_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
+                        sample_names=['MC_TTbar_1', 'MC_TTbar_2', 'None', 'MC_TTbar_4', 'MC_TTbar_5'],
+                        filename_graphic=subfolder+'/correlator_hist_W_{:}_{:}-{:}_MC.pdf'.format(level, pt_range[0], pt_range[1]),
+                        ylim=(0, 0.08), verb=False)
+        """
+
 
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_jet_pt_hist_{:}_$'.format(level),
