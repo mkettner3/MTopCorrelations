@@ -378,11 +378,11 @@ def calc_variation_shifts(mass_fit_graph, var_values, var_corr_values, filename_
     var_shifts_graph.SetTitle('')
     var_shifts_graph.GetXaxis().SetTitle('Variation Factor')
     var_shifts_graph.GetXaxis().CenterTitle(ROOT.kTRUE)
-    var_shifts_graph.GetXaxis().SetNdivisions(505)  # Unterteilung der x-Achse
+    var_shifts_graph.GetXaxis().SetNdivisions(5, 5, 0)  # Unterteilung der x-Achse
     var_shifts_graph.GetXaxis().SetTitleOffset(1.5)
     var_shifts_graph.GetYaxis().SetTitle('Shift in the Top Mass (GeV)')
     var_shifts_graph.GetYaxis().CenterTitle(ROOT.kTRUE)
-    var_shifts_graph.GetYaxis().SetNdivisions(505)
+    var_shifts_graph.GetYaxis().SetNdivisions(5, 5, 0)
     var_shifts_graph.GetYaxis().SetTitleOffset(1.5)
     var_shifts_graph.Draw('AP')
 
@@ -413,15 +413,18 @@ def calc_efficiency_shifts(mass_fit_graph, var_values, var_corr_values, filename
             efficiency_graph.SetBinContent(i+1, j+1, var_shifts[(m, n)])
 
     ROOT.gStyle.SetOptStat(0)  # Do not display stat box
+    ROOT.TColor.InvertPalette()
     c = ROOT.TCanvas('c', 'c', 600, 600)
     ROOT.gPad.SetRightMargin(0.2)
-    efficiency_graph.SetTitle('Systematic uncertainties for tracker efficiency')
-    efficiency_graph.GetXaxis().SetTitle('Detection limit of #DeltaR')
+    efficiency_graph.SetTitle('')
+    efficiency_graph.GetXaxis().SetTitle('Detection limit for #DeltaR')
     for i, m in enumerate(var_values[0]):
         efficiency_graph.GetXaxis().SetBinLabel(i+1, '{:}'.format(m))
-    efficiency_graph.GetYaxis().SetTitle('Probability of lost events')
+    efficiency_graph.GetYaxis().SetTitle('Probability of omitting a particle')
     for j, n in enumerate(var_values[1]):
         efficiency_graph.GetYaxis().SetBinLabel(j+1, '{:}%'.format(n))
+    efficiency_graph.GetZaxis().SetTitle('Shift in the Top Mass (GeV)')
+    efficiency_graph.GetZaxis().SetTitleOffset(2)
     efficiency_graph.Draw('COLZ')
     c.Print(plot_directory+filename_graphic)
 
@@ -448,7 +451,7 @@ if __name__ == '__main__':
     probab_variations = [2, 5, 10]
     efficiency_variations = [deltaR_variations, [50, 20, 10]]
     efficiency_ids = ['_varied_efficiency_{:.2f}_{:.2f}'.format(eff_deltaR, eff_probability) for eff_deltaR in deltaR_variations for eff_probability in probab_variations]
-    efficiency_names = ['{:}, {:}'.format(delR, probab) for delR in deltaR_variations for probab in ['50 %', '20 %', '10 %']]
+    efficiency_names = ['#Delta R = {:}, P = {:}'.format(delR, probab) for delR in deltaR_variations for probab in ['50 %', '20 %', '10 %']]
 
     # ========== Variations of Jet-pT ========== #
     drt_means_all_jet_pt_var = []
