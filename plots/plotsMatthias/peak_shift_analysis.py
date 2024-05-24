@@ -262,7 +262,7 @@ def draw_mass_fit_graph(correlator_values_variations, filename_graphic, chart_ti
         fit_func = ROOT.TF1('pol2_fit', 'pol2', 150, 195)
         top_mass_graph[s].Fit(fit_func, 'RQ', '', 170, 175)
 
-        top_mass_graph[s].SetMarkerSize(2)
+        top_mass_graph[s].SetMarkerSize(0)
         top_mass_graph[s].SetMarkerStyle(47)
         top_mass_graph[s].SetMarkerColor(1)
         top_mass_graph[s].GetFunction('pol2_fit').SetLineColor(s+1)

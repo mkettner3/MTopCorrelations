@@ -17,9 +17,9 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, sa
 
     c = ROOT.TCanvas('c', 'c', 600, 600)
     if all_ranges:
-        legend = ROOT.TLegend(0.63, 0.55, 0.87, 0.87)
+        legend = ROOT.TLegend(0.68, 0.55, 0.87, 0.87)
     else:
-        legend = ROOT.TLegend(0.65, 0.5, 0.85, 0.87)
+        legend = ROOT.TLegend(0.62, 0.45, 0.85, 0.87)
     ROOT.gPad.SetLeftMargin(0.12)
     ROOT.gPad.SetBottomMargin(0.12)
 
@@ -43,7 +43,7 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, sa
         hist.SetLineWidth(2)
         hist.SetLineStyle(1)
         if all_ranges:
-            legend.AddEntry(hist, 'p_{T,jet} #in ['+sample_name.replace('_','-')+'[ GeV', 'l')
+            legend.AddEntry(hist, sample_name.replace('_',' - ')+' GeV', 'l')
         else:
             legend.AddEntry(hist, 'm_{top} = '+sample_name+' GeV', 'l')
         if hist_name[-6:] != 'abscou':
@@ -134,7 +134,8 @@ def style_varied_hist(filename_root, hist_name, varied_hist_name, var_factors, f
         print('{:.3f}'.format(peak_mean))
 
 
-def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xlim=(380, 730), ylim=(0, 0.0005), rebin=5, title='Hadronic Top-Jet-Mass'):
+def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xlim=(380, 730), ylim=(0, 0.0005),
+                   rebin=5, title='GeV', legend_to_right=False, no_legend=False, max_digits_y=3):
     ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
     ROOT.gStyle.SetPadTickX(1)          # Axis ticks on top
     ROOT.gStyle.SetPadTickY(1)          # Axis ticks right
@@ -145,10 +146,16 @@ def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xli
     for i in range(len(hists)):
         hists[i].SetDirectory(ROOT.nullptr)
     f.Close()
-    c = ROOT.TCanvas('c', 'c', 600, 600)
-    legend = ROOT.TLegend(0.48, 0.30, 0.85, 0.87)
-    ROOT.gPad.SetLeftMargin(0.12)
-    ROOT.gPad.SetBottomMargin(0.12)
+    if legend_to_right:
+        c = ROOT.TCanvas('c', 'c', 850, 600)
+        ROOT.gPad.SetRightMargin(0.3)
+        legend = ROOT.TLegend(0.72, 0.35, 0.94, 0.87)
+    else:
+        c = ROOT.TCanvas('c', 'c', 600, 600)
+        legend = ROOT.TLegend(0.48, 0.30, 0.85, 0.87)
+    text_size = 0.045 if legend_to_right else 0.05
+    ROOT.gPad.SetLeftMargin(0.13)
+    ROOT.gPad.SetBottomMargin(0.13)
 
     if len(hists) == 3:
         line_colors = [ROOT.kRed, ROOT.kGreen, ROOT.kBlue]
@@ -176,19 +183,24 @@ def style_jet_hist(filename_root, sample_names, hist_name, filename_graphic, xli
     hists[0].GetXaxis().SetTitle(title)
     hists[0].GetXaxis().CenterTitle(ROOT.kTRUE)
     hists[0].GetXaxis().SetNdivisions(5, 5, 0)      # Unterteilung der x-Achse
-    hists[0].GetXaxis().SetTitleOffset(1.5)
+    hists[0].GetXaxis().SetTitleOffset(1.3)
+    hists[0].GetXaxis().SetTitleSize(text_size)
+    hists[0].GetXaxis().SetLabelSize(text_size)
     hists[0].GetYaxis().SetRangeUser(ylim[0], ylim[1])
     hists[0].GetYaxis().SetTitle("number of events")
     hists[0].GetYaxis().CenterTitle(ROOT.kTRUE)
     hists[0].GetYaxis().SetNdivisions(5, 5, 0)      # Unterteilung der y-Achse
-    hists[0].GetYaxis().SetMaxDigits(3)     # 3 ist die einzig sinnvolle Einstellung, weil als Exponent der Zehnerpotenz nur Vielfache von 3 verwendet werden.
-    hists[0].GetYaxis().SetTitleOffset(1.5)
+    hists[0].GetYaxis().SetMaxDigits(max_digits_y)     # 3 ist die einzig sinnvolle Einstellung, weil als Exponent der Zehnerpotenz nur Vielfache von 3 verwendet werden.
+    hists[0].GetYaxis().SetTitleOffset(1.3)
+    hists[0].GetYaxis().SetTitleSize(text_size)
+    hists[0].GetYaxis().SetLabelSize(text_size)
 
     hists[0].Draw('HIST')
     for i in range(1, len(hists)):
         hists[i].Draw('HIST SAME')
 
-    legend.Draw()
+    if not no_legend:
+        legend.Draw()
     c.Print(plot_directory+filename_graphic)
 
 
@@ -239,21 +251,21 @@ if __name__ == '__main__':
                        hist_name='/Others/'+level+'-Level/hadronic_top_jet_pt_hist_{:}_$'.format(level),
                        sample_names=sample_names,
                        filename_graphic=subfolder+'/hadronic_top_jet_pt_hist_{:}.pdf'.format(level),
-                       xlim=(380, 730), ylim=(0, 2000), rebin=20, title='jet p_{T} [GeV]')
+                       xlim=(380, 730), ylim=(0, 2000), rebin=20, title='jet p_{T} [GeV]', no_legend=True)
 
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_constituents_pt_hist_{:}_$'.format(level),
                        sample_names=sample_names,
                        filename_graphic=subfolder+'/hadronic_top_jet_constituents_pt_hist_{:}.pdf'.format(level),
-                       xlim=(0, 30), ylim=(0, 250000), rebin=20, title='jet constituents p_{T} [GeV]')
+                       xlim=(0, 30), ylim=(0, 250000), rebin=20, title='jet constituents p_{T} [GeV]', max_digits_y=4)
 
-        """
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_jet_mass_hist_{:}_$'.format(level),
                        sample_names=sample_names,
                        filename_graphic=subfolder+'/hadronic_top_jet_mass_hist_{:}.pdf'.format(level),
-                       xlim=(165, 190), ylim=(0, 2200), title='jet mass [GeV]')
+                       xlim=(165, 190), ylim=(0, 2200), title='jet mass [GeV]', no_legend=True)
 
+        """
         style_jet_hist(filename_root=filename,
                        hist_name='/Others/'+level+'-Level/hadronic_top_jet_mass_hist_{:}_MC_$'.format(level),
                        sample_names=['TTbar_1', 'TTbar_2', 'TTbar_4', 'TTbar_5'],
@@ -271,4 +283,4 @@ if __name__ == '__main__':
                        hist_name='/Others/'+level+'-Level/hadronic_top_mass_hist_{:}_$'.format(level),
                        sample_names=sample_names,
                        filename_graphic=subfolder+'/hadronic_top_mass_hist_{:}.pdf'.format(level),
-                       xlim=(170, 175), ylim=(0, 1500), title='Hadronic Top-Mass [GeV]')
+                       xlim=(170, 175), ylim=(0, 1500), title='hadronic top mass [GeV]', legend_to_right=True)
