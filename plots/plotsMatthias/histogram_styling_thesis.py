@@ -17,16 +17,19 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, sa
 
     c = ROOT.TCanvas('c', 'c', 600, 600)
     if all_ranges:
-        legend = ROOT.TLegend(0.68, 0.55, 0.87, 0.87)
+        legend = ROOT.TLegend(0.64, 0.55, 0.90, 0.87)
+        legend.SetFillColorAlpha(ROOT.kWhite, 0)
+    elif len(sample_name) > 8:
+        legend = ROOT.TLegend(0.63, 0.65, 0.88, 0.82)
     else:
-        legend = ROOT.TLegend(0.62, 0.45, 0.85, 0.87)
+        legend = ROOT.TLegend(0.63, 0.40, 0.88, 0.87)
     ROOT.gPad.SetLeftMargin(0.12)
     ROOT.gPad.SetBottomMargin(0.12)
 
     if len(hists) == 3:
         line_colors = [ROOT.kRed, ROOT.kGreen, ROOT.kBlue]
-    elif len(hists) == 5:
-        line_colors = [ROOT.kYellow, ROOT.kMagenta, ROOT.kGreen, ROOT.kRed, ROOT.kBlue]
+    # elif len(hists) == 5:
+    #     line_colors = [ROOT.kYellow, ROOT.kMagenta, ROOT.kGreen, ROOT.kRed, ROOT.kBlue]
     else:
         line_colors = list(range(1, len(hists)+1))
 
@@ -44,8 +47,10 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, sa
         hist.SetLineStyle(1)
         if all_ranges:
             legend.AddEntry(hist, sample_name.replace('_',' - ')+' GeV', 'l')
+        elif len(sample_name) > 8:
+            legend.AddEntry(hist, sample_name, 'l')
         else:
-            legend.AddEntry(hist, 'm_{top} = '+sample_name+' GeV', 'l')
+            legend.AddEntry(hist, '{:.2f}'.format(float(sample_name))+' GeV', 'l')
         if hist_name[-6:] != 'abscou':
             hist.Scale(1/hist.Integral())
     hists[0].GetXaxis().SetRangeUser(0, 2.5)    # x-axis range (also works for y-axis)
@@ -54,7 +59,7 @@ def style_corr_hist(filename_root, hist_name, sample_names, filename_graphic, sa
     hists[0].GetXaxis().SetNdivisions(5, 5, 0)      # Unterteilung der x-Achse
     hists[0].GetXaxis().SetTitleOffset(1.5)
     hists[0].GetYaxis().SetRangeUser(ylim[0], ylim[1])
-    # hists[0].GetYaxis().SetTitle("Energy-weighted Triplets")
+    hists[0].GetYaxis().SetTitle('weighted energy correlator')
     hists[0].GetYaxis().CenterTitle(ROOT.kTRUE)
     hists[0].GetYaxis().SetNdivisions(5, 5, 0)      # Unterteilung der y-Achse
     hists[0].GetYaxis().SetMaxDigits(3)     # 3 ist die einzig sinnvolle Einstellung, weil als Exponent der Zehnerpotenz nur Vielfache von 3 verwendet werden.
@@ -233,6 +238,13 @@ if __name__ == '__main__':
                         ylim=(0, 0.007), verb=False)
 
         style_corr_hist(filename_root=filename,
+                        hist_name='/Top-Quark/'+level+'-Level/weighted/correlator_hist_{:}_$_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
+                        sample_names=['171.5', 'MC_TTbar_2'],
+                        sample_names_display=['Breit-Wigner', 'Monte-Carlo'],
+                        filename_graphic=subfolder+'/correlator_hist_{:}_{:}-{:}_BW-MC.pdf'.format(level, pt_range[0], pt_range[1]),
+                        ylim=(0, 0.007), verb=False)
+
+        style_corr_hist(filename_root=filename,
                         hist_name='/W-Boson/'+level+'-Level/weighted/correlator_hist_W_{:}_$_{:}_{:}'.format(level, pt_range[0], pt_range[1]),
                         sample_names=sample_names,
                         filename_graphic=subfolder+'/correlator_hist_W_{:}_{:}-{:}.pdf'.format(level, pt_range[0], pt_range[1]),
@@ -263,7 +275,7 @@ if __name__ == '__main__':
                        hist_name='/Others/'+level+'-Level/hadronic_top_jet_mass_hist_{:}_$'.format(level),
                        sample_names=sample_names,
                        filename_graphic=subfolder+'/hadronic_top_jet_mass_hist_{:}.pdf'.format(level),
-                       xlim=(165, 190), ylim=(0, 2200), title='jet mass [GeV]', no_legend=True)
+                       xlim=(165, 190), ylim=(0, 2200), title='jet mass [GeV]', legend_to_right=True)
 
         """
         style_jet_hist(filename_root=filename,

@@ -66,8 +66,10 @@ def perform_gauss_fit(root_hist, window):
     mean_gauss = gauss_fit.GetParameter(1)
     sigma_gauss = gauss_fit.GetParameter(2)
     max_gauss = gauss_fit.GetMaximumX()
+    ndf = gauss_fit.GetNDF()
+    chi2 = gauss_fit.GetChisquare()
 
-    return norm_gauss, mean_gauss, sigma_gauss, max_gauss
+    return norm_gauss, mean_gauss, sigma_gauss, max_gauss, chi2/ndf
 
 
 def perform_general_crystal_ball_fit(root_hist, window, norm_gauss, mean_gauss, sigma_gauss, double_sided=False):
@@ -199,7 +201,7 @@ def OneSidedCB_standard(x, params):
     return norm*result
 
 
-def draw_histogram(root_hist, filename_graphic, sample_name, fit_label, fit_function, chi2_ndf=None, ylim=(0, 0.00015)):
+def draw_histogram(root_hist, filename_graphic, sample_name, fit_label, fit_function, chi2_ndf=None, ylim=(0, 0.0001)):
     # type: (Any, str, str, str, str, float, tuple) -> None
 
     ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
@@ -208,15 +210,16 @@ def draw_histogram(root_hist, filename_graphic, sample_name, fit_label, fit_func
     ROOT.gStyle.SetOptStat(0)  # Do not display stat box
 
     c = ROOT.TCanvas('c', 'c', 600, 600)
-    legend = ROOT.TLegend(0.65, 0.77, 0.85, 0.87)
-    ROOT.gPad.SetLeftMargin(0.12)
-    ROOT.gPad.SetBottomMargin(0.12)
+    legend = ROOT.TLegend(0.52, 0.65, 0.88, 0.87)
+    ROOT.gPad.SetLeftMargin(0.145)
+    ROOT.gPad.SetBottomMargin(0.145)
+    text_size = 0.05
 
     root_hist.SetLineColor(ROOT.kBlack)
     root_hist.SetTitle('')
     root_hist.SetLineWidth(2)
     root_hist.SetLineStyle(1)
-    legend.AddEntry(root_hist, 'm_{top} = '+sample_name+' GeV', 'l')
+    legend.AddEntry(root_hist, 'Histogram', 'l')
     root_hist.GetFunction(fit_function).SetLineColor(ROOT.kRed)
     legend.AddEntry(root_hist.GetFunction(fit_function), fit_label, 'l')
     if chi2_ndf is not None:
@@ -226,13 +229,17 @@ def draw_histogram(root_hist, filename_graphic, sample_name, fit_label, fit_func
     root_hist.GetXaxis().SetTitle("3#zeta")
     root_hist.GetXaxis().CenterTitle(ROOT.kTRUE)
     root_hist.GetXaxis().SetNdivisions(5, 5, 0)  # Unterteilung der x-Achse
-    root_hist.GetXaxis().SetTitleOffset(1.5)
+    root_hist.GetXaxis().SetTitleOffset(1.4)
+    root_hist.GetXaxis().SetTitleSize(text_size)
+    root_hist.GetXaxis().SetLabelSize(text_size)
     root_hist.GetYaxis().SetRangeUser(ylim[0], ylim[1])
-    # root_hist.GetYaxis().SetTitle("Energy-weighted Triplets")
+    root_hist.GetYaxis().SetTitle('weighted energy correlator')
     root_hist.GetYaxis().CenterTitle(ROOT.kTRUE)
     root_hist.GetYaxis().SetNdivisions(5, 5, 0)    # 2*1000000 + (root_hist.GetYaxis().GetNdiv() % 1000000))  # Unterteilung der y-Achse
     root_hist.GetYaxis().SetMaxDigits(3)  # 3 ist die einzig sinnvolle Einstellung, weil als Exponent der Zehnerpotenz nur Vielfache von 3 verwendet werden.
     root_hist.GetYaxis().SetTitleOffset(1.5)
+    root_hist.GetYaxis().SetTitleSize(text_size)
+    root_hist.GetYaxis().SetLabelSize(text_size)
 
     root_hist.Draw('HIST')
     root_hist.GetFunction(fit_function).Draw('SAME')
@@ -240,17 +247,28 @@ def draw_histogram(root_hist, filename_graphic, sample_name, fit_label, fit_func
     c.Print(plot_directory+filename_graphic)
 
 
-def draw_mass_fit_graph(correlator_values_variations, filename_graphic, chart_title, y_lim=None, correlator_value_errors=None):
-    # type: (list, str, str, tuple, list) -> dict
+def draw_mass_fit_graph(correlator_values_variations, filename_graphic, chart_title, y_lim=None, correlator_value_errors=None,
+                        show_markers=True, larger_text=False, legend_to_right=False, huge_legend=False):
+    # type: (list, str, str, tuple, list, bool, bool, bool, bool) -> dict
 
     ROOT.gStyle.SetOptStat(0)  # Do not display stat box
     ROOT.gStyle.SetLegendBorderSize(0)  # No border for legend
     ROOT.gStyle.SetPadTickX(1)
     ROOT.gStyle.SetPadTickY(1)
-    c = ROOT.TCanvas('c', 'c', 600, 600)
-    legend = ROOT.TLegend(0.15, 0.62, 0.28, 0.87)
-    ROOT.gPad.SetLeftMargin(0.12)
-    ROOT.gPad.SetBottomMargin(0.12)
+    if huge_legend:
+        c = ROOT.TCanvas('c', 'c', 750, 600)
+        ROOT.gPad.SetRightMargin(0.3)
+        legend = ROOT.TLegend(0.72, 0.4, 0.98, 0.87)
+    elif legend_to_right:
+        c = ROOT.TCanvas('c', 'c', 750, 600)
+        ROOT.gPad.SetRightMargin(0.3)
+        legend = ROOT.TLegend(0.72, 0.5, 0.94, 0.87)
+    else:
+        c = ROOT.TCanvas('c', 'c', 600, 600)
+        legend = ROOT.TLegend(0.15, 0.62, 0.28, 0.87)
+    ROOT.gPad.SetLeftMargin(0.15 if larger_text else 0.13)
+    ROOT.gPad.SetBottomMargin(0.15 if larger_text else 0.13)
+    text_size = 0.05 if larger_text else 0.04
 
     top_mass_graph = {}
     for s, (label, correlator_values) in enumerate(correlator_values_variations):
@@ -262,7 +280,7 @@ def draw_mass_fit_graph(correlator_values_variations, filename_graphic, chart_ti
         fit_func = ROOT.TF1('pol2_fit', 'pol2', 150, 195)
         top_mass_graph[s].Fit(fit_func, 'RQ', '', 170, 175)
 
-        top_mass_graph[s].SetMarkerSize(0)
+        top_mass_graph[s].SetMarkerSize(2 if show_markers else 0)
         top_mass_graph[s].SetMarkerStyle(47)
         top_mass_graph[s].SetMarkerColor(1)
         top_mass_graph[s].GetFunction('pol2_fit').SetLineColor(s+1)
@@ -270,14 +288,18 @@ def draw_mass_fit_graph(correlator_values_variations, filename_graphic, chart_ti
             legend.AddEntry(top_mass_graph[s].GetFunction('pol2_fit'), label, 'l')
 
     top_mass_graph[0].SetTitle('')
-    top_mass_graph[0].GetXaxis().SetTitle('Top-Mass (GeV)')
+    top_mass_graph[0].GetXaxis().SetTitle('m_{top} [GeV]')
     top_mass_graph[0].GetXaxis().CenterTitle(ROOT.kTRUE)
     top_mass_graph[0].GetXaxis().SetNdivisions(5, 5, 0)  # Unterteilung der x-Achse
     top_mass_graph[0].GetXaxis().SetTitleOffset(1.5)
-    top_mass_graph[0].GetYaxis().SetTitle("3#zeta")
+    top_mass_graph[0].GetXaxis().SetTitleSize(text_size)
+    top_mass_graph[0].GetXaxis().SetLabelSize(text_size)
+    top_mass_graph[0].GetYaxis().SetTitle('peak position of 3#zeta')
     top_mass_graph[0].GetYaxis().CenterTitle(ROOT.kTRUE)
     top_mass_graph[0].GetYaxis().SetNdivisions(5, 5, 0)
     top_mass_graph[0].GetYaxis().SetTitleOffset(1.5)
+    top_mass_graph[0].GetYaxis().SetTitleSize(text_size)
+    top_mass_graph[0].GetYaxis().SetLabelSize(text_size)
     if y_lim is None:
         top_mass_graph[0].GetYaxis().SetRangeUser(min([top_mass_graph[i].GetHistogram().GetMinimum() for i in top_mass_graph]),
                                                   max([top_mass_graph[i].GetHistogram().GetMaximum() for i in top_mass_graph]))
@@ -286,7 +308,8 @@ def draw_mass_fit_graph(correlator_values_variations, filename_graphic, chart_ti
     top_mass_graph[0].Draw('AP')
     for s in range(len(correlator_values_variations)):
         top_mass_graph[s].Draw('P SAME')        # This object must not be deleted until c.Print() is executed.
-    legend.Draw()
+    if not larger_text:
+        legend.Draw()
     c.Print(plot_directory+filename_graphic)
 
     return top_mass_graph
@@ -323,10 +346,10 @@ def generate_fits(rew_samples, mtop_bw_names, filename, subfolder, pt_jet_range,
         peak_mean = get_peak_mean(root_hist=hist, window=peak_window)
 
         # Perform a Gauss fit to get a rough idea of fit parameters
-        gauss_norm, gauss_mean, gauss_sigma, gauss_max = perform_gauss_fit(root_hist=hist, window=peak_window)
+        gauss_norm, gauss_mean, gauss_sigma, gauss_max, gauss_chi2_ndf = perform_gauss_fit(root_hist=hist, window=peak_window)
         print('Gauss-Fit mean: {:.3f}; Gauss-Fit Sigma: {:.3f}'.format(gauss_mean, gauss_sigma))
         draw_histogram(root_hist=hist, filename_graphic=subfolder+'/peak_fitting/correlator_gauss_fit{:}_Gen_{:}_{:}-{:}.pdf'.format(variation_id, mtop_bw_name, pt_jet_range[0], pt_jet_range[1]),
-                       sample_name=mtop_bw_name, fit_label='Gauss-Fit', fit_function='gaussFitFunction')
+                       sample_name=mtop_bw_name, fit_label='Gauss-Fit', fit_function='gaussFitFunction', chi2_ndf=gauss_chi2_ndf)
 
         # Now fit with double-sided crystal ball function
         (CB_mean, CB_mean_error, CB_max,
@@ -347,8 +370,8 @@ def generate_fits(rew_samples, mtop_bw_names, filename, subfolder, pt_jet_range,
     return direct_means, gauss_means, gauss_maximums, CB_means, CB_mean_errors, CB_maximums
 
 
-def calc_variation_shifts(mass_fit_graph, var_values, var_corr_values, filename_graphic):
-    # type: (Any, list, list, str) -> dict
+def calc_variation_shifts(mass_fit_graph, var_values, var_corr_values, filename_graphic, percentage=False):
+    # type: (Any, list, list, str, bool) -> dict
 
     std_val = (var_values[0]+var_values[-1])/2
 
@@ -370,17 +393,19 @@ def calc_variation_shifts(mass_fit_graph, var_values, var_corr_values, filename_
     ROOT.gPad.SetLeftMargin(0.12)
     ROOT.gPad.SetBottomMargin(0.12)
 
-    var_shifts_graph = ROOT.TGraph(len(var_shifts), np.asarray(list(var_shifts.keys())), np.asarray(list(var_shifts.values())))
+    assignment = {0.98: -2, 0.99: -1, 0.995: -0.5, 0.998: -0.2, 1: 0, 1.002: 0.2, 1.005: 0.5, 1.01: 1, 1.02: 2}
+    x_axis = np.array([assignment[elem] for elem in var_shifts.keys()]) if percentage else np.asarray(list(var_shifts.keys()))
+    var_shifts_graph = ROOT.TGraph(len(var_shifts), x_axis, np.asarray(list(var_shifts.values())))
 
     var_shifts_graph.SetMarkerSize(2)
     var_shifts_graph.SetMarkerStyle(47)
     var_shifts_graph.SetMarkerColor(1)
     var_shifts_graph.SetTitle('')
-    var_shifts_graph.GetXaxis().SetTitle('Variation Factor')
+    var_shifts_graph.GetXaxis().SetTitle('change of jet energy scale in %' if percentage else 'variation factor')
     var_shifts_graph.GetXaxis().CenterTitle(ROOT.kTRUE)
     var_shifts_graph.GetXaxis().SetNdivisions(5, 5, 0)  # Unterteilung der x-Achse
     var_shifts_graph.GetXaxis().SetTitleOffset(1.5)
-    var_shifts_graph.GetYaxis().SetTitle('Shift in the Top Mass (GeV)')
+    var_shifts_graph.GetYaxis().SetTitle('shift in m_{top} [GeV]')
     var_shifts_graph.GetYaxis().CenterTitle(ROOT.kTRUE)
     var_shifts_graph.GetYaxis().SetNdivisions(5, 5, 0)
     var_shifts_graph.GetYaxis().SetTitleOffset(1.5)
@@ -417,13 +442,13 @@ def calc_efficiency_shifts(mass_fit_graph, var_values, var_corr_values, filename
     c = ROOT.TCanvas('c', 'c', 600, 600)
     ROOT.gPad.SetRightMargin(0.2)
     efficiency_graph.SetTitle('')
-    efficiency_graph.GetXaxis().SetTitle('Detection limit for #DeltaR')
+    efficiency_graph.GetXaxis().SetTitle('detection limit for #DeltaR')
     for i, m in enumerate(var_values[0]):
         efficiency_graph.GetXaxis().SetBinLabel(i+1, '{:}'.format(m))
-    efficiency_graph.GetYaxis().SetTitle('Probability of omitting a particle')
+    efficiency_graph.GetYaxis().SetTitle('probability of omitting a particle')
     for j, n in enumerate(var_values[1]):
         efficiency_graph.GetYaxis().SetBinLabel(j+1, '{:}%'.format(n))
-    efficiency_graph.GetZaxis().SetTitle('Shift in the Top Mass (GeV)')
+    efficiency_graph.GetZaxis().SetTitle('shift in m_{top} [GeV]')
     efficiency_graph.GetZaxis().SetTitleOffset(2)
     efficiency_graph.Draw('COLZ')
     c.Print(plot_directory+filename_graphic)
@@ -439,13 +464,13 @@ if __name__ == '__main__':
     mtop_bw_names = ['{:.2f}'.format(elem) if elem is not None else '172.50' for elem in rew_samples]
     ROOT.gROOT.SetBatch(ROOT.kTRUE)             # Prevent graphical display for every c.Print() statement
 
-    jet_pt_variations = [1.02, 1.01, 1.005, 1.002, 1.001, 0.999, 0.998, 0.995, 0.99, 0.98]
+    jet_pt_variations = [1.02, 1.01, 1.005, 1.002, 0.998, 0.995, 0.99, 0.98]
     jet_pt_var_ids = ['_varied_jet_{:.3f}'.format(v) for v in jet_pt_variations]
-    jet_pt_var_names = ['+ 2 %', '+ 1 %', '+ 0.5 %', '+ 0.2 %', '+ 0.1 %', '- 0.1 %', '- 0.2 %', '- 0.5 %', '- 1 %', '- 2 %']
+    jet_pt_var_names = ['+ 2 %', '+ 1 %', '+ 0.5 %', '+ 0.2 %', '- 0.2 %', '- 0.5 %', '- 1 %', '- 2 %']
 
     cons_pt_variations = [-2, -1, -0.5, 0.5, 1, 2]
     cons_pt_var_ids = ['_varied_cons_pt_{:.2f}'.format(v) for v in cons_pt_variations]
-    cons_pt_var_names = ['{:.1f}'.format(v) for v in cons_pt_variations]
+    cons_pt_var_names = ['- 2', '- 1', '- 0.5', '+ 0.5', '+ 1', '+ 2']
 
     deltaR_variations = [0.01, 0.05, 0.1]
     probab_variations = [2, 5, 10]
@@ -458,6 +483,7 @@ if __name__ == '__main__':
     gauss_means_all_jet_pt_var = []
     gauss_maximums_all_jet_pt_var = []
     CB_means_all_jet_pt_var = []
+    CB_mean_errors_all_jet_pt_var = []
     CB_maximums_all_jet_pt_var = []
     for var_id, var_name in zip(['']+jet_pt_var_ids, ['original']+jet_pt_var_names):
         (drt_means, gauss_means, gauss_maximums,
@@ -467,26 +493,29 @@ if __name__ == '__main__':
         gauss_means_all_jet_pt_var.append((var_name, gauss_means))
         gauss_maximums_all_jet_pt_var.append((var_name, gauss_maximums))
         CB_means_all_jet_pt_var.append((var_name, CB_means))
+        CB_mean_errors_all_jet_pt_var.append(CB_mean_errors)
         CB_maximums_all_jet_pt_var.append((var_name, CB_maximums))
 
     draw_mass_fit_graph(correlator_values_variations=[('', drt_means_all_jet_pt_var[0][1])], filename_graphic=subfolder+'/peak_fitting/top_mass_fit.pdf',
-                        chart_title='Top Mass No Fit (Means)', y_lim=(1.075, 1.11))
+                        chart_title='Top Mass No Fit (Means)', y_lim=(1.075, 1.11), larger_text=True)
     draw_mass_fit_graph(correlator_values_variations=[('', gauss_means_all_jet_pt_var[0][1])], filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit.pdf',
-                        chart_title='Top Mass Crystal Ball Fit (Means)', y_lim=(1.045, 1.09))
+                        correlator_value_errors=CB_mean_errors_all_jet_pt_var, chart_title='Top Mass Crystal Ball Fit (Means)', y_lim=(1.045, 1.09))
     draw_mass_fit_graph(correlator_values_variations=[('', CB_maximums_all_jet_pt_var[0][1])], filename_graphic=subfolder+'/peak_fitting/top_mass_CB_max_fit.pdf',
-                        chart_title='Top Mass Crystal Ball Fit (Maximums)', y_lim=(1.10, 1.17))
+                        chart_title='Top Mass Crystal Ball Fit (Maximums)', y_lim=(1.10, 1.17), larger_text=True)
 
     draw_mass_fit_graph(correlator_values_variations=gauss_means_all_jet_pt_var,
-                        filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_fit_jet.pdf', chart_title='Top Mass Gauss Fit (Means)')
+                        filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_fit_jet.pdf', chart_title='Top Mass Gauss Fit (Means)', show_markers=False)
     draw_mass_fit_graph(correlator_values_variations=gauss_maximums_all_jet_pt_var,
-                        filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_max_fit_jet.pdf', chart_title='Top Mass Gauss Fit (Maximums)')
+                        filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_max_fit_jet.pdf', chart_title='Top Mass Gauss Fit (Maximums)', show_markers=False)
     fit_graph_CB_means = draw_mass_fit_graph(correlator_values_variations=CB_means_all_jet_pt_var,
-                                             filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_jet.pdf', chart_title='Top Mass Crystal Ball Fit (Means)') # , correlator_value_errors=CB_mean_errors
+                                             filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_jet.pdf', chart_title='Top Mass Crystal Ball Fit (Means)',
+                                             show_markers=False, legend_to_right=True)
     draw_mass_fit_graph(correlator_values_variations=CB_maximums_all_jet_pt_var,
-                        filename_graphic=subfolder+'/peak_fitting/top_mass_CB_max_fit_jet.pdf', chart_title='Top Mass Crystal Ball Fit (Maximums)')
+                        filename_graphic=subfolder+'/peak_fitting/top_mass_CB_max_fit_jet.pdf', chart_title='Top Mass Crystal Ball Fit (Maximums)', show_markers=False)
 
     jet_pt_var_shifts = calc_variation_shifts(mass_fit_graph=fit_graph_CB_means[0], var_values=jet_pt_variations,
-                                              var_corr_values=CB_means_all_jet_pt_var, filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_jet_shifts.pdf')
+                                              var_corr_values=CB_means_all_jet_pt_var, filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_jet_shifts.pdf',
+                                              percentage=True)
 
     # ========== Variations of Constituent-pT ========== #
     gauss_means_all_cons_pt_var = []
@@ -503,11 +532,12 @@ if __name__ == '__main__':
         CB_maximums_all_cons_pt_var.append((var_name, CB_maximums))
 
     draw_mass_fit_graph(correlator_values_variations=gauss_means_all_cons_pt_var,
-                        filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_fit_cons.pdf', chart_title='Top Mass Gauss Fit (Means)')
+                        filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_fit_cons.pdf', chart_title='Top Mass Gauss Fit (Means)', show_markers=False)
     draw_mass_fit_graph(correlator_values_variations=gauss_maximums_all_cons_pt_var,
-                        filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_max_fit_cons.pdf', chart_title='Top Mass Gauss Fit (Maximums)')
+                        filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_max_fit_cons.pdf', chart_title='Top Mass Gauss Fit (Maximums)', show_markers=False)
     fit_graph_CB_means = draw_mass_fit_graph(correlator_values_variations=CB_means_all_cons_pt_var,
-                                             filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_cons.pdf', chart_title='Top Mass Crystal Ball Fit (Means)') # , correlator_value_errors=CB_mean_errors
+                                             filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_cons.pdf', chart_title='Top Mass Crystal Ball Fit (Means)',
+                                             show_markers=False, legend_to_right=True)
     draw_mass_fit_graph(correlator_values_variations=CB_maximums_all_cons_pt_var,
                         filename_graphic=subfolder+'/peak_fitting/top_mass_CB_max_fit_cons.pdf', chart_title='Top Mass Crystal Ball Fit (Maximums)')
 
@@ -534,7 +564,7 @@ if __name__ == '__main__':
                         filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_max_fit_efficiency.pdf', chart_title='Top Mass Gauss Fit (Maximums)')
     fit_graph_CB_means = draw_mass_fit_graph(correlator_values_variations=CB_means_all_efficiency_var,
                                              filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit_efficiency.pdf',
-                                             chart_title='Top Mass Crystal Ball Fit (Means)')  # , correlator_value_errors=CB_mean_errors
+                                             chart_title='Top Mass Crystal Ball Fit (Means)', show_markers=False, legend_to_right=True, huge_legend=True)
     draw_mass_fit_graph(correlator_values_variations=CB_maximums_all_efficiency_var,
                         filename_graphic=subfolder+'/peak_fitting/top_mass_CB_max_fit_efficiency.pdf', chart_title='Top Mass Crystal Ball Fit (Maximums)')
 
