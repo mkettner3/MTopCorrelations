@@ -496,15 +496,16 @@ if __name__ == '__main__':
         CB_mean_errors_all_jet_pt_var.append(CB_mean_errors)
         CB_maximums_all_jet_pt_var.append((var_name, CB_maximums))
 
-        if var_id == '':
-            print('\n**********\nMean Error (172.5) = {:.5f}\n**********\n'.format(CB_mean_errors[172.5]))
-
     draw_mass_fit_graph(correlator_values_variations=[('', drt_means_all_jet_pt_var[0][1])], filename_graphic=subfolder+'/peak_fitting/top_mass_fit.pdf',
                         chart_title='Top Mass No Fit (Means)', y_lim=(1.075, 1.11), larger_text=True)
-    draw_mass_fit_graph(correlator_values_variations=[('', gauss_means_all_jet_pt_var[0][1])], filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit.pdf',
-                        correlator_value_errors=CB_mean_errors_all_jet_pt_var, chart_title='Top Mass Crystal Ball Fit (Means)', y_lim=(1.045, 1.09))
+    fit_graph = draw_mass_fit_graph(correlator_values_variations=[('', CB_means_all_jet_pt_var[0][1])], filename_graphic=subfolder+'/peak_fitting/top_mass_CB_fit.pdf',
+                                    correlator_value_errors=CB_mean_errors_all_jet_pt_var, chart_title='Top Mass Crystal Ball Fit (Means)', y_lim=(1.10, 1.17))
     draw_mass_fit_graph(correlator_values_variations=[('', CB_maximums_all_jet_pt_var[0][1])], filename_graphic=subfolder+'/peak_fitting/top_mass_CB_max_fit.pdf',
                         chart_title='Top Mass Crystal Ball Fit (Maximums)', y_lim=(1.10, 1.17), larger_text=True)
+
+    print('\n**********\nMean Error (172.5) = {:.5f}\n**********\n'.format(CB_mean_errors_all_jet_pt_var[0][172.5]))
+    stat_unc = fit_graph[0].GetFunction('pol2_fit').GetX(CB_means_all_jet_pt_var[0][1][172.5]+0.014836) - 172.5
+    print('\n**********\nStatistical Uncertainty (full Run 2) = {:.5f} GeV\n**********\n'.format(stat_unc))
 
     draw_mass_fit_graph(correlator_values_variations=gauss_means_all_jet_pt_var,
                         filename_graphic=subfolder+'/peak_fitting/top_mass_gauss_fit_jet.pdf', chart_title='Top Mass Gauss Fit (Means)', show_markers=False)
