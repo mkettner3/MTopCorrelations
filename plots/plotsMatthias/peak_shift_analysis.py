@@ -401,7 +401,7 @@ def calc_variation_shifts(mass_fit_graph, var_values, var_corr_values, filename_
     var_shifts_graph.SetMarkerStyle(47)
     var_shifts_graph.SetMarkerColor(1)
     var_shifts_graph.SetTitle('')
-    var_shifts_graph.GetXaxis().SetTitle('change of jet energy scale in %' if percentage else 'variation factor')
+    var_shifts_graph.GetXaxis().SetTitle('change of jet energy scale in %' if percentage else 'variation parameter')
     var_shifts_graph.GetXaxis().CenterTitle(ROOT.kTRUE)
     var_shifts_graph.GetXaxis().SetNdivisions(5, 5, 0)  # Unterteilung der x-Achse
     var_shifts_graph.GetXaxis().SetTitleOffset(1.5)
@@ -495,6 +495,9 @@ if __name__ == '__main__':
         CB_means_all_jet_pt_var.append((var_name, CB_means))
         CB_mean_errors_all_jet_pt_var.append(CB_mean_errors)
         CB_maximums_all_jet_pt_var.append((var_name, CB_maximums))
+
+        if var_id == '':
+            print('\n**********\nMean Error (172.5) = {:.5f}\n**********\n'.format(CB_mean_errors[172.5]))
 
     draw_mass_fit_graph(correlator_values_variations=[('', drt_means_all_jet_pt_var[0][1])], filename_graphic=subfolder+'/peak_fitting/top_mass_fit.pdf',
                         chart_title='Top Mass No Fit (Means)', y_lim=(1.075, 1.11), larger_text=True)
